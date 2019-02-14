@@ -25,25 +25,25 @@ public @interface RequestParam {
     @Retention(RUNTIME)
     @Target(PARAMETER)
     @HttpParameterMapping(ClientIpParameterMapping.class)
-    public @interface ClientIp {
+    @interface ClientIp {
     }
 
 
-    public class RequestParameterMapping extends AbstractHttpRequestParameterMapping {
-        private RequestParam reqParam;
+    class RequestParameterMapping extends AbstractHttpRequestParameterMapping {
+        private String value;
 
         public RequestParameterMapping(RequestParam reqParam, Parameter parameter) {
             super(parameter);
-            this.reqParam = reqParam;
+            value = reqParam.value();
         }
 
         @Override
         public Object apply(HttpServletRequest req, Map<String, String> pathParams) {
-            return convertToParameterType(req.getParameter(reqParam.value()), reqParam.value());
+            return convertToParameterType(req.getParameter(value), value);
         }
     }
 
-    public class ClientIpParameterMapping implements HttpRequestParameterMapping {
+    class ClientIpParameterMapping implements HttpRequestParameterMapping {
         @Override
         public Object apply(HttpServletRequest req, Map<String, String> u) {
             return req.getRemoteAddr();

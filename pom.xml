@@ -8,6 +8,24 @@
     <artifactId>action-controller-project</artifactId>
     <packaging>pom</packaging>
     <version>0.0.1-SNAPSHOT</version>
+    <name>Action Controller</name>
+    <description>Action Controller REST micro framework</description>
+
+    <url>https://github.com/jhannes/action-controller/tree/master/README.md</url>
+
+    <licenses>
+        <license>
+            <name>The Apache Licence, version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <name>Johannes Brodwall</name>
+            <email>jhannes@gmail.com</email>
+            <organizationUrl>https://github.com/jhannes</organizationUrl>
+        </developer>
+    </developers>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

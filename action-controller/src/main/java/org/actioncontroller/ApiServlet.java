@@ -1,5 +1,7 @@
 package org.actioncontroller;
 
+import org.actioncontroller.json.JsonHttpRequestException;
+import org.jsonbuddy.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,7 +76,7 @@ public class ApiServlet extends HttpServlet {
         Map<String, String> pathParameters = new HashMap<>();
         for (ApiServletAction apiRoute : routes.get(req.getMethod())) {
             if (apiRoute.matches(req.getPathInfo(), pathParameters)) {
-                apiRoute.invoke(req, resp, pathParameters, this);
+                invoke(req, resp, pathParameters, apiRoute);
                 return;
             }
         }
@@ -82,6 +84,56 @@ public class ApiServlet extends HttpServlet {
         logger.warn("No route for {}", req.getPathInfo());
         resp.sendError(404);
     }
+
+    private void invoke(HttpServletRequest req, HttpServletResponse resp, Map<String, String> pathParameters, ApiServletAction apiRoute) throws IOException {
+        try {
+            checkPreconditions(req, apiRoute.getAction());
+            apiRoute.invoke(req, resp, pathParameters, this);
+        } catch (HttpRequestException e) {
+            sendError(e, resp);
+        }
+    }
+
+    protected void sendError(HttpRequestException e, HttpServletResponse resp) throws IOException {
+        if (e.getStatusCode() >= 500) {
+            logger.error("While serving {}", this, e);
+        } else {
+            logger.info("While serving {}", this, e);
+        }
+        e.sendError(resp);
+    }
+
+
+    private void checkPreconditions(HttpServletRequest req, Method action) {
+        verifyUserAccess(req, action);
+    }
+
+    // TODO: It feels like there is some more generic concept missing here
+    // TODO: Perhaps a mechanism like transaction wrapping could be supported?
+    // TODO: Timing logging? MDC boundary?
+    protected void verifyUserAccess(HttpServletRequest req, Method action) {
+        String role = getRequiredUserRole(action).orElse(null);
+        if (role == null) {
+            return;
+        }
+        if (!isUserLoggedIn(req)) {
+            throw new JsonHttpRequestException(401,
+                    "User must be logged in for " + action,
+                    new JsonObject().put("message", "Login required"));
+        }
+        if (!isUserInRole(req, role)) {
+            throw new JsonHttpRequestException(403,
+                    "User failed to authenticate for " + action + ": Missing role " + role + " for user",
+                    new JsonObject().put("message", "Insufficient permissions"));
+        }
+    }
+
+    protected Optional<String> getRequiredUserRole(Method action) {
+        return Optional.ofNullable(
+                action.getDeclaredAnnotation(RequireUserRole.class)
+        ).map(RequireUserRole::value);
+    }
+
 
     @Override
     public final void init(ServletConfig config) throws ServletException {

@@ -46,6 +46,17 @@ public class MyApiController {
         // ... do your thing
         return "/home/";
     }
+    
+    @Get("/oauth2callback")
+    @SendRedirect
+    public String establishUserSession(
+            @RequestParam("code") String authenticationCode,
+            @SessionParameter("userProfile", invalidate=true) Consumer<UserProfile> setUserProfile
+    ) {
+        // ...
+        setUserProfile.apply(newlyLoggedInUser);
+        return "/profile";
+    }
 
 }
 ```

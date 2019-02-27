@@ -19,6 +19,11 @@ import java.util.function.Consumer;
 @HttpParameterMapping(SessionParameter.SessionParameterMapping.class)
 public @interface SessionParameter {
 
+    String value();
+
+    boolean invalidate() default false;
+
+
     class SessionParameterMapping extends AbstractHttpRequestParameterMapping {
 
         private SessionParameter sessionParam;
@@ -52,9 +57,5 @@ public @interface SessionParameter {
             }
         }
     }
-
-    String value();
-
-    boolean invalidate() default false;
 
 }

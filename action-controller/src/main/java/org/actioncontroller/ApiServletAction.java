@@ -1,13 +1,9 @@
 package org.actioncontroller;
 
-import org.actioncontroller.json.JsonHttpRequestException;
 import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpRequestParameterMapping;
 import org.actioncontroller.meta.HttpResponseValueMapping;
 import org.actioncontroller.meta.HttpReturnMapping;
-import org.jsonbuddy.JsonObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -26,8 +22,6 @@ import java.util.*;
  * template, and on the Java-side as a method on the controller class.
  */
 class ApiServletAction {
-
-    private static Logger logger = LoggerFactory.getLogger(ApiServletAction.class);
 
     private String pattern;
 
@@ -61,22 +55,23 @@ class ApiServletAction {
         for (Annotation annotation : action.getAnnotations()) {
             HttpReturnMapping mappingAnnotation = annotation.annotationType().getAnnotation(HttpReturnMapping.class);
             if (mappingAnnotation != null) {
-                Class<?> value = mappingAnnotation.value();
+                Class<? extends HttpResponseValueMapping> value = mappingAnnotation.value();
                 try {
                     try {
-                        return (HttpResponseValueMapping) value
+                        return value
                                 .getDeclaredConstructor(annotation.annotationType(), Class.class)
                                 .newInstance(annotation, action.getReturnType());
                     } catch (NoSuchMethodException e) {
-                        return (HttpResponseValueMapping) value.getDeclaredConstructor().newInstance();
+                        return value.getDeclaredConstructor().newInstance();
                     }
                 } catch (NoSuchMethodException e) {
                     throw new ApiActionResponseUnknownMappingException(
                             "No mapping annotation for " + action.getName() + "() return type"
                                     + ": Illegal mapping function for " + annotation);
-                } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
-                        | InvocationTargetException | SecurityException e) {
+                } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | SecurityException e) {
                     throw ExceptionUtil.softenException(e);
+                } catch (InvocationTargetException e) {
+                    throw ExceptionUtil.softenException(e.getTargetException());
                 }
             }
         }
@@ -89,14 +84,14 @@ class ApiServletAction {
         for (Annotation annotation : parameter.getAnnotations()) {
             HttpParameterMapping mappingAnnotation = annotation.annotationType().getAnnotation(HttpParameterMapping.class);
             if (mappingAnnotation != null) {
-                Class<?> value = mappingAnnotation.value();
+                Class<? extends HttpRequestParameterMapping> value = mappingAnnotation.value();
                 try {
                     try {
-                        return (HttpRequestParameterMapping) value
+                        return value
                                 .getDeclaredConstructor(annotation.annotationType(), Parameter.class)
                                 .newInstance(annotation, parameter);
                     } catch (NoSuchMethodException e) {
-                        return (HttpRequestParameterMapping) value.getDeclaredConstructor().newInstance();
+                        return value.getDeclaredConstructor().newInstance();
                     }
                 } catch (NoSuchMethodException e) {
                     throw new ApiActionParameterUnknownMappingException(

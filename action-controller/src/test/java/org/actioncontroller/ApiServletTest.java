@@ -22,6 +22,8 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -133,7 +135,7 @@ public class ApiServletTest {
         when(requestMock.getMethod()).thenReturn("GET");
         when(requestMock.getPathInfo()).thenReturn("/missing");
         servlet.service(requestMock, responseMock);
-        verify(responseMock).sendError(404);
+        verify(responseMock).sendError(eq(404), anyString());
     }
 
     @Test

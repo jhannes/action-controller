@@ -50,12 +50,12 @@ class ApiServletAction {
 
     private static Map<Class<?>, HttpResponseValueMapping> typebasedResponseMapping = new HashMap<>();
     static {
-        typebasedResponseMapping.put(URL.class, (o, resp) -> resp.sendRedirect(o.toString()));
+        typebasedResponseMapping.put(URL.class, (o, resp, req) -> resp.sendRedirect(o.toString()));
     }
 
     private HttpResponseValueMapping createResponseMapper() {
         if (action.getReturnType() == Void.TYPE) {
-            return (a, b) -> {};
+            return (a, b, req) -> {};
         }
 
         for (Annotation annotation : action.getAnnotations()) {
@@ -161,7 +161,7 @@ class ApiServletAction {
             verifyUserAccess(req, apiServlet);
             Object[] arguments = createArguments(getAction(), req, pathParameters);
             Object result = invoke(getController(), getAction(), arguments);
-            responseMapper.accept(result, resp);
+            responseMapper.accept(result, resp, req);
         } catch (HttpRequestException e) {
             sendError(e, resp);
         }

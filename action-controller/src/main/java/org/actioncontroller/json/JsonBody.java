@@ -30,12 +30,12 @@ public @interface JsonBody {
 
     class JsonResponseMapper implements HttpResponseValueMapping {
 
-        private static HttpResponseValueMapping writeJsonNode = (o, resp) -> {
+        private static HttpResponseValueMapping writeJsonNode = (o, resp, req) -> {
             resp.setContentType("application/json");
             ((JsonNode) o).toJson(resp.getWriter());
         };
 
-        private static HttpResponseValueMapping writePojo = (o, resp) -> {
+        private static HttpResponseValueMapping writePojo = (o, resp, req) -> {
             resp.setContentType("application/json");
             JsonGenerator.generate(o).toJson(resp.getWriter());
         };
@@ -51,8 +51,8 @@ public @interface JsonBody {
         }
 
         @Override
-        public void accept(Object o, HttpServletResponse resp) throws IOException {
-            this.responseMapping.accept(o, resp);
+        public void accept(Object o, HttpServletResponse resp, HttpServletRequest req) throws IOException {
+            this.responseMapping.accept(o, resp, req);
         }
     }
 

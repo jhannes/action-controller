@@ -79,8 +79,8 @@ public class ApiServlet extends HttpServlet {
             }
         }
 
-        logger.warn("No route for {}", req.getPathInfo());
-        resp.sendError(404);
+        logger.warn("No route for {} {}", req.getMethod(), req.getPathInfo());
+        resp.sendError(404, "No route for " + req.getMethod() + ": " + req.getRequestURI());
     }
 
     @Override

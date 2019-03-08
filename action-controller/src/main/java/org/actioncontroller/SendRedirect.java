@@ -3,6 +3,7 @@ package org.actioncontroller;
 import org.actioncontroller.meta.HttpResponseValueMapping;
 import org.actioncontroller.meta.HttpReturnMapping;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.lang.annotation.Retention;
@@ -20,7 +21,7 @@ public @interface SendRedirect {
 
 class SendRedirectMapping implements HttpResponseValueMapping {
     @Override
-    public void accept(Object result, HttpServletResponse resp) throws IOException {
+    public void accept(Object result, HttpServletResponse resp, HttpServletRequest req) throws IOException {
         resp.sendRedirect(result.toString());
     }
 }

@@ -66,7 +66,7 @@ public @interface JsonBody {
             if (JsonNode.class.isAssignableFrom(parameter.getType())) {
                 responseMapping = readJsonNode;
             } else if (List.class.isAssignableFrom(parameter.getType())) {
-                throw new IllegalArgumentException(parameter + " must be a JSON type");
+                responseMapping = readJsonNode;
             } else {
                 responseMapping = (req, u) -> PojoMapper.map(
                         JsonParser.parseToObject(req.getReader()),

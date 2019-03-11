@@ -73,10 +73,9 @@ public class ApiServlet extends HttpServlet {
 
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        Map<String, String> pathParameters = new HashMap<>();
         for (ApiServletAction apiRoute : routes.get(req.getMethod())) {
-            if (apiRoute.matches(req.getPathInfo(), pathParameters)) {
-                invoke(req, resp, pathParameters, apiRoute);
+            if (apiRoute.matches(req.getPathInfo())) {
+                invoke(req, resp, apiRoute.collectPathParameters(req.getPathInfo()), apiRoute);
                 return;
             }
         }

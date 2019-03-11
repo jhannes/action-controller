@@ -140,15 +140,33 @@ class ApiServletAction {
         return action;
     }
 
-    boolean matches(String pathInfo, Map<String, String> pathParameters) {
+    public Map<String, String> collectPathParameters(String pathInfo) {
+        HashMap<String, String> pathParameters = new HashMap<>();
+
         String[] patternParts = this.pattern.split("/");
         String[] actualParts = pathInfo.split("/");
-        if (patternParts.length != actualParts.length) return false;
+        if (patternParts.length != actualParts.length) {
+            throw new IllegalArgumentException("Paths don't match <" + pattern + ">, but was <" + pathInfo + ">");
+        }
 
         for (int i = 0; i < patternParts.length; i++) {
             if (patternParts[i].startsWith(":")) {
                 pathParameters.put(patternParts[i].substring(1), actualParts[i]);
             } else if (!patternParts[i].equals(actualParts[i])) {
+                throw new IllegalArgumentException("Paths don't match <" + pattern + ">, but was <" + pathInfo + ">");
+            }
+        }
+
+        return pathParameters;
+    }
+
+    boolean matches(String pathInfo) {
+        String[] patternParts = this.pattern.split("/");
+        String[] actualParts = pathInfo.split("/");
+        if (patternParts.length != actualParts.length) return false;
+
+        for (int i = 0; i < patternParts.length; i++) {
+            if (!patternParts[i].startsWith(":") && !patternParts[i].equals(actualParts[i])) {
                 return false;
             }
         }
@@ -232,4 +250,5 @@ class ApiServletAction {
         }
         return arguments;
     }
+
 }

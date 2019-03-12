@@ -5,7 +5,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @FunctionalInterface
-public interface HttpResponseValueMapping {
+public interface HttpReturnValueMapping {
 
     void accept(Object result, HttpServletResponse resp, HttpServletRequest req) throws IOException;
 

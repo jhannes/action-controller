@@ -8,7 +8,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -61,12 +60,6 @@ public class ApiServletTest {
             return new URL("https://messages.example.com/?user=" + userId + "&message=" + messageId);
         }
 
-        @Get("/mismatch/:something")
-        @JsonBody
-        public JsonObject mismatched(@PathParam("somethingElse") String param) {
-            return new JsonObject();
-        }
-
         @Get("/restricted")
         @RequireUserRole("admin")
         @JsonBody
@@ -110,7 +103,7 @@ public class ApiServletTest {
     }
 
     @Test
-    public void shouldCallMethodWithArgumentsAndConvertReturn() throws ServletException, IOException {
+    public void shouldCallMethodWithArgumentsAndConvertReturn() throws IOException {
         String name = UUID.randomUUID().toString();
         when(requestMock.getMethod()).thenReturn("GET");
         when(requestMock.getPathInfo()).thenReturn("/one");
@@ -125,7 +118,7 @@ public class ApiServletTest {
     }
 
     @Test
-    public void shouldOutputErrorToResponse() throws ServletException, IOException {
+    public void shouldOutputErrorToResponse() throws IOException {
         when(requestMock.getMethod()).thenReturn("GET");
         when(requestMock.getPathInfo()).thenReturn("/error");
 
@@ -134,7 +127,7 @@ public class ApiServletTest {
     }
 
     @Test
-    public void shouldGive404OnUnknownAction() throws ServletException, IOException {
+    public void shouldGive404OnUnknownAction() throws IOException {
         when(requestMock.getMethod()).thenReturn("GET");
         when(requestMock.getPathInfo()).thenReturn("/missing");
         servlet.service(requestMock, responseMock);
@@ -142,7 +135,7 @@ public class ApiServletTest {
     }
 
     @Test
-    public void shouldDecodePathParams() throws ServletException, IOException {
+    public void shouldDecodePathParams() throws IOException {
         UUID userId = UUID.randomUUID();
         when(requestMock.getMethod()).thenReturn("GET");
         when(requestMock.getPathInfo()).thenReturn("/user/" + userId + "/message/abc");
@@ -151,7 +144,7 @@ public class ApiServletTest {
     }
 
     @Test
-    public void shouldSendRedirect() throws ServletException, IOException {
+    public void shouldSendRedirect() throws IOException {
         when(requestMock.getMethod()).thenReturn("GET");
         when(requestMock.getPathInfo()).thenReturn("/redirect");
         servlet.service(requestMock, responseMock);
@@ -159,7 +152,7 @@ public class ApiServletTest {
     }
 
     @Test
-    public void shouldPostJson() throws ServletException, IOException {
+    public void shouldPostJson() throws IOException {
         when(requestMock.getMethod()).thenReturn("POST");
         when(requestMock.getPathInfo()).thenReturn("/postMethod");
 
@@ -174,7 +167,7 @@ public class ApiServletTest {
     }
 
     @Test
-    public void shouldCallWithOptionalParameter() throws ServletException, IOException {
+    public void shouldCallWithOptionalParameter() throws IOException {
         when(requestMock.getMethod()).thenReturn("GET");
         when(requestMock.getPathInfo()).thenReturn("/hello");
 
@@ -189,7 +182,7 @@ public class ApiServletTest {
 
 
     @Test
-    public void shouldCallWithRequiredInt() throws ServletException, IOException {
+    public void shouldCallWithRequiredInt() throws IOException {
         when(requestMock.getMethod()).thenReturn("GET");
         when(requestMock.getPathInfo()).thenReturn("/goodbye");
 
@@ -199,7 +192,7 @@ public class ApiServletTest {
     }
 
     @Test
-    public void shouldRequireNonOptionalParameter() throws ServletException, IOException {
+    public void shouldRequireNonOptionalParameter() throws IOException {
         when(requestMock.getMethod()).thenReturn("GET");
         when(requestMock.getPathInfo()).thenReturn("/goodbye");
 
@@ -208,7 +201,7 @@ public class ApiServletTest {
     }
 
     @Test
-    public void shouldReportParameterConversionFailure() throws ServletException, IOException {
+    public void shouldReportParameterConversionFailure() throws IOException {
         when(requestMock.getMethod()).thenReturn("GET");
         when(requestMock.getPathInfo()).thenReturn("/goodbye");
 
@@ -218,7 +211,7 @@ public class ApiServletTest {
     }
 
     @Test
-    public void shouldSetSessionParameters() throws ServletException, IOException {
+    public void shouldSetSessionParameters() throws IOException {
         when(requestMock.getMethod()).thenReturn("POST");
         when(requestMock.getPathInfo()).thenReturn("/setLoggedInUser");
 
@@ -230,7 +223,7 @@ public class ApiServletTest {
     }
 
     @Test
-    public void shouldRejectUnauthenticedUsersFromRestrictedOperation() throws ServletException, IOException {
+    public void shouldRejectUnauthenticedUsersFromRestrictedOperation() throws IOException {
         when(requestMock.getMethod()).thenReturn("GET");
         when(requestMock.getPathInfo()).thenReturn("/restricted");
         servlet.service(requestMock, responseMock);
@@ -243,7 +236,7 @@ public class ApiServletTest {
     }
 
     @Test
-    public void shouldAllowUserWithCorrectRole() throws ServletException, IOException {
+    public void shouldAllowUserWithCorrectRole() throws IOException {
         when(requestMock.getRemoteUser()).thenReturn("good user");
         when(requestMock.isUserInRole("admin")).thenReturn(true);
 
@@ -258,7 +251,7 @@ public class ApiServletTest {
     }
 
     @Test
-    public void shouldRejectUserWithoutCorrectRole() throws ServletException, IOException {
+    public void shouldRejectUserWithoutCorrectRole() throws IOException {
         when(requestMock.getRemoteUser()).thenReturn("silly user");
         when(requestMock.isUserInRole("guest")).thenReturn(false);
         when(requestMock.getMethod()).thenReturn("GET");

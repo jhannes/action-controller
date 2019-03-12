@@ -2,16 +2,15 @@ package org.actioncontroller.json;
 
 import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpRequestParameterMapping;
-import org.actioncontroller.meta.HttpResponseValueMapping;
+import org.actioncontroller.meta.HttpRequestParameterMappingFactory;
+import org.actioncontroller.meta.HttpReturnValueMapping;
+import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
 import org.jsonbuddy.JsonNode;
 import org.jsonbuddy.parse.JsonParser;
 import org.jsonbuddy.pojo.JsonGenerator;
 import org.jsonbuddy.pojo.PojoMapper;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.lang.reflect.Parameter;
@@ -28,31 +27,24 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @HttpReturnMapping(JsonBody.JsonResponseMapper.class)
 public @interface JsonBody {
 
-    class JsonResponseMapper implements HttpResponseValueMapping {
-
-        private static HttpResponseValueMapping writeJsonNode = (o, resp, req) -> {
+    class ReturnMapperFactory implements HttpReturnMapperFactory<JsonBody> {
+        private static HttpReturnValueMapping writeJsonNode = (o, resp, req) -> {
             resp.setContentType("application/json");
             ((JsonNode) o).toJson(resp.getWriter());
         };
 
-        private static HttpResponseValueMapping writePojo = (o, resp, req) -> {
+        private static HttpReturnValueMapping writePojo = (o, resp, req) -> {
             resp.setContentType("application/json");
             JsonGenerator.generate(o).toJson(resp.getWriter());
         };
 
-        private final HttpResponseValueMapping responseMapping;
-
-        public JsonResponseMapper(JsonBody jsonBody, Class<?> returnType) {
-            if (!JsonNode.class.isAssignableFrom(returnType)) {
-                this.responseMapping = writePojo;
-            } else {
-                this.responseMapping = writeJsonNode;
-            }
-        }
-
         @Override
-        public void accept(Object o, HttpServletResponse resp, HttpServletRequest req) throws IOException {
-            this.responseMapping.accept(o, resp, req);
+        public HttpReturnValueMapping create(JsonBody annotation, Class<?> returnType) {
+            if (!JsonNode.class.isAssignableFrom(returnType)) {
+                return writePojo;
+            } else {
+                return writeJsonNode;
+            }
         }
     }
 
@@ -80,5 +72,6 @@ public @interface JsonBody {
             return responseMapping.apply(req, u);
         }
     }
+
 }
 

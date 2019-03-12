@@ -1,11 +1,9 @@
 package org.actioncontroller;
 
-import org.actioncontroller.meta.HttpResponseValueMapping;
+import org.actioncontroller.meta.HttpReturnValueMapping;
+import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.net.URL;
@@ -15,19 +13,15 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 @Retention(RUNTIME)
 @Target(METHOD)
-@HttpReturnMapping(ContentLocationHeader.Mapping.class)
+@HttpReturnMapping(ContentLocationHeader.MappingFactory.class)
 public @interface ContentLocationHeader {
 
-    public class Mapping implements HttpResponseValueMapping {
-        private ContentLocationHeader annotation;
-
-        public Mapping(ContentLocationHeader annotation, Class<?> returnType) {
-            this.annotation = annotation;
-        }
-
+    class MappingFactory implements HttpReturnMapperFactory<ContentLocationHeader> {
         @Override
-        public void accept(Object result, HttpServletResponse resp, HttpServletRequest req) throws IOException {
-            resp.setHeader("Content-Location", new URL(new URL(req.getRequestURL().toString()), result.toString()).toString());
+        public HttpReturnValueMapping create(ContentLocationHeader annotation, Class<?> returnType) {
+            return (result, resp, req) ->
+                    resp.setHeader("Content-Location",
+                            new URL(new URL(req.getRequestURL().toString()), result.toString()).toString());
         }
     }
 }

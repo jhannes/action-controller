@@ -3,7 +3,9 @@ package org.actioncontroller;
 import org.actioncontroller.json.JsonHttpRequestException;
 import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpRequestParameterMapping;
-import org.actioncontroller.meta.HttpResponseValueMapping;
+import org.actioncontroller.meta.HttpRequestParameterMappingFactory;
+import org.actioncontroller.meta.HttpReturnValueMapping;
+import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
 import org.jsonbuddy.JsonObject;
 import org.slf4j.Logger;
@@ -40,7 +42,7 @@ class ApiServletAction {
 
     private List<HttpRequestParameterMapping> parameterMappers = new ArrayList<>();
 
-    private HttpResponseValueMapping responseMapper;
+    private HttpReturnValueMapping responseMapper;
 
     public ApiServletAction(Object controller, Method action, String pattern) {
         this.controller = controller;
@@ -83,12 +85,12 @@ class ApiServletAction {
         }
     }
 
-    private static Map<Class<?>, HttpResponseValueMapping> typebasedResponseMapping = new HashMap<>();
+    private static Map<Class<?>, HttpReturnValueMapping> typebasedResponseMapping = new HashMap<>();
     static {
         typebasedResponseMapping.put(URL.class, (o, resp, req) -> resp.sendRedirect(o.toString()));
     }
 
-    private HttpResponseValueMapping createResponseMapper() {
+    private HttpReturnValueMapping createResponseMapper() {
         if (action.getReturnType() == Void.TYPE) {
             return (a, b, req) -> {};
         }
@@ -96,19 +98,16 @@ class ApiServletAction {
         for (Annotation annotation : action.getAnnotations()) {
             HttpReturnMapping mappingAnnotation = annotation.annotationType().getAnnotation(HttpReturnMapping.class);
             if (mappingAnnotation != null) {
-                Class<? extends HttpResponseValueMapping> value = mappingAnnotation.value();
+                Class<? extends HttpReturnMapperFactory> value = mappingAnnotation.value();
                 try {
-                    try {
-                        return value
-                                .getDeclaredConstructor(annotation.annotationType(), Class.class)
-                                .newInstance(annotation, action.getReturnType());
-                    } catch (NoSuchMethodException e) {
-                        return value.getDeclaredConstructor().newInstance();
-                    }
+                    return value
+                            .getDeclaredConstructor()
+                            .newInstance()
+                            .create(annotation, action.getReturnType());
                 } catch (NoSuchMethodException e) {
                     throw new ApiActionResponseUnknownMappingException(
                             "No mapping annotation for " + action.getName() + "() return type"
-                                    + ": Illegal mapping function for " + annotation);
+                                    + ": Illegal mapping function for " + value + " (no default constructor)");
                 } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | SecurityException e) {
                     throw ExceptionUtil.softenException(e);
                 } catch (InvocationTargetException e) {

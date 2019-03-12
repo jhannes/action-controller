@@ -3,6 +3,8 @@ package org.actioncontroller;
 
 import org.actioncontroller.meta.AbstractHttpRequestParameterMapping;
 import org.actioncontroller.meta.HttpParameterMapping;
+import org.actioncontroller.meta.HttpRequestParameterMapping;
+import org.actioncontroller.meta.HttpRequestParameterMappingFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import java.lang.annotation.ElementType;
@@ -16,12 +18,19 @@ import java.util.function.Consumer;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
-@HttpParameterMapping(SessionParameter.SessionParameterMapping.class)
+@HttpParameterMapping(SessionParameter.MappingFactory.class)
 public @interface SessionParameter {
 
     String value();
 
     boolean invalidate() default false;
+
+    public class MappingFactory implements HttpRequestParameterMappingFactory<SessionParameter> {
+        @Override
+        public HttpRequestParameterMapping create(SessionParameter annotation, Parameter parameter) {
+            return new SessionParameterMapping(annotation, parameter);
+        }
+    }
 
 
     class SessionParameterMapping extends AbstractHttpRequestParameterMapping {
@@ -36,14 +45,11 @@ public @interface SessionParameter {
         @Override
         public Object apply(HttpServletRequest req, Map<String, String> u) {
             if (parameter.getType() == Consumer.class) {
-                return new Consumer<Object>() {
-                    @Override
-                    public void accept(Object o) {
-                        if (sessionParam.invalidate()) {
-                            req.getSession().invalidate();
-                        }
-                        req.getSession(true).setAttribute(sessionParam.value(), o);
+                return (Consumer<Object>) o -> {
+                    if (sessionParam.invalidate()) {
+                        req.getSession().invalidate();
                     }
+                    req.getSession(true).setAttribute(sessionParam.value(), o);
                 };
             }
 

@@ -16,7 +16,7 @@ public abstract class AbstractHttpRequestParameterMapping implements HttpRequest
         this.parameter = parameter;
     }
 
-    protected Object convertParameterType(String value, Type parameterType) {
+    protected static Object convertParameterType(String value, Parameter parameter, Type parameterType) {
         if (parameterType == String.class) {
             return value;
         } else if (parameterType == Boolean.class) {
@@ -38,6 +38,10 @@ public abstract class AbstractHttpRequestParameterMapping implements HttpRequest
     }
 
     protected Object convertToParameterType(String value, String parameterName) {
+        return convertTo(value, parameterName, parameter);
+    }
+
+    public static Object convertTo(String value, String parameterName, Parameter parameter) {
         boolean optional = parameter.getType() == Optional.class;
 
         if (value == null) {
@@ -55,7 +59,7 @@ public abstract class AbstractHttpRequestParameterMapping implements HttpRequest
             parameterType = parameter.getType();
         }
 
-        Object parameterValue = convertParameterType(value, parameterType);
+        Object parameterValue = convertParameterType(value, parameter, parameterType);
         return optional ? Optional.of(parameterValue) : parameterValue;
     }
 

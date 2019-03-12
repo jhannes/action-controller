@@ -33,6 +33,8 @@ import java.util.stream.Stream;
  * Represents a single action that can be performed on a controller.
  * An action is defined on the http-end as a http method and a path
  * template, and on the Java-side as a method on the controller class.
+ * For example <code>@Get("/helloWorld") public String hello(@RequestParam("greeter") String greeter)</code>
+ * defines an action that responds to <code>GET /helloWorld?greeter=something</code> with a string.
  */
 class ApiServletAction {
 
@@ -124,15 +126,9 @@ class ApiServletAction {
         for (Annotation annotation : parameter.getAnnotations()) {
             HttpParameterMapping mappingAnnotation = annotation.annotationType().getAnnotation(HttpParameterMapping.class);
             if (mappingAnnotation != null) {
-                Class<? extends HttpRequestParameterMapping> value = mappingAnnotation.value();
+                Class<? extends HttpRequestParameterMappingFactory> value = mappingAnnotation.value();
                 try {
-                    try {
-                        return value
-                                .getDeclaredConstructor(annotation.annotationType(), Parameter.class)
-                                .newInstance(annotation, parameter);
-                    } catch (NoSuchMethodException e) {
-                        return value.getDeclaredConstructor().newInstance();
-                    }
+                    return value.getDeclaredConstructor().newInstance().create(annotation, parameter);
                 } catch (NoSuchMethodException e) {
                     throw new ApiActionParameterUnknownMappingException(
                             "No mapping annotation for " + action.getName() + "() parameter " + index

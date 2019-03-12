@@ -9,6 +9,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface HttpParameterMapping {
 
-    Class<? extends HttpRequestParameterMapping> value();
+    Class<? extends HttpRequestParameterMappingFactory> value();
 
 }

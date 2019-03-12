@@ -15,7 +15,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.lang.reflect.Parameter;
 import java.util.List;
-import java.util.Map;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.PARAMETER;
@@ -23,8 +22,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 @Retention(RUNTIME)
 @Target({PARAMETER, METHOD})
-@HttpParameterMapping(JsonBody.JsonRequestMapper.class)
-@HttpReturnMapping(JsonBody.JsonResponseMapper.class)
+@HttpParameterMapping(JsonBody.RequestMapperFactory.class)
+@HttpReturnMapping(JsonBody.ReturnMapperFactory.class)
 public @interface JsonBody {
 
     class ReturnMapperFactory implements HttpReturnMapperFactory<JsonBody> {
@@ -48,28 +47,19 @@ public @interface JsonBody {
         }
     }
 
-    class JsonRequestMapper implements HttpRequestParameterMapping {
-
-        private static HttpRequestParameterMapping readJsonNode = (req, pathParams) -> JsonParser.parse(req.getReader());
-
-        private HttpRequestParameterMapping responseMapping;
-
-        public JsonRequestMapper(JsonBody jsonBody, Parameter parameter) {
+    class RequestMapperFactory implements HttpRequestParameterMappingFactory<JsonBody> {
+        @Override
+        public HttpRequestParameterMapping create(JsonBody annotation, Parameter parameter) {
             if (JsonNode.class.isAssignableFrom(parameter.getType())) {
-                responseMapping = readJsonNode;
+                return (req, pathParams) -> JsonParser.parse(req.getReader());
             } else if (List.class.isAssignableFrom(parameter.getType())) {
-                responseMapping = readJsonNode;
+                return (req, pathParams) -> JsonParser.parse(req.getReader());
             } else {
-                responseMapping = (req, u) -> PojoMapper.map(
+                return (req, u) -> PojoMapper.map(
                         JsonParser.parseToObject(req.getReader()),
                         parameter.getType()
                 );
             }
-        }
-
-        @Override
-        public Object apply(HttpServletRequest req, Map<String, String> u) throws IOException {
-            return responseMapping.apply(req, u);
         }
     }
 

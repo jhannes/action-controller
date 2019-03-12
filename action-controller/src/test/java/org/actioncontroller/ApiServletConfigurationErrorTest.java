@@ -2,11 +2,12 @@ package org.actioncontroller;
 
 import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpRequestParameterMapping;
+import org.actioncontroller.meta.HttpRequestParameterMappingFactory;
 import org.junit.Test;
 
-import javax.servlet.http.HttpServletRequest;
+import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
-import java.util.Map;
+import java.lang.reflect.Parameter;
 
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -37,16 +38,15 @@ public class ApiServletConfigurationErrorTest {
     }
 
 
-    public static class ParameterMappingWithoutProperConstructor implements HttpRequestParameterMapping {
+    public static class ParameterMappingWithoutProperConstructor implements HttpRequestParameterMappingFactory<Annotation> {
 
         public ParameterMappingWithoutProperConstructor(@SuppressWarnings("unused") String string) {
         }
 
         @Override
-        public Object apply(HttpServletRequest req, Map<String, String> pathParameters) {
+        public HttpRequestParameterMapping create(Annotation annotation, Parameter parameter) {
             return null;
         }
-
     }
 
 

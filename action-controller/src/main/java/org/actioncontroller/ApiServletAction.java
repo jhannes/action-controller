@@ -22,7 +22,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Represents a single action that can be performed on a controller.
@@ -50,6 +53,34 @@ class ApiServletAction {
         }
 
         responseMapper = createResponseMapper();
+
+        verifyPathParameters();
+    }
+
+    private void verifyPathParameters() {
+        List<String> specifiedPathParameters = Stream.of(pattern.split("/"))
+                .filter(s -> s.startsWith(":"))
+                .map(s -> s.substring(1))
+                .collect(Collectors.toList());
+        List<String> boundPathParameters = Stream.of(action.getParameters())
+                .map(p -> p.getAnnotation(PathParam.class))
+                .filter(Objects::nonNull)
+                .map(PathParam::value)
+                .collect(Collectors.toList());
+
+        List<String> extraParameters = new ArrayList<>(boundPathParameters);
+        extraParameters.removeAll(specifiedPathParameters);
+
+        List<String> unboundParameters = new ArrayList<>(specifiedPathParameters);
+        unboundParameters.removeAll(boundPathParameters);
+
+        if (!unboundParameters.isEmpty()) {
+            logger.warn("Unused path parameters for {}: {}", action, unboundParameters);
+        }
+        if (!extraParameters.isEmpty()) {
+            throw new ApiActionParameterUnknownMappingException(
+                    "Unknown parameters specified for " + action.getName() + ": " + extraParameters);
+        }
     }
 
     private static Map<Class<?>, HttpResponseValueMapping> typebasedResponseMapping = new HashMap<>();

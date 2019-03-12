@@ -20,6 +20,7 @@ public class ApiServletConfigurationErrorTest {
             public void init() {
                 registerController(new ControllerWithErrors());
                 registerController(new OtherControllerWithErrors());
+                registerController(new ControllerWithMismatchedPathParams());
             }
         };
 
@@ -30,6 +31,8 @@ public class ApiServletConfigurationErrorTest {
                 .hasMessageContaining("actionWithUnknownReturnType")
                 .hasMessageContaining(OtherControllerWithErrors.class.getName())
                 .hasMessageContaining("actionWithInvalidMappingAnnotation")
+                .hasMessageContaining(ControllerWithMismatchedPathParams.class.getName())
+                .hasMessageContaining("incorrect")
         ;
     }
 
@@ -66,6 +69,13 @@ public class ApiServletConfigurationErrorTest {
             return null;
         }
 
+    }
+
+    private class ControllerWithMismatchedPathParams {
+        @Get("/test/:myTest")
+        public void actionWithParameterMismatch(@PathParam("incorrect") String param) {
+
+        }
     }
 
 

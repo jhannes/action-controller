@@ -6,14 +6,17 @@ import org.jsonbuddy.parse.JsonParser;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Matchers;
 import org.mockito.Mockito;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
@@ -153,15 +156,6 @@ public class ApiServletTest {
         when(requestMock.getPathInfo()).thenReturn("/redirect");
         servlet.service(requestMock, responseMock);
         verify(responseMock).sendRedirect("/login");
-    }
-
-    @Test
-    public void shouldSetServerErrorWhenRouteIsMismatched() throws ServletException, IOException {
-        when(requestMock.getMethod()).thenReturn("GET");
-        when(requestMock.getPathInfo()).thenReturn("/mismatch/1244");
-        servlet.service(requestMock, responseMock);
-        verify(responseMock).sendError(Matchers.eq(500),
-                Matchers.startsWith("Path parameter :somethingElse not matched"));
     }
 
     @Test

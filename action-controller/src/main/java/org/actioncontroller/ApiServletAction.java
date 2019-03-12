@@ -137,7 +137,7 @@ class ApiServletAction {
                 } catch (NoSuchMethodException e) {
                     throw new ApiActionParameterUnknownMappingException(
                             "No mapping annotation for " + action.getName() + "() parameter " + index
-                                    + ": Illegal mapping function for " + annotation);
+                                    + ": Illegal mapping factory " + value + " (no default constructor)");
                 } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | SecurityException e) {
                     throw ExceptionUtil.softenException(e);
                 } catch (InvocationTargetException e) {

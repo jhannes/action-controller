@@ -144,6 +144,9 @@ public class ApiServlet extends HttpServlet {
     }
 
     protected void registerController(Object controller) {
+        if (controllerException == null) {
+            controllerException = new ApiServletCompositeException();
+        }
         try {
             registerActions(controller);
         } catch (ApiControllerCompositeException e) {

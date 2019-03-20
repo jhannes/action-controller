@@ -24,9 +24,9 @@ import java.util.*;
  *
  *     &#064;Get("/v1/api/objects")
  *     &#064;JsonBody
- *     public List<SomePojo> listObjects(
- *         &#064;RequestParam("query") Optional<String> query,
- *         &#064;RequestParam("maxHits") Optional<Integer> maxHits
+ *     public List&lt;SomePojo&gt; listObjects(
+ *         &#064;RequestParam("query") Optional&lt;String&gt; query,
+ *         &#064;RequestParam("maxHits") Optional&lt;Integer&gt; maxHits
  *     ) {
  *         // ... this is up to you
  *     }
@@ -41,7 +41,7 @@ import java.util.*;
  *     &#064;SendRedirect
  *     public String postData(
  *         &#064;JsonBody SomePojo myPojo,
- *         &#064;SessionParameter("user") Optional<User> user
+ *         &#064;SessionParameter("user") Optional&lt;User&gt; user
  *     ) {
  *         // ... do your thing
  *         return "/home/";

@@ -59,7 +59,7 @@ public @interface SessionParameter {
             } else if (value != null) {
                 return value;
             } else {
-                throw new HttpRequestException(401, "Missing required session parameter " + sessionParam.value());
+                throw new HttpActionException(401, "Missing required session parameter " + sessionParam.value());
             }
         }
     }

@@ -25,7 +25,7 @@ public @interface PathParam {
             return (req, pathParameters) -> {
                 String result = pathParameters.get(name);
                 if (result == null) {
-                    throw new HttpRequestException(500, "Path parameter :" + name + " not matched");
+                    throw new HttpActionException(500, "Path parameter :" + name + " not matched");
                 }
                 return AbstractHttpRequestParameterMapping.convertTo(result, name, parameter);
             };

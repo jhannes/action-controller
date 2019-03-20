@@ -1,6 +1,6 @@
 package org.actioncontroller;
 
-import org.actioncontroller.json.JsonHttpRequestException;
+import org.actioncontroller.json.JsonHttpActionException;
 import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpRequestParameterMapping;
 import org.actioncontroller.meta.HttpRequestParameterMappingFactory;
@@ -211,7 +211,7 @@ class ApiServletAction {
             Object[] arguments = createArguments(getAction(), req, pathParameters);
             Object result = invoke(getController(), getAction(), arguments);
             responseMapper.accept(result, resp, req);
-        } catch (HttpRequestException e) {
+        } catch (HttpActionException e) {
             sendError(e, resp);
         }
     }
@@ -225,18 +225,18 @@ class ApiServletAction {
             return;
         }
         if (!apiServlet.isUserLoggedIn(req)) {
-            throw new JsonHttpRequestException(401,
+            throw new JsonHttpActionException(401,
                     "User must be logged in for " + action,
                     new JsonObject().put("message", "Login required"));
         }
         if (!apiServlet.isUserInRole(req, role)) {
-            throw new JsonHttpRequestException(403,
+            throw new JsonHttpActionException(403,
                     "User failed to authenticate for " + action + ": Missing role " + role + " for user",
                     new JsonObject().put("message", "Insufficient permissions"));
         }
     }
 
-    protected void sendError(HttpRequestException e, HttpServletResponse resp) throws IOException {
+    protected void sendError(HttpActionException e, HttpServletResponse resp) throws IOException {
         if (e.getStatusCode() >= 500) {
             logger.error("While serving {}", this, e);
         } else {
@@ -262,19 +262,25 @@ class ApiServletAction {
             if (e.getTargetException() instanceof RuntimeException) {
                 throw (RuntimeException)e.getTargetException();
             } else {
-                throw new HttpRequestException(500, e.getTargetException());
+                throw new HttpActionException(500, e.getTargetException());
             }
         } catch (IllegalAccessException e) {
-            throw new HttpRequestException(500, e);
+            throw new HttpActionException(500, e);
         }
     }
 
     private Object[] createArguments(Method method, HttpServletRequest req, Map<String, String> pathParameters) throws IOException {
-        Object[] arguments = new Object[method.getParameterCount()];
-        for (int i = 0; i < arguments.length; i++) {
-            arguments[i] = parameterMappers.get(i).apply(req, pathParameters);
+        try {
+            Object[] arguments = new Object[method.getParameterCount()];
+            for (int i = 0; i < arguments.length; i++) {
+                arguments[i] = parameterMappers.get(i).apply(req, pathParameters);
+            }
+            return arguments;
+        } catch (HttpActionException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new HttpRequestException(e.getMessage());
         }
-        return arguments;
     }
 
 }

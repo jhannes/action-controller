@@ -49,7 +49,7 @@ public class ApiServletTest {
 
         @Get("/error")
         public void throwError() {
-            throw new HttpRequestException(401, "You are not authorized");
+            throw new HttpActionException(401, "You are not authorized");
         }
 
         @Get("/user/:userId/message/:messageId")
@@ -167,6 +167,17 @@ public class ApiServletTest {
     }
 
     @Test
+    public void shouldGive400OnMisformedJson() throws IOException {
+        when(requestMock.getMethod()).thenReturn("POST");
+        when(requestMock.getPathInfo()).thenReturn("/postMethod");
+
+        when(requestMock.getReader())
+                .thenReturn(new BufferedReader(new StringReader("This is not JSON!")));
+        servlet.service(requestMock, responseMock);
+        verify(responseMock).sendError(eq(400), anyString());
+    }
+
+    @Test
     public void shouldCallWithOptionalParameter() throws IOException {
         when(requestMock.getMethod()).thenReturn("GET");
         when(requestMock.getPathInfo()).thenReturn("/hello");
@@ -189,6 +200,17 @@ public class ApiServletTest {
         when(requestMock.getParameter("amount")).thenReturn("123");
         servlet.service(requestMock, responseMock);
         assertThat(amount).isEqualTo(123);
+    }
+
+    @Test
+    public void shouldGive400OnParameterConversion() throws IOException {
+        when(requestMock.getMethod()).thenReturn("GET");
+        when(requestMock.getPathInfo()).thenReturn("/goodbye");
+
+        when(requestMock.getParameter("amount")).thenReturn("one");
+        servlet.service(requestMock, responseMock);
+
+        verify(responseMock).sendError(eq(400), anyString());
     }
 
     @Test
@@ -263,7 +285,6 @@ public class ApiServletTest {
         verify(responseMock).getWriter();
         assertThat(JsonParser.parseToObject(responseBody.toString()).requiredString("message"))
                 .isEqualTo("Insufficient permissions");
-
     }
 
     @Before

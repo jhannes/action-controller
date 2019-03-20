@@ -1,6 +1,6 @@
 package org.actioncontroller.meta;
 
-import org.actioncontroller.HttpRequestException;
+import org.actioncontroller.HttpActionException;
 
 import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
@@ -25,7 +25,7 @@ public abstract class AbstractHttpRequestParameterMapping implements HttpRequest
             try {
                 return Integer.parseInt(value);
             } catch (NumberFormatException e) {
-                throw new HttpRequestException(400,
+                throw new HttpActionException(400,
                         String.format("Invalid parameter amount '%s' is not an %s", value, parameterType));
             }
         } else if (parameter.getType() == UUID.class) {
@@ -33,7 +33,7 @@ public abstract class AbstractHttpRequestParameterMapping implements HttpRequest
         } else if (parameterType == Long.class || parameterType == Long.TYPE) {
             return Long.parseLong(value);
         } else {
-            throw new HttpRequestException(500, "Unhandled parameter type " + parameterType);
+            throw new HttpActionException(500, "Unhandled parameter type " + parameterType);
         }
     }
 
@@ -46,7 +46,7 @@ public abstract class AbstractHttpRequestParameterMapping implements HttpRequest
 
         if (value == null) {
             if (!optional) {
-                throw new HttpRequestException(400, "Missing required parameter " + parameterName);
+                throw new HttpActionException(400, "Missing required parameter " + parameterName);
             }
             return Optional.empty();
         }

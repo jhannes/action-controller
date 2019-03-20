@@ -1,16 +1,16 @@
 package org.actioncontroller.json;
 
-import org.actioncontroller.HttpRequestException;
+import org.actioncontroller.HttpActionException;
 import org.jsonbuddy.JsonObject;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-public class JsonHttpRequestException extends HttpRequestException {
+public class JsonHttpActionException extends HttpActionException {
 
     private JsonObject jsonObject;
 
-    public JsonHttpRequestException(int errorCode, String message, JsonObject jsonObject) {
+    public JsonHttpActionException(int errorCode, String message, JsonObject jsonObject) {
         super(errorCode, message);
         this.jsonObject = jsonObject;
     }

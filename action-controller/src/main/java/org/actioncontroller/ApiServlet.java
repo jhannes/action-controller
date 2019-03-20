@@ -1,6 +1,6 @@
 package org.actioncontroller;
 
-import org.actioncontroller.json.JsonHttpRequestException;
+import org.actioncontroller.json.JsonHttpActionException;
 import org.jsonbuddy.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,12 +88,12 @@ public class ApiServlet extends HttpServlet {
         try {
             checkPreconditions(req, apiRoute.getAction());
             apiRoute.invoke(req, resp, pathParameters, this);
-        } catch (HttpRequestException e) {
+        } catch (HttpActionException e) {
             sendError(e, resp);
         }
     }
 
-    protected void sendError(HttpRequestException e, HttpServletResponse resp) throws IOException {
+    protected void sendError(HttpActionException e, HttpServletResponse resp) throws IOException {
         if (e.getStatusCode() >= 500) {
             logger.error("While serving {}", this, e);
         } else {
@@ -116,12 +116,12 @@ public class ApiServlet extends HttpServlet {
             return;
         }
         if (!isUserLoggedIn(req)) {
-            throw new JsonHttpRequestException(401,
+            throw new JsonHttpActionException(401,
                     "User must be logged in for " + action,
                     new JsonObject().put("message", "Login required"));
         }
         if (!isUserInRole(req, role)) {
-            throw new JsonHttpRequestException(403,
+            throw new JsonHttpActionException(403,
                     "User failed to authenticate for " + action + ": Missing role " + role + " for user",
                     new JsonObject().put("message", "Insufficient permissions"));
         }

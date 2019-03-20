@@ -73,6 +73,7 @@ public class ApiServlet extends HttpServlet {
 
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        verifyNoExceptions();
         for (ApiServletAction apiRoute : routes.get(req.getMethod())) {
             if (apiRoute.matches(req.getPathInfo())) {
                 invoke(req, resp, apiRoute.collectPathParameters(req.getPathInfo()), apiRoute);
@@ -138,6 +139,10 @@ public class ApiServlet extends HttpServlet {
     public final void init(ServletConfig config) throws ServletException {
         this.controllerException = new ApiServletCompositeException();
         super.init(config);
+        verifyNoExceptions();
+    }
+
+    void verifyNoExceptions() {
         if (!controllerException.isEmpty()) {
             throw controllerException;
         }

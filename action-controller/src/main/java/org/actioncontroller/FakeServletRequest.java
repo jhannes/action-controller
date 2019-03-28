@@ -17,9 +17,13 @@ import java.io.BufferedReader;
 import java.net.URL;
 import java.security.Principal;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * DANGER! Unfinished class! Implement methods as you go!
@@ -32,6 +36,8 @@ public class FakeServletRequest implements HttpServletRequest {
     private final String contextPath;
     private final String servletPath;
     private final String pathInfo;
+
+    private Map<String, List<String>> headers = new HashMap<>();
 
     /**
      * DANGER! Unfinished class! Implement methods as you go!
@@ -63,22 +69,22 @@ public class FakeServletRequest implements HttpServletRequest {
 
     @Override
     public String getHeader(String s) {
-        throw new AssertionError("called unexpected method");
+        return Optional.ofNullable(headers.get(s)).map(l -> l.get(0)).orElse(null);
     }
 
     @Override
     public Enumeration<String> getHeaders(String s) {
-        throw new AssertionError("called unexpected method");
+        return Optional.ofNullable(headers.get(s)).map(Collections::enumeration).orElse(null);
     }
 
     @Override
     public Enumeration<String> getHeaderNames() {
-        throw new AssertionError("called unexpected method");
+        return Collections.enumeration(headers.keySet());
     }
 
     @Override
     public int getIntHeader(String s) {
-        throw new AssertionError("called unexpected method");
+        return Optional.ofNullable(getHeader(s)).map(Integer::parseInt).orElse(-1);
     }
 
     @Override
@@ -300,7 +306,7 @@ public class FakeServletRequest implements HttpServletRequest {
 
     @Override
     public String getServerName() {
-        throw new AssertionError("called unexpected method");
+        return host;
     }
 
     @Override
@@ -320,7 +326,7 @@ public class FakeServletRequest implements HttpServletRequest {
 
     @Override
     public String getRemoteHost() {
-        return host;
+        throw new AssertionError("called unexpected method");
     }
 
     @Override

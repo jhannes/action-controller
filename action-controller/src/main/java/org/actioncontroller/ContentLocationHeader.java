@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.net.URL;
+import java.util.Optional;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -29,11 +30,15 @@ public @interface ContentLocationHeader {
         }
 
         private String getServerUrl(HttpServletRequest req) {
+            String scheme = Optional.ofNullable(req.getHeader("X-Forwarded-Proto")).orElse(req.getScheme());
+            int port = Optional.ofNullable(req.getHeader("X-Forwarded-Port")).map(Integer::parseInt).orElse(req.getServerPort());
+            String host = req.getServerName();
+            int defaultSchemePort = scheme.equals("https") ? 443 : 80;
+
             StringBuilder url = new StringBuilder();
-            url.append(req.getScheme()).append("://").append(req.getRemoteHost());
-            int defaultPort = req.getScheme().equals("http") ? 80 : (req.getScheme().equals("https") ? 443 : -1);
-            if (req.getServerPort() != 0 && req.getServerPort() != defaultPort) {
-                url.append(':').append(req.getServerPort());
+            url.append(scheme).append("://").append(host);
+            if (port != defaultSchemePort) {
+                url.append(":").append(port);
             }
             return url.toString();
         }

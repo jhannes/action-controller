@@ -1,12 +1,13 @@
 package org.actioncontroller.meta;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Map;
 
 @FunctionalInterface
 public interface HttpRequestParameterMapping {
 
-    Object apply(HttpServletRequest req, Map<String, String> pathParameters) throws IOException;
+    Object apply(HttpServletRequest req, Map<String, String> pathParameters, HttpServletResponse resp) throws IOException;
 
 }

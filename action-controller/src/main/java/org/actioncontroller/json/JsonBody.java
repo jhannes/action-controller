@@ -51,11 +51,11 @@ public @interface JsonBody {
         @Override
         public HttpRequestParameterMapping create(JsonBody annotation, Parameter parameter) {
             if (JsonNode.class.isAssignableFrom(parameter.getType())) {
-                return (req, pathParams) -> JsonParser.parse(req.getReader());
+                return (req, pathParams, resp) -> JsonParser.parse(req.getReader());
             } else if (List.class.isAssignableFrom(parameter.getType())) {
-                return (req, pathParams) -> JsonParser.parse(req.getReader());
+                return (req, pathParams, resp) -> JsonParser.parse(req.getReader());
             } else {
-                return (req, u) -> PojoMapper.map(
+                return (req, u, resp) -> PojoMapper.map(
                         JsonParser.parseToObject(req.getReader()),
                         parameter.getType()
                 );

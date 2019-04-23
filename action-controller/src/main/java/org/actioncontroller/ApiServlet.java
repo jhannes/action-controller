@@ -4,6 +4,7 @@ import org.actioncontroller.json.JsonHttpActionException;
 import org.jsonbuddy.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -73,16 +74,23 @@ public class ApiServlet extends HttpServlet {
 
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        verifyNoExceptions();
-        for (ApiServletAction apiRoute : routes.get(req.getMethod())) {
-            if (apiRoute.matches(req.getPathInfo())) {
-                invoke(req, resp, apiRoute.collectPathParameters(req.getPathInfo()), apiRoute);
-                return;
-            }
-        }
+        try {
+            MDC.put("clientIp", req.getRemoteAddr());
+            MDC.put("request", req.getContextPath() + req.getServletPath() + req.getPathInfo());
 
-        logger.warn("No route for {} {}", req.getMethod(), req.getPathInfo());
-        resp.sendError(404, "No route for " + req.getMethod() + ": " + req.getRequestURI());
+            verifyNoExceptions();
+            for (ApiServletAction apiRoute : routes.get(req.getMethod())) {
+                if (apiRoute.matches(req.getPathInfo())) {
+                    invoke(req, resp, apiRoute.collectPathParameters(req.getPathInfo()), apiRoute);
+                    return;
+                }
+            }
+
+            logger.warn("No route for {} {}", req.getMethod(), req.getPathInfo());
+            resp.sendError(404, "No route for " + req.getMethod() + ": " + req.getRequestURI());
+        } finally {
+            MDC.clear();
+        }
     }
 
     private void invoke(HttpServletRequest req, HttpServletResponse resp, Map<String, String> pathParameters, ApiServletAction apiRoute) throws IOException {

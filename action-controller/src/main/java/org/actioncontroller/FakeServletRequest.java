@@ -321,7 +321,7 @@ public class FakeServletRequest implements HttpServletRequest {
 
     @Override
     public String getRemoteAddr() {
-        throw new AssertionError("called unexpected method");
+        return "127.0.0.1";
     }
 
     @Override

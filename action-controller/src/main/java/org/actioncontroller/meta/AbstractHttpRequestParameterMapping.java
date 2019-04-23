@@ -16,7 +16,7 @@ public abstract class AbstractHttpRequestParameterMapping implements HttpRequest
         this.parameter = parameter;
     }
 
-    protected static Object convertParameterType(String value, Parameter parameter, Type parameterType) {
+    protected static Object convertParameterType(String value, Type parameterType) {
         if (parameterType == String.class) {
             return value;
         } else if (parameterType == Boolean.class) {
@@ -28,10 +28,12 @@ public abstract class AbstractHttpRequestParameterMapping implements HttpRequest
                 throw new HttpActionException(400,
                         String.format("Invalid parameter amount '%s' is not an %s", value, parameterType));
             }
-        } else if (parameter.getType() == UUID.class) {
+        } else if (parameterType == UUID.class) {
             return UUID.fromString(value);
         } else if (parameterType == Long.class || parameterType == Long.TYPE) {
             return Long.parseLong(value);
+        } else if (Enum.class.isAssignableFrom((Class<?>)parameterType)) {
+            return Enum.valueOf((Class) parameterType, value);
         } else {
             throw new HttpActionException(500, "Unhandled parameter type " + parameterType);
         }
@@ -59,7 +61,7 @@ public abstract class AbstractHttpRequestParameterMapping implements HttpRequest
             parameterType = parameter.getType();
         }
 
-        Object parameterValue = convertParameterType(value, parameter, parameterType);
+        Object parameterValue = convertParameterType(value, parameterType);
         return optional ? Optional.of(parameterValue) : parameterValue;
     }
 

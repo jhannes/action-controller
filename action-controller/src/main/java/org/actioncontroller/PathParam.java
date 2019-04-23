@@ -22,7 +22,7 @@ public @interface PathParam {
         @Override
         public HttpRequestParameterMapping create(PathParam annotation, Parameter parameter) {
             String name = annotation.value();
-            return (req, pathParameters) -> {
+            return (req, pathParameters, resp) -> {
                 String result = pathParameters.get(name);
                 if (result == null) {
                     throw new HttpActionException(500, "Path parameter :" + name + " not matched");

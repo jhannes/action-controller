@@ -150,8 +150,8 @@ class ApiServletAction {
 
     private static Map<Class<?>, HttpRequestParameterMapping> typebasedRequestMapping = new HashMap<>();
     static {
-        typebasedRequestMapping.put(HttpSession.class, (req, map) -> req.getSession());
-        typebasedRequestMapping.put(HttpServletRequest.class, (req, map) -> req);
+        typebasedRequestMapping.put(HttpSession.class, (req, map, resp) -> req.getSession());
+        typebasedRequestMapping.put(HttpServletRequest.class, (req, map, resp) -> req);
     }
 
     private final Object controller;
@@ -208,7 +208,7 @@ class ApiServletAction {
     ) throws IOException {
         try {
             verifyUserAccess(req, apiServlet);
-            Object[] arguments = createArguments(getAction(), req, pathParameters);
+            Object[] arguments = createArguments(getAction(), req, pathParameters, resp);
             Object result = invoke(getController(), getAction(), arguments);
             responseMapper.accept(result, resp, req);
         } catch (HttpActionException e) {
@@ -269,14 +269,21 @@ class ApiServletAction {
         }
     }
 
-    private Object[] createArguments(Method method, HttpServletRequest req, Map<String, String> pathParameters) throws IOException {
+    private Object[] createArguments(Method method, HttpServletRequest req, Map<String, String> pathParameters, HttpServletResponse resp) throws IOException {
         try {
             Object[] arguments = new Object[method.getParameterCount()];
             for (int i = 0; i < arguments.length; i++) {
-                arguments[i] = parameterMappers.get(i).apply(req, pathParameters);
+                arguments[i] = parameterMappers.get(i).apply(req, pathParameters, resp);
             }
             return arguments;
         } catch (HttpActionException e) {
+            StackTraceElement[] stackTrace = e.getStackTrace();
+            StackTraceElement[] replacedStackTrace = new StackTraceElement[stackTrace.length+1];
+            replacedStackTrace[0] = new StackTraceElement(method.getDeclaringClass().getName(), method.getName(),
+                    method.getDeclaringClass().getSimpleName() + ".java", 1);
+            System.arraycopy(stackTrace, 0, replacedStackTrace, 1, stackTrace.length);
+            e.setStackTrace(replacedStackTrace);
+
             throw e;
         } catch (RuntimeException e) {
             throw new HttpRequestException(e.getMessage());

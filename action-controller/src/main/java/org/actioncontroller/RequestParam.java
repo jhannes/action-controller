@@ -4,6 +4,7 @@ import org.actioncontroller.meta.AbstractHttpRequestParameterMapping;
 import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpRequestParameterMapping;
 import org.actioncontroller.meta.HttpRequestParameterMappingFactory;
+import org.actioncontroller.util.ServletUtil;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -31,7 +32,7 @@ public @interface RequestParam {
 
         @Override
         public HttpRequestParameterMapping create(ClientIp annotation, Parameter parameter) {
-            return (req, pathParameter) -> req.getRemoteAddr();
+            return (req, pathParameter, resp) -> ServletUtil.getRemoteAddress(req);
         }
     }
 
@@ -39,7 +40,7 @@ public @interface RequestParam {
         @Override
         public HttpRequestParameterMapping create(RequestParam annotation, Parameter parameter) {
             String name = annotation.value();
-            return (req, pathParams) -> AbstractHttpRequestParameterMapping.convertTo(
+            return (req, pathParams, resp) -> AbstractHttpRequestParameterMapping.convertTo(
                     req.getParameter(name),
                     name,
                     parameter

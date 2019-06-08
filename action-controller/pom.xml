@@ -36,7 +36,7 @@
         <dependency>
             <groupId>org.logevents</groupId>
             <artifactId>logevents</artifactId>
-            <version>0.1.12</version>
+            <version>0.1.17</version>
             <scope>test</scope>
         </dependency>
         <dependency>

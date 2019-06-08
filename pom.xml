@@ -129,5 +129,7 @@
     </profiles>
     <modules>
         <module>action-controller</module>
+        <module>action-controller-demo-app</module>
+        <module>action-controller-demo-server</module>
     </modules>
 </project>

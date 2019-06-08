@@ -6,16 +6,10 @@ import java.util.Optional;
 public class ServletUtil {
     public static String getServerUrl(HttpServletRequest req) {
         String scheme = Optional.ofNullable(req.getHeader("X-Forwarded-Proto")).orElse(req.getScheme());
-        int port = Optional.ofNullable(req.getHeader("X-Forwarded-Port")).map(Integer::parseInt).orElse(req.getServerPort());
-        String host = req.getServerName();
-        int defaultSchemePort = scheme.equals("https") ? 443 : 80;
-
-        StringBuilder url = new StringBuilder();
-        url.append(scheme).append("://").append(host);
-        if (port != defaultSchemePort) {
-            url.append(":").append(port);
-        }
-        return url.toString();
+        String host = Optional.ofNullable(req.getHeader("X-Forwarded-Host"))
+                .orElseGet(() -> Optional.ofNullable(req.getHeader("Host"))
+                        .orElseGet(() -> req.getServerName() + ":" + req.getServerPort()));
+        return scheme + "://" + host;
     }
 
     public static String getRemoteAddress(HttpServletRequest req) {

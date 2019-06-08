@@ -22,6 +22,8 @@ public @interface UnencryptedCookie {
 
     String value();
 
+    boolean secure() default true;
+
     public class Factory implements HttpRequestParameterMappingFactory<UnencryptedCookie> {
 
         @Override
@@ -33,7 +35,7 @@ public @interface UnencryptedCookie {
                         @Override
                         public void accept(Object o) {
                             Cookie cookie = new Cookie(name, o.toString());
-                            cookie.setSecure(true);
+                            cookie.setSecure(annotation.secure());
                             cookie.setPath(req.getContextPath() + req.getServletPath());
                             resp.addCookie(cookie);
                         }

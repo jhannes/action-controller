@@ -79,38 +79,29 @@ public class ApiServlet extends HttpServlet {
             MDC.put("request", req.getContextPath() + req.getServletPath() + req.getPathInfo());
 
             verifyNoExceptions();
-            for (ApiServletAction apiRoute : routes.get(req.getMethod())) {
-                if (apiRoute.matches(req.getPathInfo())) {
-                    invoke(req, resp, apiRoute.collectPathParameters(req.getPathInfo()), apiRoute);
-                    return;
-                }
-            }
-
-            logger.warn("No route for {} {}", req.getMethod(), req.getPathInfo());
-            resp.sendError(404, "No route for " + req.getMethod() + ": " + req.getRequestURI());
+            invokeAction(req, resp);
         } finally {
             MDC.clear();
         }
     }
 
+    protected boolean invokeAction(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        for (ApiServletAction apiRoute : routes.get(req.getMethod())) {
+            if (apiRoute.matches(req.getPathInfo())) {
+                invoke(req, resp, apiRoute.collectPathParameters(req.getPathInfo()), apiRoute);
+                return true;
+            }
+        }
+
+        logger.warn("No route for {} {} in {}", req.getMethod(), req.getPathInfo(), req.getContextPath() + req.getServletPath());
+        resp.sendError(404, "No route for " + req.getMethod() + ": " + req.getRequestURI());
+        return false;
+    }
+
     private void invoke(HttpServletRequest req, HttpServletResponse resp, Map<String, String> pathParameters, ApiServletAction apiRoute) throws IOException {
-        try {
-            checkPreconditions(req, apiRoute.getAction());
-            apiRoute.invoke(req, resp, pathParameters, this);
-        } catch (HttpActionException e) {
-            sendError(e, resp);
-        }
+        checkPreconditions(req, apiRoute.getAction());
+        apiRoute.invoke(req, resp, pathParameters, this);
     }
-
-    protected void sendError(HttpActionException e, HttpServletResponse resp) throws IOException {
-        if (e.getStatusCode() >= 500) {
-            logger.error("While serving {}", this, e);
-        } else {
-            logger.info("While serving {}", this, e);
-        }
-        e.sendError(resp);
-    }
-
 
     private void checkPreconditions(HttpServletRequest req, Method action) {
         verifyUserAccess(req, action);
@@ -180,6 +171,7 @@ public class ApiServlet extends HttpServlet {
                 addRoute("DELETE", Optional.ofNullable(method.getAnnotation(Delete.class)).map(Delete::value),
                         controller, method);
             } catch (ApiServletException e) {
+                logger.warn("Failed to setup {}", method, e);
                 exceptions.addActionException(e);
             }
         }

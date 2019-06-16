@@ -5,6 +5,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -13,13 +14,15 @@ public class ContentLocationHeaderTest {
     public static class Controller {
         @Post("/one")
         @ContentLocationHeader
-        public String creatingMethod() {
-            return "/two/1234";
+        public String creatingMethod(
+                @RequestParam("id") Optional<String> id
+                ) {
+            return "/two/" + id.orElse("1234");
         }
 
         @Post("/two/:id")
         @ContentLocationHeader
-        public URL referingMethod() throws MalformedURLException {
+        public URL referingMethod(@PathParam("id") String id) throws MalformedURLException {
             return new URL("https://server.example.com:20443/hello/world");
         }
     }

@@ -1,9 +1,9 @@
 package org.actioncontroller;
 
+import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpRequestParameterMapping;
 import org.actioncontroller.meta.HttpRequestParameterMappingFactory;
-import org.actioncontroller.util.ServletUtil;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -16,13 +16,13 @@ import java.net.URL;
 @Target(ElementType.PARAMETER)
 @HttpParameterMapping(ServletUrl.MappingFactory.class)
 public @interface ServletUrl {
-    public class MappingFactory implements HttpRequestParameterMappingFactory<ServletUrl> {
+    class MappingFactory implements HttpRequestParameterMappingFactory<ServletUrl> {
         @Override
         public HttpRequestParameterMapping create(ServletUrl annotation, Parameter parameter) {
             if (parameter.getType() == URL.class) {
-                return (req, path, resp) -> new URL(ServletUtil.getServerUrl(req) + req.getContextPath() + req.getServletPath());
+                return ApiHttpExchange::getApiURL;
             } else if (parameter.getType() == String.class) {
-                return (req, path, resp) -> ServletUtil.getServerUrl(req) + req.getContextPath() + req.getServletPath();
+                return exchange -> exchange.getApiURL().toString();
             }
             throw new IllegalArgumentException("Can't map " + parameter);
         }

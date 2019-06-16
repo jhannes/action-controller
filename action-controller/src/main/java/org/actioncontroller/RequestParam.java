@@ -1,10 +1,9 @@
 package org.actioncontroller;
 
-import org.actioncontroller.meta.AbstractHttpRequestParameterMapping;
+import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpRequestParameterMapping;
 import org.actioncontroller.meta.HttpRequestParameterMappingFactory;
-import org.actioncontroller.util.ServletUtil;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -28,23 +27,19 @@ public @interface RequestParam {
     @interface ClientIp {
     }
 
-    public class ClientIpParameterMappingFactory implements HttpRequestParameterMappingFactory<ClientIp> {
+    class ClientIpParameterMappingFactory implements HttpRequestParameterMappingFactory<ClientIp> {
 
         @Override
         public HttpRequestParameterMapping create(ClientIp annotation, Parameter parameter) {
-            return (req, pathParameter, resp) -> ServletUtil.getRemoteAddress(req);
+            return ApiHttpExchange::getClientIp;
         }
     }
 
-    public class RequestParameterMappingFactory implements HttpRequestParameterMappingFactory<RequestParam> {
+    class RequestParameterMappingFactory implements HttpRequestParameterMappingFactory<RequestParam> {
         @Override
         public HttpRequestParameterMapping create(RequestParam annotation, Parameter parameter) {
             String name = annotation.value();
-            return (req, pathParams, resp) -> AbstractHttpRequestParameterMapping.convertTo(
-                    req.getParameter(name),
-                    name,
-                    parameter
-            );
+            return (exchange) -> exchange.getParameter(name, parameter);
         }
     }
 }

@@ -1,14 +1,11 @@
 package org.actioncontroller;
 
 
-import org.actioncontroller.meta.AbstractHttpRequestParameterMapping;
+import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpRequestParameterMapping;
 import org.actioncontroller.meta.HttpRequestParameterMappingFactory;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -17,7 +14,6 @@ import java.lang.reflect.AnnotatedParameterizedType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Parameter;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -32,7 +28,7 @@ public @interface SessionParameter {
 
     boolean invalidate() default false;
 
-    public class MappingFactory implements HttpRequestParameterMappingFactory<SessionParameter> {
+    class MappingFactory implements HttpRequestParameterMappingFactory<SessionParameter> {
         @Override
         public HttpRequestParameterMapping create(SessionParameter annotation, Parameter parameter) {
             String name = annotation.value();
@@ -74,18 +70,18 @@ public @interface SessionParameter {
         }
 
         @Override
-        public Object apply(HttpServletRequest req, Map<String, String> pathParameters, HttpServletResponse resp) throws IOException {
-            Object value = req.getSession().getAttribute(name);
-            if (value != null) {
-                return value;
-            }
+        public Object apply(ApiHttpExchange exchange) {
+            return exchange.getSessionAttribute(name)
+                    .orElseGet(() -> {
+                        Object newValue = newInstance();
+                        exchange.setSessionAttribute(name, newValue, invalidate);
+                        return newValue;
+                    });
+        }
+
+        private Object newInstance() {
             try {
-                Object newValue = constructor.newInstance();
-                if (invalidate) {
-                    req.getSession().invalidate();
-                }
-                req.getSession(true).setAttribute(name, newValue);
-                return newValue;
+                return constructor.newInstance();
             } catch (InstantiationException | IllegalAccessException e) {
                 throw ExceptionUtil.softenException(e);
             } catch (InvocationTargetException e) {
@@ -105,33 +101,29 @@ public @interface SessionParameter {
         }
 
         @Override
-        public Object apply(HttpServletRequest req, Map<String, String> pathParameters, HttpServletResponse resp) throws IOException {
-            return (Consumer<Object>) o -> {
-                if (invalidate) {
-                    req.getSession().invalidate();
-                }
-                req.getSession(true).setAttribute(name, o);
-            };
+        public Object apply(ApiHttpExchange exchange) {
+            return (Consumer<Object>) o -> exchange.setSessionAttribute(name, o, invalidate);
         }
     }
 
 
-    class SessionParameterMapping extends AbstractHttpRequestParameterMapping {
+    class SessionParameterMapping implements HttpRequestParameterMapping {
 
+        private Parameter parameter;
         private String value;
 
         public SessionParameterMapping(Parameter parameter, String name) {
-            super(parameter);
+            this.parameter = parameter;
             this.value = name;
         }
 
         @Override
-        public Object apply(HttpServletRequest req, Map<String, String> u, HttpServletResponse resp) {
-            Object value = req.getSession().getAttribute(this.value);
+        public Object apply(ApiHttpExchange exchange) {
+            Optional value = exchange.getSessionAttribute(this.value);
             if (parameter.getType() == Optional.class) {
                 return Optional.ofNullable(value);
-            } else if (value != null) {
-                return value;
+            } else if (value.isPresent()) {
+                return value.get();
             } else {
                 throw new HttpActionException(401, "Missing required session parameter " + this.value);
             }

@@ -1,9 +1,9 @@
 package org.actioncontroller.json;
 
 import org.actioncontroller.HttpActionException;
+import org.actioncontroller.meta.ApiHttpExchange;
 import org.jsonbuddy.JsonObject;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 public class JsonHttpActionException extends HttpActionException {
@@ -16,10 +16,9 @@ public class JsonHttpActionException extends HttpActionException {
     }
 
     @Override
-    public void sendError(HttpServletResponse resp) throws IOException {
-        resp.setStatus(getStatusCode());
-        resp.setContentType("application/json");
-        jsonObject.toJson(resp.getWriter());
+    public void sendError(ApiHttpExchange exchange) throws IOException {
+        exchange.sendError(getStatusCode(), getMessage());
+        exchange.write("application/json", writer -> jsonObject.toJson(writer));
     }
 
 }

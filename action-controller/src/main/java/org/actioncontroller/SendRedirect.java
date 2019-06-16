@@ -18,7 +18,16 @@ public @interface SendRedirect {
     class MappingFactory implements HttpReturnMapperFactory<SendRedirect> {
         @Override
         public HttpReturnValueMapping create(SendRedirect annotation, Class<?> returnType) {
-            return (result, resp, req) -> resp.sendRedirect(result.toString());
+            return (result, exchange) -> {
+                String path = result.toString();
+                if (path.matches("^https?://.*")) {
+                    exchange.sendRedirect(path);
+                } else if (path.startsWith("/")) {
+                    exchange.sendRedirect(exchange.getServerURL() + path);
+                } else {
+                    exchange.sendRedirect(exchange.getApiURL() + "/" + path);
+                }
+            };
         }
     }
 }

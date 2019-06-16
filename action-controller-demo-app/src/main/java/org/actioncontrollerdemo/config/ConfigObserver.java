@@ -22,6 +22,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -29,17 +30,18 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
-public class ApplicationConfig {
+public class ConfigObserver {
 
-    private static final Logger logger = LoggerFactory.getLogger(ApplicationConfig.class);
+    private static final Logger logger = LoggerFactory.getLogger(ConfigObserver.class);
 
     private final Path propertiesDir;
     private final WatchService newWatchService;
     private String applicationName;
     private Map<String, String> currentConfiguration;
-    private HashMap<String, List<ConfigurationConsumer<Optional<String>>>> configurationListeners = new HashMap<>();
+    private Map<String, List<ConfigurationConsumer<Optional<String>>>> configurationListeners = new HashMap<>();
+    private Map<String, List<ConfigurationConsumer<Map<String, String>>>> prefixListeners = new TreeMap<>();
 
-    public ApplicationConfig(String applicationName) {
+    public ConfigObserver(String applicationName) {
         this.applicationName = applicationName;
         this.propertiesDir = Paths.get(".").toAbsolutePath();
         this.currentConfiguration = loadConfiguration();
@@ -50,6 +52,11 @@ public class ApplicationConfig {
             throw new ApplicationConfigurationException("Failed to start watcher", e);
         }
         startConfigurationFileWatcher();
+    }
+
+    public void onPrefix(String prefix, ConfigurationConsumer<Map<String, String>> callback) {
+        prefixListeners.computeIfAbsent(prefix, p -> new ArrayList<>()).add(callback);
+        triggerListener(prefix, currentConfiguration, callback);
     }
 
     public void onInetSocketAddress(String key, ConfigurationConsumer<InetSocketAddress> callback, int defaultPort) {
@@ -122,24 +129,33 @@ public class ApplicationConfig {
     private void reload() {
         Map<String, String> newConfiguration = loadConfiguration();
 
-        Set<String> allKeys = new HashSet<>();
-        allKeys.addAll(newConfiguration.keySet());
-        allKeys.addAll(currentConfiguration.keySet());
+        Set<String> changedKeys = new HashSet<>();
+        changedKeys.addAll(newConfiguration.keySet());
+        changedKeys.addAll(currentConfiguration.keySet());
 
-        allKeys.removeIf(key -> Objects.equals(newConfiguration.get(key), currentConfiguration.get(key)));
+        changedKeys.removeIf(key -> Objects.equals(newConfiguration.get(key), currentConfiguration.get(key)));
         this.currentConfiguration = newConfiguration;
-        onConfigurationChanged(allKeys, newConfiguration);
+        onConfigurationChanged(changedKeys, newConfiguration);
     }
 
-    private void onConfigurationChanged(Set<String> changeKeys, Map<String, String> newConfiguration) {
-        changeKeys.forEach(key -> triggerListeners(key, Optional.ofNullable(newConfiguration.get(key))));
+    private void onConfigurationChanged(Set<String> changedKeys, Map<String, String> newConfiguration) {
+        changedKeys.forEach(key -> triggerListeners(key, Optional.ofNullable(newConfiguration.get(key))));
+
+        prefixListeners.entrySet().stream()
+                .filter(entry -> containsPrefix(changedKeys, entry.getKey()))
+                .forEach(entry -> entry.getValue()
+                        .forEach(c -> triggerListener(entry.getKey(), newConfiguration, c)));
+    }
+
+    private boolean containsPrefix(Set<String> changesKeys, String prefix) {
+        return changesKeys.stream().anyMatch(changed -> changed.startsWith(prefix));
     }
 
     private void triggerListeners(String key, Optional<String> value) {
         getConfigurationListeners(key).forEach(listener -> triggerListener(key, value, listener));
     }
 
-    private void triggerListener(String key, Optional<String> value, ConfigurationConsumer<Optional<String>> listener) {
+    private <T> void triggerListener(String key, T value, ConfigurationConsumer<T> listener) {
         try {
             logger.debug("Setting configuration {}={} for {}", key, value, listener);
             listener.accept(value);

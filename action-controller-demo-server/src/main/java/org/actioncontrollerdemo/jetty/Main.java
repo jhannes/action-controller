@@ -1,6 +1,7 @@
-package org.actioncontrollerdemo;
+package org.actioncontrollerdemo.jetty;
 
-import org.actioncontrollerdemo.config.ApplicationConfig;
+import org.actioncontrollerdemo.config.ConfigObserver;
+import org.actioncontrollerdemo.servlet.DemoListener;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.slf4j.Logger;
@@ -15,7 +16,7 @@ public class Main {
     private Server server = new Server();
     private ServerConnector connector = new ServerConnector(server);
     private String localhostName;
-    private ApplicationConfig config = new ApplicationConfig("demoserver");
+    private ConfigObserver config = new ConfigObserver("demoserver");
 
     public Main() throws UnknownHostException {
         localhostName = InetAddress.getLocalHost().getHostAddress();
@@ -32,7 +33,7 @@ public class Main {
 
         server.addConnector(connector);
 
-        config.onInetSocketAddress("httpPort", httpSocketAddress -> {
+        config.onInetSocketAddress("httpSocketAddress", httpSocketAddress -> {
             setConnectorPort(httpSocketAddress.getPort());
         }, 10080);
     }

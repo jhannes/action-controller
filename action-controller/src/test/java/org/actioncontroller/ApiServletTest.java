@@ -1,6 +1,7 @@
 package org.actioncontroller;
 
 import org.actioncontroller.json.JsonBody;
+import org.actioncontroller.meta.ApiHttpExchange;
 import org.jsonbuddy.JsonObject;
 import org.jsonbuddy.parse.JsonParser;
 import org.junit.After;
@@ -91,14 +92,14 @@ public class ApiServletTest {
         }
 
         @Post("/mappingByType")
-        public void mappingByType(HttpServletRequest req, HttpSession session) {
+        public void mappingByType(ApiHttpExchange exchange) {
 
         }
 
         @Get("/redirect")
         @SendRedirect
         public String redirector() {
-            return "/login";
+            return "login";
         }
     }
 
@@ -145,10 +146,14 @@ public class ApiServletTest {
 
     @Test
     public void shouldSendRedirect() throws IOException {
+        when(requestMock.getScheme()).thenReturn("https");
+        when(requestMock.getHeader("Host")).thenReturn("messages.example.com");
+        when(requestMock.getContextPath()).thenReturn("");
+        when(requestMock.getServletPath()).thenReturn("");
         when(requestMock.getMethod()).thenReturn("GET");
         when(requestMock.getPathInfo()).thenReturn("/redirect");
         servlet.service(requestMock, responseMock);
-        verify(responseMock).sendRedirect("/login");
+        verify(responseMock).sendRedirect("https://messages.example.com/login");
     }
 
     @Test
@@ -250,7 +255,7 @@ public class ApiServletTest {
         when(requestMock.getPathInfo()).thenReturn("/restricted");
         servlet.service(requestMock, responseMock);
 
-        verify(responseMock).setStatus(401);
+        verify(responseMock).sendError(401,"User must be logged in for public org.jsonbuddy.JsonObject org.actioncontroller.ApiServletTest$ExampleController.restrictedOperation()");
         verify(responseMock).setContentType("application/json");
         verify(responseMock).getWriter();
         assertThat(JsonParser.parseToObject(responseBody.toString()).requiredString("message"))
@@ -280,7 +285,7 @@ public class ApiServletTest {
         when(requestMock.getPathInfo()).thenReturn("/restricted");
         servlet.service(requestMock, responseMock);
 
-        verify(responseMock).setStatus(403);
+        verify(responseMock).sendError(403, "User failed to authenticate for public org.jsonbuddy.JsonObject org.actioncontroller.ApiServletTest$ExampleController.restrictedOperation(): Missing role admin for user");
         verify(responseMock).setContentType("application/json");
         verify(responseMock).getWriter();
         assertThat(JsonParser.parseToObject(responseBody.toString()).requiredString("message"))

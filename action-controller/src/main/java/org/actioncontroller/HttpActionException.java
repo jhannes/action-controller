@@ -1,6 +1,7 @@
 package org.actioncontroller;
 
-import javax.servlet.http.HttpServletResponse;
+import org.actioncontroller.meta.ApiHttpExchange;
+
 import java.io.IOException;
 
 public class HttpActionException extends RuntimeException {
@@ -26,8 +27,7 @@ public class HttpActionException extends RuntimeException {
         return getClass().getName() + ": " + getStatusCode() + " " + getMessage();
     }
 
-    public void sendError(HttpServletResponse resp) throws IOException {
-        resp.sendError(getStatusCode(), getMessage());
+    public void sendError(ApiHttpExchange exchange) throws IOException {
+        exchange.sendError(getStatusCode(), getMessage());
     }
-
 }

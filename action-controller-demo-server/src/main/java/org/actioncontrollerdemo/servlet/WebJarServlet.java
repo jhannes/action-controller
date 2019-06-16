@@ -1,4 +1,4 @@
-package org.actioncontrollerdemo;
+package org.actioncontrollerdemo.servlet;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;

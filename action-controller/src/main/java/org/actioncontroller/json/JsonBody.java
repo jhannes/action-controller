@@ -27,23 +27,15 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 public @interface JsonBody {
 
     class ReturnMapperFactory implements HttpReturnMapperFactory<JsonBody> {
-        private static HttpReturnValueMapping writeJsonNode = (o, resp, req) -> {
-            resp.setContentType("application/json");
-            ((JsonNode) o).toJson(resp.getWriter());
-        };
+        private static HttpReturnValueMapping writeJsonNode =
+                (o, exchange) -> exchange.write("application/json", ((JsonNode) o)::toJson);
 
-        private static HttpReturnValueMapping writePojo = (o, resp, req) -> {
-            resp.setContentType("application/json");
-            JsonGenerator.generate(o).toJson(resp.getWriter());
-        };
+        private static HttpReturnValueMapping writePojo =
+                (o, exchange) -> exchange.write("application/json", writer -> JsonGenerator.generate(o).toJson(writer));
 
         @Override
         public HttpReturnValueMapping create(JsonBody annotation, Class<?> returnType) {
-            if (!JsonNode.class.isAssignableFrom(returnType)) {
-                return writePojo;
-            } else {
-                return writeJsonNode;
-            }
+            return JsonNode.class.isAssignableFrom(returnType) ? writeJsonNode : writePojo;
         }
     }
 
@@ -51,12 +43,12 @@ public @interface JsonBody {
         @Override
         public HttpRequestParameterMapping create(JsonBody annotation, Parameter parameter) {
             if (JsonNode.class.isAssignableFrom(parameter.getType())) {
-                return (req, pathParams, resp) -> JsonParser.parse(req.getReader());
+                return exchange -> JsonParser.parse(exchange.getReader());
             } else if (List.class.isAssignableFrom(parameter.getType())) {
-                return (req, pathParams, resp) -> JsonParser.parse(req.getReader());
+                return exchange -> JsonParser.parse(exchange.getReader());
             } else {
-                return (req, u, resp) -> PojoMapper.map(
-                        JsonParser.parseToObject(req.getReader()),
+                return exchange -> PojoMapper.map(
+                        JsonParser.parseToObject(exchange.getReader()),
                         parameter.getType()
                 );
             }

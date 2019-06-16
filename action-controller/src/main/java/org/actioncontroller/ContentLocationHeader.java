@@ -3,7 +3,6 @@ package org.actioncontroller;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
 import org.actioncontroller.meta.HttpReturnValueMapping;
-import org.actioncontroller.util.ServletUtil;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -21,11 +20,10 @@ public @interface ContentLocationHeader {
         @Override
         public HttpReturnValueMapping create(ContentLocationHeader annotation, Class<?> returnType) {
             if (returnType == URL.class) {
-                return (result, resp, req) -> resp.setHeader("Content-location", result.toString());
+                return (result, exchange) -> exchange.setResponseHeader("Content-location", result.toString());
             }
-            return (result, resp, req) ->
-                    resp.setHeader("Content-Location",
-                            ServletUtil.getServerUrl(req) + req.getContextPath() + req.getServletPath() + result);
+            return (result, exchange) ->
+                    exchange.setResponseHeader("Content-Location", exchange.getApiURL() + result.toString());
         }
 
     }

@@ -1,7 +1,9 @@
-package org.actioncontrollerdemo;
+package org.actioncontrollerdemo.servlet;
 
 import org.actioncontroller.ApiServlet;
+import org.actioncontrollerdemo.TestController;
 
+import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
@@ -14,14 +16,17 @@ public class DemoListener implements ServletContextListener {
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
-        sce.getServletContext().addServlet("api", new ApiServlet() {
+        ServletContext context = sce.getServletContext();
+        context.addServlet("api", new ApiServlet() {
             @Override
             public void init() {
                 registerController(new TestController(updater));
             }
         }).addMapping("/api/*");
-        sce.getServletContext().addServlet("swagger", new WebJarServlet("swagger-ui"))
+        context.addServlet("swagger", new WebJarServlet("swagger-ui"))
                 .addMapping("/swagger/*");
+        context.addServlet("default", new ContentServlet())
+                .addMapping("/*");
     }
 
     @Override

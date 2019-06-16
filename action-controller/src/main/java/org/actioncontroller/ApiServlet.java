@@ -1,6 +1,8 @@
 package org.actioncontroller;
 
 import org.actioncontroller.json.JsonHttpActionException;
+import org.actioncontroller.meta.ApiHttpExchange;
+import org.actioncontroller.servlet.ServletHttpExchange;
 import org.jsonbuddy.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,16 +52,16 @@ import java.util.*;
  * }
  * </pre>
  */
-public class ApiServlet extends HttpServlet {
+public class ApiServlet extends HttpServlet implements UserContext {
 
     private static Logger logger = LoggerFactory.getLogger(ApiServlet.class);
 
-    protected boolean isUserLoggedIn(HttpServletRequest req) {
-        return req.getRemoteUser() != null;
+    public boolean isUserLoggedIn(ApiHttpExchange exchange) {
+        return exchange.isUserLoggedIn();
     }
 
-    protected boolean isUserInRole(HttpServletRequest req, String role) {
-        return req.isUserInRole(role);
+    public boolean isUserInRole(ApiHttpExchange exchange, String role) {
+        return exchange.isUserInRole(role);
     }
 
     private Map<String, List<ApiServletAction>> routes = new HashMap<>();
@@ -88,7 +90,7 @@ public class ApiServlet extends HttpServlet {
     protected boolean invokeAction(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         for (ApiServletAction apiRoute : routes.get(req.getMethod())) {
             if (apiRoute.matches(req.getPathInfo())) {
-                invoke(req, resp, apiRoute.collectPathParameters(req.getPathInfo()), apiRoute);
+                invoke(createHttpExchange(req, resp, apiRoute), apiRoute);
                 return true;
             }
         }
@@ -98,29 +100,37 @@ public class ApiServlet extends HttpServlet {
         return false;
     }
 
-    private void invoke(HttpServletRequest req, HttpServletResponse resp, Map<String, String> pathParameters, ApiServletAction apiRoute) throws IOException {
-        checkPreconditions(req, apiRoute.getAction());
-        apiRoute.invoke(req, resp, pathParameters, this);
+    protected ServletHttpExchange createHttpExchange(HttpServletRequest req, HttpServletResponse resp, ApiServletAction apiRoute) {
+        return new ServletHttpExchange(req, resp, apiRoute.collectPathParameters(req.getPathInfo()));
     }
 
-    private void checkPreconditions(HttpServletRequest req, Method action) {
+    private void invoke(ApiHttpExchange exchange, ApiServletAction apiRoute) throws IOException {
+        try {
+            checkPreconditions(exchange, apiRoute.getAction());
+            apiRoute.invoke(this, exchange);
+        } catch (HttpActionException e) {
+            e.sendError(exchange);
+        }
+    }
+
+    protected void checkPreconditions(ApiHttpExchange req, Method action) {
         verifyUserAccess(req, action);
     }
 
     // TODO: It feels like there is some more generic concept missing here
     // TODO: Perhaps a mechanism like transaction wrapping could be supported?
     // TODO: Timing logging? MDC boundary?
-    protected void verifyUserAccess(HttpServletRequest req, Method action) {
+    protected void verifyUserAccess(ApiHttpExchange exchange, Method action) {
         String role = getRequiredUserRole(action).orElse(null);
         if (role == null) {
             return;
         }
-        if (!isUserLoggedIn(req)) {
+        if (!isUserLoggedIn(exchange)) {
             throw new JsonHttpActionException(401,
                     "User must be logged in for " + action,
                     new JsonObject().put("message", "Login required"));
         }
-        if (!isUserInRole(req, role)) {
+        if (!isUserInRole(exchange, role)) {
             throw new JsonHttpActionException(403,
                     "User failed to authenticate for " + action + ": Missing role " + role + " for user",
                     new JsonObject().put("message", "Insufficient permissions"));
@@ -132,7 +142,6 @@ public class ApiServlet extends HttpServlet {
                 action.getDeclaredAnnotation(RequireUserRole.class)
         ).map(RequireUserRole::value);
     }
-
 
     @Override
     public final void init(ServletConfig config) throws ServletException {
@@ -152,36 +161,9 @@ public class ApiServlet extends HttpServlet {
             controllerException = new ApiServletCompositeException();
         }
         try {
-            registerActions(controller);
+             ApiServletAction.registerActions(controller, routes);
         } catch (ApiControllerCompositeException e) {
             controllerException.addControllerException(e);
         }
-    }
-
-    private void registerActions(Object controller) {
-        ApiControllerCompositeException exceptions = new ApiControllerCompositeException(controller);
-        for (Method method : controller.getClass().getMethods()) {
-            try {
-                addRoute("GET", Optional.ofNullable(method.getAnnotation(Get.class)).map(Get::value),
-                        controller, method);
-                addRoute("POST", Optional.ofNullable(method.getAnnotation(Post.class)).map(Post::value),
-                        controller, method);
-                addRoute("PUT", Optional.ofNullable(method.getAnnotation(Put.class)).map(Put::value),
-                        controller, method);
-                addRoute("DELETE", Optional.ofNullable(method.getAnnotation(Delete.class)).map(Delete::value),
-                        controller, method);
-            } catch (ApiServletException e) {
-                logger.warn("Failed to setup {}", method, e);
-                exceptions.addActionException(e);
-            }
-        }
-        if (!exceptions.isEmpty()) {
-            throw exceptions;
-        }
-    }
-
-    private void addRoute(String httpMethod, Optional<Object> path, Object controller, Method actionMethod) {
-        path.ifPresent(p -> routes.get(httpMethod).add(new ApiServletAction(controller, actionMethod, p.toString())));
-
     }
 }

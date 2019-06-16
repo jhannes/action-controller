@@ -2,21 +2,64 @@ package org.actioncontroller.meta;
 
 import org.actioncontroller.HttpActionException;
 
+import java.io.IOException;
+import java.io.Reader;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Optional;
 import java.util.UUID;
 
-public abstract class AbstractHttpRequestParameterMapping implements HttpRequestParameterMapping {
+/**
+ * Abstracts the interaction with the http request and response. This interface
+ * acts as an abstraction that enables Action Controller to work both with
+ * both the servlet API and {@link com.sun.net.httpserver.HttpServer}.
+ * {@link ApiHttpExchange} also provides convenience methods used by several
+ * {@link HttpRequestParameterMapping} and {@link HttpReturnMapping} implementations.
+ */
+public interface ApiHttpExchange {
 
-    protected Parameter parameter;
 
-    public AbstractHttpRequestParameterMapping(Parameter parameter) {
-        this.parameter = parameter;
-    }
+    void write(String contentType, WriterConsumer consumer) throws IOException;
 
-    protected static Object convertParameterType(String value, Type parameterType) {
+    void setResponseHeader(String key, String value);
+
+    void sendRedirect(String path) throws IOException;
+
+    String getServerURL();
+
+    URL getContextURL() throws MalformedURLException;
+
+    URL getApiURL() throws MalformedURLException;
+
+    /**
+     * @throws HttpActionException throws 500 if the name was not matched with a path parameter
+     */
+    Object pathParam(String name, Parameter parameter) throws HttpActionException;
+
+    Reader getReader() throws IOException;
+
+    String getClientIp();
+
+    Object getParameter(String name, Parameter parameter);
+
+    void setCookie(String name, String value, boolean secure);
+
+    Object getCookie(String name, Parameter parameter);
+
+    void sendError(int statusCode, String message) throws IOException;
+
+    boolean isUserLoggedIn();
+
+    boolean isUserInRole(String role);
+
+    void setSessionAttribute(String name, Object value, boolean invalidate);
+
+    Optional getSessionAttribute(String name);
+
+    static Object convertParameterType(String value, Type parameterType) {
         if (parameterType == String.class) {
             return value;
         } else if (parameterType == Boolean.class) {
@@ -39,11 +82,7 @@ public abstract class AbstractHttpRequestParameterMapping implements HttpRequest
         }
     }
 
-    protected Object convertToParameterType(String value, String parameterName) {
-        return convertTo(value, parameterName, parameter);
-    }
-
-    public static Object convertTo(String value, String parameterName, Parameter parameter) {
+    static Object convertTo(String value, String parameterName, Parameter parameter) {
         boolean optional = parameter.getType() == Optional.class;
 
         if (value == null) {
@@ -64,5 +103,4 @@ public abstract class AbstractHttpRequestParameterMapping implements HttpRequest
         Object parameterValue = convertParameterType(value, parameterType);
         return optional ? Optional.of(parameterValue) : parameterValue;
     }
-
 }

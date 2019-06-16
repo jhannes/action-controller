@@ -1,19 +1,17 @@
 package org.actioncontroller;
 
 import org.actioncontroller.json.JsonHttpActionException;
+import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpRequestParameterMapping;
 import org.actioncontroller.meta.HttpRequestParameterMappingFactory;
-import org.actioncontroller.meta.HttpReturnValueMapping;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
+import org.actioncontroller.meta.HttpReturnValueMapping;
 import org.jsonbuddy.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
@@ -61,6 +59,32 @@ class ApiServletAction {
         verifyPathParameters();
     }
 
+    static void registerActions(Object controller, Map<String, List<ApiServletAction>> routes) {
+        ApiControllerCompositeException exceptions = new ApiControllerCompositeException(controller);
+        for (Method method : controller.getClass().getMethods()) {
+            try {
+                addRoute("GET", Optional.ofNullable(method.getAnnotation(Get.class)).map(Get::value),
+                        controller, method, routes);
+                addRoute("POST", Optional.ofNullable(method.getAnnotation(Post.class)).map(Post::value),
+                        controller, method, routes);
+                addRoute("PUT", Optional.ofNullable(method.getAnnotation(Put.class)).map(Put::value),
+                        controller, method, routes);
+                addRoute("DELETE", Optional.ofNullable(method.getAnnotation(Delete.class)).map(Delete::value),
+                        controller, method, routes);
+            } catch (ApiServletException e) {
+                logger.warn("Failed to setup {}", method, e);
+                exceptions.addActionException(e);
+            }
+        }
+        if (!exceptions.isEmpty()) {
+            throw exceptions;
+        }
+    }
+
+    private static void addRoute(String httpMethod, Optional<Object> path, Object controller, Method actionMethod, Map<String, List<ApiServletAction>> routes) {
+        path.ifPresent(p -> routes.get(httpMethod).add(new ApiServletAction(controller, actionMethod, p.toString())));
+    }
+
     private void verifyPathParameters() {
         List<String> specifiedPathParameters = Stream.of(pattern.split("/"))
                 .filter(s -> s.startsWith(":"))
@@ -89,12 +113,12 @@ class ApiServletAction {
 
     private static Map<Class<?>, HttpReturnValueMapping> typebasedResponseMapping = new HashMap<>();
     static {
-        typebasedResponseMapping.put(URL.class, (o, resp, req) -> resp.sendRedirect(o.toString()));
+        typebasedResponseMapping.put(URL.class, (o, exchange) -> exchange.sendRedirect(o.toString()));
     }
 
     private HttpReturnValueMapping createResponseMapper() {
         if (action.getReturnType() == Void.TYPE) {
-            return (a, b, req) -> {};
+            return (a, exchange) -> {};
         }
 
         for (Annotation annotation : action.getAnnotations()) {
@@ -150,8 +174,7 @@ class ApiServletAction {
 
     private static Map<Class<?>, HttpRequestParameterMapping> typebasedRequestMapping = new HashMap<>();
     static {
-        typebasedRequestMapping.put(HttpSession.class, (req, map, resp) -> req.getSession());
-        typebasedRequestMapping.put(HttpServletRequest.class, (req, map, resp) -> req);
+        typebasedRequestMapping.put(ApiHttpExchange.class, (exchange) -> exchange);
     }
 
     private final Object controller;
@@ -187,6 +210,9 @@ class ApiServletAction {
     }
 
     boolean matches(String pathInfo) {
+        if (pathInfo == null) {
+            return this.pattern.isEmpty();
+        }
         String[] patternParts = this.pattern.split("/");
         String[] actualParts = pathInfo.split("/");
         if (patternParts.length != actualParts.length) return false;
@@ -200,50 +226,33 @@ class ApiServletAction {
         return true;
     }
 
-    public void invoke(
-            HttpServletRequest req,
-            HttpServletResponse resp,
-            Map<String, String> pathParameters,
-            ApiServlet apiServlet
-    ) throws IOException {
-        try {
-            verifyUserAccess(req, apiServlet);
-            Object[] arguments = createArguments(getAction(), req, pathParameters, resp);
-            Object result = invoke(getController(), getAction(), arguments);
-            responseMapper.accept(result, resp, req);
-        } catch (HttpActionException e) {
-            sendError(e, resp);
-        }
+    public void invoke(UserContext userContext, ApiHttpExchange exchange) throws IOException {
+        verifyUserAccess(exchange, userContext);
+        Object[] arguments = createArguments(getAction(), exchange);
+        Object result = invoke(getController(), getAction(), arguments);
+        responseMapper.accept(result, exchange);
     }
 
     // TODO: It feels like there is some more generic concept missing here
     // TODO: Perhaps a mechanism like transaction wrapping could be supported?
     // TODO: Timing logging? MDC boundary?
-    protected void verifyUserAccess(HttpServletRequest req, ApiServlet apiServlet) {
+    protected void verifyUserAccess(ApiHttpExchange exchange, UserContext userContext) {
         String role = getRequiredUserRole().orElse(null);
         if (role == null) {
             return;
         }
-        if (!apiServlet.isUserLoggedIn(req)) {
+        if (!userContext.isUserLoggedIn(exchange)) {
             throw new JsonHttpActionException(401,
                     "User must be logged in for " + action,
                     new JsonObject().put("message", "Login required"));
         }
-        if (!apiServlet.isUserInRole(req, role)) {
+        if (!userContext.isUserInRole(exchange, role)) {
             throw new JsonHttpActionException(403,
                     "User failed to authenticate for " + action + ": Missing role " + role + " for user",
                     new JsonObject().put("message", "Insufficient permissions"));
         }
     }
 
-    protected void sendError(HttpActionException e, HttpServletResponse resp) throws IOException {
-        if (e.getStatusCode() >= 500) {
-            logger.error("While serving {}", this, e);
-        } else {
-            logger.info("While serving {}", this, e);
-        }
-        e.sendError(resp);
-    }
 
     protected Optional<String> getRequiredUserRole() {
         return Optional.ofNullable(
@@ -269,11 +278,11 @@ class ApiServletAction {
         }
     }
 
-    private Object[] createArguments(Method method, HttpServletRequest req, Map<String, String> pathParameters, HttpServletResponse resp) throws IOException {
+    private Object[] createArguments(Method method, ApiHttpExchange exchange) throws IOException {
         try {
             Object[] arguments = new Object[method.getParameterCount()];
             for (int i = 0; i < arguments.length; i++) {
-                arguments[i] = parameterMappers.get(i).apply(req, pathParameters, resp);
+                arguments[i] = parameterMappers.get(i).apply(exchange);
             }
             return arguments;
         } catch (HttpActionException e) {
@@ -289,5 +298,4 @@ class ApiServletAction {
             throw new HttpRequestException(e.getMessage());
         }
     }
-
 }

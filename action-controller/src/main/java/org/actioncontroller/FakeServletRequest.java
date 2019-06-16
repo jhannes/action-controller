@@ -38,6 +38,7 @@ public class FakeServletRequest implements HttpServletRequest {
     private final String pathInfo;
 
     private Map<String, List<String>> headers = new HashMap<>();
+    private HashMap<String, String> parameters = new HashMap<>();
 
     /**
      * DANGER! Unfinished class! Implement methods as you go!
@@ -276,7 +277,7 @@ public class FakeServletRequest implements HttpServletRequest {
 
     @Override
     public String getParameter(String s) {
-        throw new AssertionError("called unexpected method");
+        return parameters.get(s);
     }
 
     @Override
@@ -417,5 +418,9 @@ public class FakeServletRequest implements HttpServletRequest {
     @Override
     public DispatcherType getDispatcherType() {
         throw new AssertionError("called unexpected method");
+    }
+
+    public void setParameter(String key, String value) {
+        parameters.put(key, value);
     }
 }

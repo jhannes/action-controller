@@ -20,7 +20,7 @@ public @interface HttpResponseHeader {
         @Override
         public HttpReturnValueMapping create(HttpResponseHeader annotation, Class<?> returnType) {
             String name = annotation.value();
-            return (result, resp, req) -> resp.setHeader(name, result.toString());
+            return (result, exchange) -> exchange.setResponseHeader(name, result.toString());
         }
     }
 }

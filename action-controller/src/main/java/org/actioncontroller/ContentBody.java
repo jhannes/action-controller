@@ -20,10 +20,8 @@ public @interface ContentBody {
     class MappingFactory implements HttpReturnMapperFactory<ContentBody> {
         @Override
         public HttpReturnValueMapping create(ContentBody annotation, Class<?> returnType) {
-            return (result, resp, req) -> {
-                resp.setContentType(annotation.contentType());
-                resp.getWriter().write(String.valueOf(result));
-            };
+            return (result, exchange) ->
+                    exchange.write(annotation.contentType(), writer -> writer.write(String.valueOf(result)));
         }
     }
 }

@@ -1,6 +1,5 @@
 package org.actioncontroller;
 
-import org.actioncontroller.meta.AbstractHttpRequestParameterMapping;
 import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpRequestParameterMapping;
 import org.actioncontroller.meta.HttpRequestParameterMappingFactory;
@@ -22,13 +21,7 @@ public @interface PathParam {
         @Override
         public HttpRequestParameterMapping create(PathParam annotation, Parameter parameter) {
             String name = annotation.value();
-            return (req, pathParameters, resp) -> {
-                String result = pathParameters.get(name);
-                if (result == null) {
-                    throw new HttpActionException(500, "Path parameter :" + name + " not matched");
-                }
-                return AbstractHttpRequestParameterMapping.convertTo(result, name, parameter);
-            };
+            return (exchange) -> exchange.pathParam(name, parameter);
         }
     }
 }

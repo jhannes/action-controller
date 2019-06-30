@@ -19,7 +19,7 @@ public abstract class PrefixConfigListener<T> implements ConfigListener {
         }
     }
 
-    protected abstract T transform(Map<String, String> config);
+    protected abstract T transform(Map<String, String> config) throws Exception;
 
     private boolean containsPrefix(Set<String> changedKeys) {
         return changedKeys.stream().anyMatch(key -> key.startsWith(prefix));

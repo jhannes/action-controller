@@ -58,6 +58,6 @@ public class FileScanner {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{directory=" +  directory + "}";
+        return getClass().getSimpleName() + "{directory=" +  directory.getAbsoluteFile().getParentFile().getName() + "}";
     }
 }

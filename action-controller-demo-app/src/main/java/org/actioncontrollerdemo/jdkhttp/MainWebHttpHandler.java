@@ -25,8 +25,8 @@ public class MainWebHttpHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        for (HttpExchangeHandler staticContent : handlerList) {
-            if (staticContent.handle(exchange)) {
+        for (HttpExchangeHandler handler : handlerList) {
+            if (handler.handle(exchange)) {
                 exchange.close();
                 return;
             }

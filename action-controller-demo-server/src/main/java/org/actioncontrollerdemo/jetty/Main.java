@@ -1,12 +1,13 @@
 package org.actioncontrollerdemo.jetty;
 
-import org.actioncontrollerdemo.config.ConfigObserver;
+import org.actioncontroller.config.ConfigObserver;
 import org.actioncontrollerdemo.servlet.DemoListener;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -16,7 +17,7 @@ public class Main {
     private Server server = new Server();
     private ServerConnector connector = new ServerConnector(server);
     private String localhostName;
-    private ConfigObserver config = new ConfigObserver("demoserver");
+    private ConfigObserver config = new ConfigObserver(new File("."), "demoserver");
 
     public Main() throws UnknownHostException {
         localhostName = InetAddress.getLocalHost().getHostAddress();
@@ -27,23 +28,19 @@ public class Main {
     }
 
     private void start() throws Exception {
-        DemoListener listener = new DemoListener(() -> update());
+        DemoListener listener = new DemoListener(() -> System.out.println("Hello world"));
         server.setHandler(new MainWebAppContext("/demo", "webapp-actioncontrollerdemo", listener));
         server.start();
 
         server.addConnector(connector);
 
         config.onInetSocketAddress("httpSocketAddress", httpSocketAddress -> {
-            setConnectorPort(httpSocketAddress.getPort());
+            connector.stop();
+            connector.setPort(httpSocketAddress.getPort());
+            connector.start();
+
+            logger.warn("Listening on {}", getUrl(connector));
         }, 10080);
-    }
-
-    private void setConnectorPort(int port) throws Exception {
-        connector.stop();
-        connector.setPort(port);
-        connector.start();
-
-        logger.warn("Listening on {}", getUrl(connector));
     }
 
     private String getUrl(ServerConnector connector) {
@@ -54,11 +51,4 @@ public class Main {
         return connector.getHost() != null ? connector.getHost() : localhostName;
     }
 
-    private void update() {
-        try {
-            setConnectorPort(12080);
-        } catch (Exception e) {
-            logger.error("While updating port", e);
-        }
-    }
 }

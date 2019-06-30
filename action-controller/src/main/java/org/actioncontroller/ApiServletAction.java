@@ -82,7 +82,10 @@ class ApiServletAction {
     }
 
     private static void addRoute(String httpMethod, Optional<Object> path, Object controller, Method actionMethod, Map<String, List<ApiServletAction>> routes) {
-        path.ifPresent(p -> routes.get(httpMethod).add(new ApiServletAction(controller, actionMethod, p.toString())));
+        path.ifPresent(p -> {
+            routes.get(httpMethod).add(new ApiServletAction(controller, actionMethod, p.toString()));
+            logger.info("Installing route {} ...{} as {}", httpMethod, p, actionMethod);
+        });
     }
 
     private void verifyPathParameters() {
@@ -295,7 +298,7 @@ class ApiServletAction {
 
             throw e;
         } catch (RuntimeException e) {
-            throw new HttpRequestException(e.getMessage());
+            throw new HttpRequestException(e);
         }
     }
 }

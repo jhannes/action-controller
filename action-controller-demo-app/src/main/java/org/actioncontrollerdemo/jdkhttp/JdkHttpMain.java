@@ -2,13 +2,18 @@ package org.actioncontrollerdemo.jdkhttp;
 
 import com.sun.net.httpserver.HttpServer;
 import com.zaxxer.hikari.HikariDataSource;
-import org.actioncontrollerdemo.config.ConfigObserver;
+import org.actioncontroller.config.ConfigObserver;
+import org.actioncontroller.config.ConfigValueListener;
+import org.actioncontroller.config.PrefixConfigListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.sql.SQLException;
+import java.util.Map;
 
 public class JdkHttpMain {
 
@@ -18,6 +23,25 @@ public class JdkHttpMain {
 
     public static void main(String[] args) throws IOException {
         new JdkHttpMain().start();
+    }
+
+    private static class DataSourceConfigListener extends PrefixConfigListener<DataSource> {
+
+        private DataSourceConfigListener(String prefix, ConfigValueListener<DataSource> listener) {
+            super(prefix, listener);
+        }
+
+        @Override
+        protected DataSource transform(Map<String, String> cfg) throws SQLException {
+            HikariDataSource dataSource = new HikariDataSource();
+            dataSource.setJdbcUrl(cfg.get(prefix + ".jdbcUrl"));
+            dataSource.setUsername(cfg.get(prefix + ".jdbcUsername"));
+            dataSource.setPassword(cfg.get(prefix + ".jdbcPassword"));
+            dataSource.getConnection().close();
+            logger.info("{} = {}", prefix, dataSource.getJdbcUrl());
+
+            return dataSource;
+        }
     }
 
     private void start() throws MalformedURLException {
@@ -34,7 +58,7 @@ public class JdkHttpMain {
             }
         }).start();
 
-        ConfigObserver config = new ConfigObserver("demoserver");
+        ConfigObserver config = new ConfigObserver(new File("."), "demoserver");
         config.onInetSocketAddress("httpSocketAddress", inetSocketAddress -> {
             HttpServer oldServer = httpServer;
             httpServer = HttpServer.create();
@@ -48,14 +72,7 @@ public class JdkHttpMain {
             }
         }, 20080);
 
-        config.onPrefix("my.dataSource", cfg -> {
-            HikariDataSource dataSource = new HikariDataSource();
-            dataSource.setJdbcUrl(cfg.get("my.dataSource.jdbcUrl"));
-            dataSource.setUsername(cfg.get("my.dataSource.username"));
-            dataSource.setPassword(cfg.get("my.dataSource.password"));
-            dataSource.getConnection().close();
-            logger.info("my.dataSource = {}", dataSource.getJdbcUrl());
-            this.dataSource = dataSource;
-        });
+
+        config.onConfigChange(new DataSourceConfigListener("my.dataSource", ds -> this.dataSource = ds));
     }
 }

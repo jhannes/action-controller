@@ -2,12 +2,17 @@ package org.actioncontroller;
 
 import org.actioncontroller.json.JsonBody;
 import org.actioncontroller.meta.ApiHttpExchange;
+import org.actioncontroller.test.FakeServletRequest;
+import org.actioncontroller.test.FakeServletResponse;
 import org.jsonbuddy.JsonObject;
 import org.jsonbuddy.parse.JsonParser;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.logevents.extend.junit.ExpectedLogEventsRule;
 import org.mockito.Mockito;
+import org.slf4j.event.Level;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -17,6 +22,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.lang.annotation.ElementType;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
@@ -39,8 +45,14 @@ public class ApiServletTest {
     public JsonObject postedBody;
     public Optional<Boolean> admin;
     public int amount;
+    private URL contextRoot;
+    private FakeServletResponse response = new FakeServletResponse();
 
     private class ExampleController {
+
+        private UUID uuid;
+        private long longValue;
+        private ElementType enumValue;
 
         @Get("/one")
         @JsonBody
@@ -86,6 +98,21 @@ public class ApiServletTest {
             amount = amountParam;
         }
 
+        @Post("/withUuid")
+        public void methodWithUuid(@RequestParam("uuid") UUID uuid) {
+            this.uuid = uuid;
+        }
+
+        @Post("/withLong")
+        public void methodWithLong(@RequestParam("longValue") long longValue) {
+            this.longValue = longValue;
+        }
+
+        @Post("/withEnum")
+        public void methodWithEnum(@RequestParam("enumValue") ElementType enumValue) {
+            this.enumValue = enumValue;
+        }
+
         @Post("/setLoggedInUser")
         public void sessionUpdater(@SessionParameter("username") Consumer<String> usernameSetter) {
             usernameSetter.accept("Alice Bobson");
@@ -129,10 +156,10 @@ public class ApiServletTest {
 
     @Test
     public void shouldGive404OnUnknownAction() throws IOException {
-        when(requestMock.getMethod()).thenReturn("GET");
-        when(requestMock.getPathInfo()).thenReturn("/missing");
-        servlet.service(requestMock, responseMock);
-        verify(responseMock).sendError(eq(404), anyString());
+        FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/api", "/missing");
+        expectedLogEvents.expect(ApiServlet.class, Level.WARN, "No route for GET " + contextRoot.getPath() + "/api[/missing]");
+        servlet.service(request, response);
+        assertThat(response.getStatus()).isEqualTo(404);
     }
 
     @Test
@@ -172,14 +199,17 @@ public class ApiServletTest {
     }
 
     @Test
-    public void shouldGive400OnMisformedJson() throws IOException {
-        when(requestMock.getMethod()).thenReturn("POST");
-        when(requestMock.getPathInfo()).thenReturn("/postMethod");
+    public void shouldGive400OnMalformedJson() throws IOException {
+        FakeServletRequest request = new FakeServletRequest("POST", contextRoot, "/api", "/postMethod");
 
-        when(requestMock.getReader())
-                .thenReturn(new BufferedReader(new StringReader("This is not JSON!")));
-        servlet.service(requestMock, responseMock);
-        verify(responseMock).sendError(eq(400), anyString());
+        request.setReader(() -> new BufferedReader(new StringReader("This is not JSON!")));
+
+        expectedLogEvents.expect(ApiServletAction.class, Level.WARN,
+                "While processing ServletHttpExchange[POST " + contextRoot + "/api/postMethod] arguments");
+        servlet.service(request, response);
+
+        assertThat(response.getStatus()).isEqualTo(400);
+        assertThat(response.getStatusMessage()).contains("org.jsonbuddy.parse.JsonParseException: Unexpected character 'T'");
     }
 
     @Test
@@ -216,6 +246,51 @@ public class ApiServletTest {
         servlet.service(requestMock, responseMock);
 
         verify(responseMock).sendError(eq(400), anyString());
+    }
+
+    @Test
+    public void shouldGive400OnInvalidUuidConversion() throws IOException {
+        FakeServletRequest request = new FakeServletRequest("POST", contextRoot, "/api", "/withUuid");
+        request.setParameter("uuid", "Not an uuid");
+
+        expectedLogEvents.expect(ApiServletAction.class, Level.WARN,
+                "While processing ServletHttpExchange[POST " + contextRoot + "/api/withUuid?uuid=Not+an+uuid] arguments",
+                new IllegalArgumentException("Invalid UUID string: Not an uuid"));
+        servlet.service(request, response);
+
+        assertThat(response.getStatus()).isEqualTo(400);
+        assertThat(response.getStatusMessage()).contains("Invalid UUID string");
+    }
+
+    @Test
+    public void shouldGive400OnInvalidLongConversion() throws IOException {
+        FakeServletRequest request = new FakeServletRequest("POST", contextRoot, "/api", "/withLong");
+        request.setParameter("longValue", "one hundred");
+
+        expectedLogEvents.expect(ApiServletAction.class, Level.WARN,
+                "While processing ServletHttpExchange[POST " + contextRoot + "/api/withLong?longValue=one+hundred] arguments",
+                new NumberFormatException("For input string: \"one hundred\""));
+        servlet.service(request, response);
+
+        assertThat(response.getStatus()).isEqualTo(400);
+        assertThat(response.getStatusMessage()).contains("NumberFormatException: For input string: \"one hundred\"");
+    }
+
+    @Rule
+    public ExpectedLogEventsRule expectedLogEvents = new ExpectedLogEventsRule(Level.WARN);
+
+    @Test
+    public void shouldGive400OnInvalidEnumConversion() throws IOException {
+        FakeServletRequest request = new FakeServletRequest("POST", contextRoot, "/api", "/withEnum");
+        request.setParameter("enumValue", "unknown");
+
+        expectedLogEvents.expect(ApiServletAction.class, Level.WARN,
+                "While processing ServletHttpExchange[POST " + contextRoot + "/api/withEnum?enumValue=unknown] arguments",
+                new IllegalArgumentException("No enum constant java.lang.annotation.ElementType.unknown"));
+        servlet.service(request, response);
+
+        assertThat(response.getStatus()).isEqualTo(400);
+        assertThat(response.getStatusMessage()).contains("No enum constant java.lang.annotation.ElementType.unknown");
     }
 
     @Test
@@ -297,6 +372,7 @@ public class ApiServletTest {
         servlet.registerController(new ExampleController());
 
         when(responseMock.getWriter()).thenReturn(new PrintWriter(responseBody));
+        contextRoot = new URL("http://example.com/root");
     }
 
     @After

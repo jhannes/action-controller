@@ -1,4 +1,4 @@
-package org.actioncontroller;
+package org.actioncontroller.test;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
@@ -107,7 +107,7 @@ public class FakeServletResponse implements HttpServletResponse {
 
     @Override
     public int getStatus() {
-        throw new AssertionError("called unexpected method");
+        return statusCode;
     }
 
     @Override
@@ -207,5 +207,9 @@ public class FakeServletResponse implements HttpServletResponse {
 
     public void assertNoError() {
         assertThat(statusCode).describedAs(statusMessage).isLessThan(400);
+    }
+
+    public String getStatusMessage() {
+        return statusMessage;
     }
 }

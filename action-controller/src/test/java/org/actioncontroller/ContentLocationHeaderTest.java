@@ -1,5 +1,7 @@
 package org.actioncontroller;
 
+import org.actioncontroller.test.FakeServletRequest;
+import org.actioncontroller.test.FakeServletResponse;
 import org.junit.Test;
 
 import java.io.IOException;

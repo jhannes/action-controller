@@ -19,6 +19,12 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
+// TODO: Test exception
+
+// TODO: InetSocketAddress as number, as :number
+
+// TODO: Exception in listener
+
 public class ConfigObserverTest {
 
     private File directory = new File("target/test/dir-" + UUID.randomUUID());

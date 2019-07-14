@@ -1,4 +1,4 @@
-package org.actioncontroller;
+package org.actioncontroller.test;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.DispatcherType;
@@ -14,7 +14,10 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpUpgradeHandler;
 import javax.servlet.http.Part;
 import java.io.BufferedReader;
+import java.io.Reader;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Collections;
@@ -24,6 +27,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * DANGER! Unfinished class! Implement methods as you go!
@@ -39,6 +44,7 @@ public class FakeServletRequest implements HttpServletRequest {
 
     private Map<String, List<String>> headers = new HashMap<>();
     private HashMap<String, String> parameters = new HashMap<>();
+    private Supplier<Reader> readerSupplier;
 
     /**
      * DANGER! Unfinished class! Implement methods as you go!
@@ -49,8 +55,12 @@ public class FakeServletRequest implements HttpServletRequest {
         this.servletPath = servletPath;
         this.pathInfo = pathInfo;
         this.scheme = contextRoot.getProtocol();
-        this.port = contextRoot.getPort();
+        this.port = contextRoot.getPort() != -1 ? contextRoot.getPort() : defaultPort(scheme);
         this.host = contextRoot.getHost();
+    }
+
+    private int defaultPort(String scheme) {
+        return scheme.equals("https") ? 443 : 80;
     }
 
     @Override
@@ -110,7 +120,21 @@ public class FakeServletRequest implements HttpServletRequest {
 
     @Override
     public String getQueryString() {
-        throw new AssertionError("called unexpected method");
+        if (parameters.isEmpty()) {
+            return null;
+        } else {
+            return parameters.entrySet().stream()
+                    .map(e -> urlEncode(e.getKey()) + "=" + urlEncode(e.getValue()))
+                    .collect(Collectors.joining("&"));
+        }
+    }
+
+    private String urlEncode(String value) {
+        try {
+            return URLEncoder.encode(value, "US-ASCII");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -142,24 +166,8 @@ public class FakeServletRequest implements HttpServletRequest {
     public StringBuffer getRequestURL() {
         final StringBuffer url = new StringBuffer(128);
         url.append(getScheme()).append("://").append(getRemoteHost());
-
-        if (port > 0)
-        {
-            switch(scheme)
-            {
-                case "http":
-                    if (port!=80)
-                        url.append(':').append(getServerPort());
-                    break;
-
-                case "https":
-                    if (port!=443)
-                        url.append(':').append(getServerPort());
-                    break;
-
-                default:
-                    url.append(':').append(getServerPort());
-            }
+        if (port > 0 && port != defaultPort(scheme)) {
+            url.append(':').append(port);
         }
         url.append(getRequestURI());
         return url;
@@ -317,7 +325,11 @@ public class FakeServletRequest implements HttpServletRequest {
 
     @Override
     public BufferedReader getReader() {
-        throw new AssertionError("called unexpected method");
+        if (readerSupplier != null) {
+            return new BufferedReader(readerSupplier.get());
+        } else {
+            throw new AssertionError("Call setReader first");
+        }
     }
 
     @Override
@@ -422,5 +434,9 @@ public class FakeServletRequest implements HttpServletRequest {
 
     public void setParameter(String key, String value) {
         parameters.put(key, value);
+    }
+
+    public void setReader(Supplier<Reader> readerSupplier) {
+        this.readerSupplier = readerSupplier;
     }
 }

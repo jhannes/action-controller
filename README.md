@@ -70,7 +70,7 @@ The set of annotations is actually extensible. Here's how `@RequestParam` is def
 ```java
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
-@HttpParameterMapping(RequestParam.RequestParameterMapping.class)
+@HttpParameterMapping(RequestParam.RequestParameterMappingFactory.class)
 public @interface RequestParam {
 
     String value();
@@ -82,27 +82,31 @@ public @interface RequestParam {
 this annotation on method parameters (as opposed to, for example class declarations).
 
 `@HttpParameterMapping` tells Action Controller to use this annotation to resolve the value
-of a action method parameter. The `RequestParam.RequestParameterMapping` describes what Action
+of a action method parameter. The `RequestParam.RequestParameterMappingFactory` describes what Action
 Controller should do with the annotation. Here's how it's defined:
 
 ```java
-public class RequestParameterMapping extends AbstractHttpRequestParameterMapping {
-    private String value;
-
-    public RequestParameterMapping(RequestParam reqParam, Parameter parameter) {
-        super(parameter);
-        value = reqParam.value();
-    }
-
-    @Override
-    public Object apply(HttpServletRequest req, Map<String, String> pathParams) {
-        return convertToParameterType(req.getParameter(value), value);
-    }
+public class RequestParameterMappingFactory extends HttpRequestParameterMappingFactory<RequestParam> {
+        @Override
+        public HttpRequestParameterMapping create(RequestParam annotation, Parameter parameter) {
+            String name = annotation.value();
+            return (exchange) -> exchange.getParameter(name, parameter);
+        }
 }
 ```
 
-Action Servlet automatically searches for a constructor with the `RequestParam` (that is,
-the annotation itself), which lets the mapping class use annotation properties to do its job.
+Action Servlet instansiates the mapping factory with a default constructor and invokes create, which lets
+the factory set up the mapping with properties from the annotation. The mapper itself takes an
+ApiHttpExchange (which encapsulates the HTTP request and the response) and returns the value to use
+for the method parameter on the action controller.
 
 That's really all there it to it! :-)
+
+
+TODO
+====
+
+[ ] HttpHeaderRequestMapping
+[ ] Customer conversion
+[ ] Log payloads
 

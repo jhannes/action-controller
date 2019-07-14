@@ -33,6 +33,8 @@ import java.util.stream.Stream;
  * template, and on the Java-side as a method on the controller class.
  * For example <code>@Get("/helloWorld") public String hello(@RequestParam("greeter") String greeter)</code>
  * defines an action that responds to <code>GET /helloWorld?greeter=something</code> with a string.
+ *
+ * TODO: Rename to ApiControllerAction
  */
 class ApiServletAction {
 
@@ -72,7 +74,7 @@ class ApiServletAction {
                 addRoute("DELETE", Optional.ofNullable(method.getAnnotation(Delete.class)).map(Delete::value),
                         controller, method, routes);
             } catch (ApiServletException e) {
-                logger.warn("Failed to setup {}", method, e);
+                logger.warn("Failed to setup {}", getMethodName(method), e);
                 exceptions.addActionException(e);
             }
         }
@@ -84,7 +86,7 @@ class ApiServletAction {
     private static void addRoute(String httpMethod, Optional<Object> path, Object controller, Method actionMethod, Map<String, List<ApiServletAction>> routes) {
         path.ifPresent(p -> {
             routes.get(httpMethod).add(new ApiServletAction(controller, actionMethod, p.toString()));
-            logger.info("Installing route {} ...{} as {}", httpMethod, p, actionMethod);
+            logger.info("Installing route {} ...{} as {}", httpMethod, p, getMethodName(actionMethod));
         });
     }
 
@@ -106,7 +108,7 @@ class ApiServletAction {
         unboundParameters.removeAll(boundPathParameters);
 
         if (!unboundParameters.isEmpty()) {
-            logger.warn("Unused path parameters for {}: {}", action, unboundParameters);
+            logger.warn("Unused path parameters for {}: {}", getMethodName(action), unboundParameters);
         }
         if (!extraParameters.isEmpty()) {
             throw new ApiActionParameterUnknownMappingException(
@@ -271,14 +273,23 @@ class ApiServletAction {
         try {
             return action.invoke(controller, arguments);
         } catch (InvocationTargetException e) {
-            if (e.getTargetException() instanceof RuntimeException) {
-                throw (RuntimeException)e.getTargetException();
+            if (e.getTargetException() instanceof HttpActionException) {
+                throw (HttpActionException)e.getTargetException();
             } else {
-                throw new HttpActionException(500, e.getTargetException());
+                logger.error("While invoking {}", getMethodName(action), e.getTargetException());
+                throw new HttpServerErrorException(e.getTargetException());
             }
         } catch (IllegalAccessException e) {
-            throw new HttpActionException(500, e);
+            logger.error("While invoking {}", getMethodName(action), e);
+            throw new HttpServerErrorException(e);
         }
+    }
+
+    private static Object getMethodName(Method action) {
+        String parameters = Stream.of(action.getParameterTypes())
+                .map(Class::getSimpleName)
+                .collect(Collectors.joining(","));
+        return action.getDeclaringClass().getSimpleName() + "." + action.getName() + "(" + parameters + ")";
     }
 
     private Object[] createArguments(Method method, ApiHttpExchange exchange) throws IOException {
@@ -298,6 +309,7 @@ class ApiServletAction {
 
             throw e;
         } catch (RuntimeException e) {
+            logger.warn("While processing {} arguments", exchange, e);
             throw new HttpRequestException(e);
         }
     }

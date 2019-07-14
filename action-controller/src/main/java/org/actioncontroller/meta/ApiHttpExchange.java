@@ -51,6 +51,8 @@ public interface ApiHttpExchange {
 
     void sendError(int statusCode, String message) throws IOException;
 
+    void sendError(int statusCode) throws IOException;
+
     boolean isUserLoggedIn();
 
     boolean isUserInRole(String role);

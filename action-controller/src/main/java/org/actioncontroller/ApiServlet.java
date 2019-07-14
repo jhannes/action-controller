@@ -15,7 +15,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Subclass ApiServlet and implement {@link #init init} by calling
@@ -95,8 +100,8 @@ public class ApiServlet extends HttpServlet implements UserContext {
             }
         }
 
-        logger.warn("No route for {} {} in {}", req.getMethod(), req.getPathInfo(), req.getContextPath() + req.getServletPath());
-        resp.sendError(404, "No route for " + req.getMethod() + ": " + req.getRequestURI());
+        logger.warn("No route for {} {}[{}]", req.getMethod(), req.getContextPath() + req.getServletPath(), req.getPathInfo());
+        new ServletHttpExchange(req, resp, new HashMap<>()).sendError(404, "No route for " + req.getMethod() + ": " + req.getRequestURI());
         return false;
     }
 
@@ -145,6 +150,16 @@ public class ApiServlet extends HttpServlet implements UserContext {
 
     @Override
     public final void init(ServletConfig config) throws ServletException {
+        if (config != null) {
+            List<String> mappings = config.getServletContext()
+                    .getServletRegistrations().values().stream()
+                    .flatMap(reg -> reg.getMappings().stream())
+                    .collect(Collectors.toList());
+            if (mappings.stream().noneMatch(path -> path.endsWith("/*"))) {
+                throw new ApiServletException(getClass() + " should have mapping ending with /*, was " + mappings);
+            }
+        }
+
         this.controllerException = new ApiServletCompositeException();
         super.init(config);
         verifyNoExceptions();

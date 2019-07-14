@@ -40,22 +40,22 @@ public class JdkHttpExchange implements ApiHttpExchange {
 
     @Override
     public boolean isUserLoggedIn() {
-        return false;
+        throw new UnsupportedOperationException(getClass().getName() + " does not implement sessions");
     }
 
     @Override
     public boolean isUserInRole(String role) {
-        return false;
+        throw new UnsupportedOperationException(getClass().getName() + " does not implement sessions");
     }
 
     @Override
     public void setSessionAttribute(String name, Object value, boolean invalidate) {
-
+        throw new UnsupportedOperationException(getClass().getName() + " does not implement sessions");
     }
 
     @Override
     public Optional getSessionAttribute(String name) {
-        return Optional.empty();
+        throw new UnsupportedOperationException(getClass().getName() + " does not implement sessions");
     }
 
     @Override
@@ -167,6 +167,10 @@ public class JdkHttpExchange implements ApiHttpExchange {
         exchange.getResponseBody().write(message.getBytes());
     }
 
+    @Override
+    public void sendError(int statusCode) throws IOException {
+        exchange.sendResponseHeaders(statusCode, 0);
+    }
 
     protected Map<String, String[]> parseParameters(String query) throws UnsupportedEncodingException {
         if (query == null) {
@@ -191,5 +195,4 @@ public class JdkHttpExchange implements ApiHttpExchange {
         }
         return result;
     }
-
 }

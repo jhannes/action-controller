@@ -49,11 +49,22 @@ public class ServletHttpExchange implements ApiHttpExchange {
 
     @Override
     public String getServerURL() {
-        String scheme = Optional.ofNullable(req.getHeader("X-Forwarded-Proto")).orElse(req.getScheme());
         String host = Optional.ofNullable(req.getHeader("X-Forwarded-Host"))
                 .orElseGet(() -> Optional.ofNullable(req.getHeader("Host"))
-                        .orElseGet(() -> req.getServerName() + ":" + req.getServerPort()));
-        return scheme + "://" + host;
+                        .orElseGet(this::calculateHost));
+        return getScheme() + "://" + host;
+    }
+
+    private String getScheme() {
+        return Optional.ofNullable(req.getHeader("X-Forwarded-Proto")).orElse(req.getScheme());
+    }
+
+    private String calculateHost() {
+        return req.getServerName() + (req.getServerPort() == getDefaultPort() ? "" : ":" + req.getServerPort());
+    }
+
+    private int getDefaultPort() {
+        return getScheme().equals("https") ? 443 : (getScheme().equals("http") ? 80 : -1);
     }
 
     @Override
@@ -62,8 +73,12 @@ public class ServletHttpExchange implements ApiHttpExchange {
     }
 
     @Override
-    public URL getApiURL() throws MalformedURLException {
-        return new URL(getServerURL() + req.getContextPath() + req.getServletPath());
+    public URL getApiURL() {
+        try {
+            return new URL(getServerURL() + req.getContextPath() + req.getServletPath());
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -119,6 +134,11 @@ public class ServletHttpExchange implements ApiHttpExchange {
     }
 
     @Override
+    public void sendError(int statusCode) throws IOException {
+        resp.sendError(statusCode);
+    }
+
+    @Override
     public boolean isUserInRole(String role) {
         return req.isUserInRole(role);
     }
@@ -141,4 +161,12 @@ public class ServletHttpExchange implements ApiHttpExchange {
         return Optional.empty();
     }
 
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + req.getMethod() + " " + getFullURL() + "]";
+    }
+
+    private String getFullURL() {
+        return getApiURL() + req.getPathInfo() + (req.getQueryString() != null ? "?" + req.getQueryString() : "");
+    }
 }

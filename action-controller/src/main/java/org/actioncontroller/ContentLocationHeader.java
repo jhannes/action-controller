@@ -16,14 +16,16 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @HttpReturnMapping(ContentLocationHeader.MappingFactory.class)
 public @interface ContentLocationHeader {
 
+    String FIELD_NAME = "Content-location";
+
     class MappingFactory implements HttpReturnMapperFactory<ContentLocationHeader> {
         @Override
         public HttpReturnValueMapping create(ContentLocationHeader annotation, Class<?> returnType) {
             if (returnType == URL.class) {
-                return (result, exchange) -> exchange.setResponseHeader("Content-location", result.toString());
+                return (result, exchange) -> exchange.setResponseHeader(FIELD_NAME, result.toString());
             }
             return (result, exchange) ->
-                    exchange.setResponseHeader("Content-Location", exchange.getApiURL() + result.toString());
+                    exchange.setResponseHeader(FIELD_NAME, exchange.getApiURL() + result.toString());
         }
 
     }

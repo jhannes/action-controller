@@ -69,7 +69,7 @@ public class ApiServlet extends HttpServlet implements UserContext {
         return exchange.isUserInRole(role);
     }
 
-    private Map<String, List<ApiServletAction>> routes = new HashMap<>();
+    private Map<String, List<ApiControllerAction>> routes = new HashMap<>();
     {
         routes.put("GET", new ArrayList<>());
         routes.put("POST", new ArrayList<>());
@@ -93,7 +93,7 @@ public class ApiServlet extends HttpServlet implements UserContext {
     }
 
     protected boolean invokeAction(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        for (ApiServletAction apiRoute : routes.get(req.getMethod())) {
+        for (ApiControllerAction apiRoute : routes.get(req.getMethod())) {
             if (apiRoute.matches(req.getPathInfo())) {
                 invoke(createHttpExchange(req, resp, apiRoute), apiRoute);
                 return true;
@@ -105,11 +105,11 @@ public class ApiServlet extends HttpServlet implements UserContext {
         return false;
     }
 
-    protected ServletHttpExchange createHttpExchange(HttpServletRequest req, HttpServletResponse resp, ApiServletAction apiRoute) {
+    protected ServletHttpExchange createHttpExchange(HttpServletRequest req, HttpServletResponse resp, ApiControllerAction apiRoute) {
         return new ServletHttpExchange(req, resp, apiRoute.collectPathParameters(req.getPathInfo()));
     }
 
-    private void invoke(ApiHttpExchange exchange, ApiServletAction apiRoute) throws IOException {
+    private void invoke(ApiHttpExchange exchange, ApiControllerAction apiRoute) throws IOException {
         try {
             checkPreconditions(exchange, apiRoute.getAction());
             apiRoute.invoke(this, exchange);
@@ -176,7 +176,7 @@ public class ApiServlet extends HttpServlet implements UserContext {
             controllerException = new ApiServletCompositeException();
         }
         try {
-             ApiServletAction.registerActions(controller, routes);
+             ApiControllerAction.registerActions(controller, routes);
         } catch (ApiControllerCompositeException e) {
             controllerException.addControllerException(e);
         }

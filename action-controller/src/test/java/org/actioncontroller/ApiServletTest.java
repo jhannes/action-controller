@@ -204,7 +204,7 @@ public class ApiServletTest {
 
         request.setReader(() -> new BufferedReader(new StringReader("This is not JSON!")));
 
-        expectedLogEvents.expect(ApiServletAction.class, Level.WARN,
+        expectedLogEvents.expect(ApiControllerAction.class, Level.WARN,
                 "While processing ServletHttpExchange[POST " + contextRoot + "/api/postMethod] arguments");
         servlet.service(request, response);
 
@@ -253,7 +253,7 @@ public class ApiServletTest {
         FakeServletRequest request = new FakeServletRequest("POST", contextRoot, "/api", "/withUuid");
         request.setParameter("uuid", "Not an uuid");
 
-        expectedLogEvents.expect(ApiServletAction.class, Level.WARN,
+        expectedLogEvents.expect(ApiControllerAction.class, Level.WARN,
                 "While processing ServletHttpExchange[POST " + contextRoot + "/api/withUuid?uuid=Not+an+uuid] arguments",
                 new IllegalArgumentException("Invalid UUID string: Not an uuid"));
         servlet.service(request, response);
@@ -267,7 +267,7 @@ public class ApiServletTest {
         FakeServletRequest request = new FakeServletRequest("POST", contextRoot, "/api", "/withLong");
         request.setParameter("longValue", "one hundred");
 
-        expectedLogEvents.expect(ApiServletAction.class, Level.WARN,
+        expectedLogEvents.expect(ApiControllerAction.class, Level.WARN,
                 "While processing ServletHttpExchange[POST " + contextRoot + "/api/withLong?longValue=one+hundred] arguments",
                 new NumberFormatException("For input string: \"one hundred\""));
         servlet.service(request, response);
@@ -284,7 +284,7 @@ public class ApiServletTest {
         FakeServletRequest request = new FakeServletRequest("POST", contextRoot, "/api", "/withEnum");
         request.setParameter("enumValue", "unknown");
 
-        expectedLogEvents.expect(ApiServletAction.class, Level.WARN,
+        expectedLogEvents.expect(ApiControllerAction.class, Level.WARN,
                 "While processing ServletHttpExchange[POST " + contextRoot + "/api/withEnum?enumValue=unknown] arguments",
                 new IllegalArgumentException("No enum constant java.lang.annotation.ElementType.unknown"));
         servlet.service(request, response);

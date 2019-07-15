@@ -161,7 +161,7 @@ public class ApiClientProxyTest {
         assertThatThrownBy(() -> client.divide(10, 0))
                 .isEqualTo(new HttpClientException(500, "Server Error", null));
         expectedLogEvents.expect(
-                ApiServletAction.class,
+                ApiControllerAction.class,
                 Level.ERROR,
                 "While invoking TestController.divide(int,int)",
                 new ArithmeticException("/ by zero")

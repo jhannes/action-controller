@@ -33,12 +33,10 @@ import java.util.stream.Stream;
  * template, and on the Java-side as a method on the controller class.
  * For example <code>@Get("/helloWorld") public String hello(@RequestParam("greeter") String greeter)</code>
  * defines an action that responds to <code>GET /helloWorld?greeter=something</code> with a string.
- *
- * TODO: Rename to ApiControllerAction
  */
-class ApiServletAction {
+class ApiControllerAction {
 
-    private final static Logger logger = LoggerFactory.getLogger(ApiServletAction.class);
+    private final static Logger logger = LoggerFactory.getLogger(ApiControllerAction.class);
 
     private String pattern;
 
@@ -46,7 +44,7 @@ class ApiServletAction {
 
     private HttpReturnValueMapping responseMapper;
 
-    public ApiServletAction(Object controller, Method action, String pattern) {
+    public ApiControllerAction(Object controller, Method action, String pattern) {
         this.controller = controller;
         this.action = action;
         this.pattern = pattern;
@@ -61,7 +59,7 @@ class ApiServletAction {
         verifyPathParameters();
     }
 
-    static void registerActions(Object controller, Map<String, List<ApiServletAction>> routes) {
+    static void registerActions(Object controller, Map<String, List<ApiControllerAction>> routes) {
         ApiControllerCompositeException exceptions = new ApiControllerCompositeException(controller);
         for (Method method : controller.getClass().getMethods()) {
             try {
@@ -83,9 +81,9 @@ class ApiServletAction {
         }
     }
 
-    private static void addRoute(String httpMethod, Optional<Object> path, Object controller, Method actionMethod, Map<String, List<ApiServletAction>> routes) {
+    private static void addRoute(String httpMethod, Optional<Object> path, Object controller, Method actionMethod, Map<String, List<ApiControllerAction>> routes) {
         path.ifPresent(p -> {
-            routes.get(httpMethod).add(new ApiServletAction(controller, actionMethod, p.toString()));
+            routes.get(httpMethod).add(new ApiControllerAction(controller, actionMethod, p.toString()));
             logger.info("Installing route {} ...{} as {}", httpMethod, p, getMethodName(actionMethod));
         });
     }

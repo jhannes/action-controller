@@ -45,8 +45,8 @@ public class ApiServletConfigurationErrorTest {
                 .hasMessageContaining("incorrect")
         ;
 
-        expectedLogEventsRule.expectPattern(ApiServletAction.class, Level.WARN, "Failed to setup {}");
-        expectedLogEventsRule.expect(ApiServletAction.class, Level.WARN,
+        expectedLogEventsRule.expectPattern(ApiControllerAction.class, Level.WARN, "Failed to setup {}");
+        expectedLogEventsRule.expect(ApiControllerAction.class, Level.WARN,
                 "Unused path parameters for ControllerWithMismatchedPathParams.actionWithParameterMismatch(String): [myTest]");
     }
 

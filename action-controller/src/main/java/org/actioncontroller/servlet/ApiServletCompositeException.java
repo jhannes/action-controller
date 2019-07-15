@@ -1,4 +1,6 @@
-package org.actioncontroller;
+package org.actioncontroller.servlet;
+
+import org.actioncontroller.ApiControllerCompositeException;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,5 +1,6 @@
 package org.actioncontroller;
 
+import org.actioncontroller.servlet.ApiServlet;
 import org.actioncontroller.test.ApiClientProxy;
 import org.actioncontroller.test.HttpClientException;
 import org.eclipse.jetty.server.Server;

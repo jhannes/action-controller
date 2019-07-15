@@ -1,5 +1,7 @@
 package org.actioncontroller;
 
+import org.actioncontroller.servlet.ApiServletException;
+
 import java.lang.reflect.Method;
 
 public class ApiActionResponseUnknownMappingException extends ApiServletException {

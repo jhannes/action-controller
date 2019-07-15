@@ -8,6 +8,7 @@ import org.actioncontroller.meta.HttpRequestParameterMappingFactory;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
 import org.actioncontroller.meta.HttpReturnValueMapping;
+import org.actioncontroller.servlet.ApiServletException;
 import org.jsonbuddy.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,7 @@ import java.util.stream.Stream;
  * For example <code>@Get("/helloWorld") public String hello(@RequestParam("greeter") String greeter)</code>
  * defines an action that responds to <code>GET /helloWorld?greeter=something</code> with a string.
  */
-class ApiControllerAction {
+public class ApiControllerAction {
 
     private final static Logger logger = LoggerFactory.getLogger(ApiControllerAction.class);
 
@@ -62,7 +63,7 @@ class ApiControllerAction {
         verifyPathParameters();
     }
 
-    static Map<String, List<ApiControllerAction>> registerActions(Object controller) {
+    public static Map<String, List<ApiControllerAction>> registerActions(Object controller) {
         Map<String, List<ApiControllerAction>> routes = new HashMap<>();
         routes.put("GET", new ArrayList<>());
         routes.put("POST", new ArrayList<>());
@@ -221,7 +222,7 @@ class ApiControllerAction {
         return pathParameters;
     }
 
-    boolean matches(String pathInfo) {
+    public boolean matches(String pathInfo) {
         if (pathInfo == null) {
             return patternParts.length == 1 && patternParts[0].isEmpty();
         }

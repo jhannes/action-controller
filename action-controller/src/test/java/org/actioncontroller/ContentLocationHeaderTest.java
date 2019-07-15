@@ -1,9 +1,11 @@
 package org.actioncontroller;
 
+import org.actioncontroller.servlet.ApiServlet;
 import org.actioncontroller.test.FakeServletRequest;
 import org.actioncontroller.test.FakeServletResponse;
 import org.junit.Test;
 
+import javax.servlet.ServletException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -38,7 +40,7 @@ public class ContentLocationHeaderTest {
 
 
     @Test
-    public void shouldCombineParameterWithReturn() throws IOException {
+    public void shouldCombineParameterWithReturn() throws IOException, ServletException {
         FakeServletResponse resp = new FakeServletResponse();
         servlet.service(
                 new FakeServletRequest("POST", new URL("http://my.example.com:8080/my/context"), "/actions", "/one"),
@@ -50,7 +52,7 @@ public class ContentLocationHeaderTest {
     }
 
     @Test
-    public void shouldReturnUrl() throws IOException {
+    public void shouldReturnUrl() throws IOException, ServletException {
         FakeServletResponse resp = new FakeServletResponse();
         servlet.service(
                 new FakeServletRequest("POST", new URL("http://my.example.com:8080/my/context"), "/actions", "/two/1234"),

@@ -1,7 +1,10 @@
-package org.actioncontroller;
+package org.actioncontroller.servlet;
 
+import org.actioncontroller.ApiControllerAction;
+import org.actioncontroller.ApiControllerCompositeException;
+import org.actioncontroller.HttpActionException;
+import org.actioncontroller.UserContext;
 import org.actioncontroller.meta.ApiHttpExchange;
-import org.actioncontroller.servlet.ServletHttpExchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -113,7 +116,7 @@ public class ApiServlet extends HttpServlet implements UserContext {
         verifyNoExceptions();
     }
 
-    void verifyNoExceptions() {
+    protected void verifyNoExceptions() {
         if (!controllerException.isEmpty()) {
             throw controllerException;
         }

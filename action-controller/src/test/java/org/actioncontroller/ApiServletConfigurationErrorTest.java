@@ -6,6 +6,8 @@ import org.actioncontroller.meta.HttpRequestParameterMappingFactory;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
 import org.actioncontroller.meta.HttpReturnValueMapping;
+import org.actioncontroller.servlet.ApiServlet;
+import org.actioncontroller.servlet.ApiServletException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.extend.junit.ExpectedLogEventsRule;
@@ -25,6 +27,8 @@ public class ApiServletConfigurationErrorTest {
 
     @Test
     public void shouldReportAllActionErrors() {
+        expectedLogEventsRule.expectPattern(ApiControllerAction.class, Level.WARN, "Unused path parameters for {}: {}");
+        expectedLogEventsRule.expectPattern(ApiControllerAction.class, Level.WARN, "Failed to setup {}");
         ApiServlet apiServlet = new ApiServlet() {
             @Override
             public void init() {

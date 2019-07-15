@@ -1,5 +1,14 @@
-package org.actioncontroller;
+package org.actioncontroller.servlet;
 
+import org.actioncontroller.ApiControllerAction;
+import org.actioncontroller.Get;
+import org.actioncontroller.HttpActionException;
+import org.actioncontroller.PathParam;
+import org.actioncontroller.Post;
+import org.actioncontroller.RequestParam;
+import org.actioncontroller.RequireUserRole;
+import org.actioncontroller.SendRedirect;
+import org.actioncontroller.SessionParameter;
 import org.actioncontroller.json.JsonBody;
 import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.test.FakeServletRequest;
@@ -10,7 +19,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.logevents.LogEvent;
 import org.logevents.extend.junit.ExpectedLogEventsRule;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.slf4j.event.Level;
 
@@ -31,8 +42,6 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -48,7 +57,7 @@ public class ApiServletTest {
     private URL contextRoot;
     private FakeServletResponse response = new FakeServletResponse();
 
-    private class ExampleController {
+    public class ExampleController {
 
         private UUID uuid;
         private long longValue;
@@ -245,7 +254,7 @@ public class ApiServletTest {
         when(requestMock.getParameter("amount")).thenReturn("one");
         servlet.service(requestMock, responseMock);
 
-        verify(responseMock).sendError(eq(400), anyString());
+        verify(responseMock).sendError(ArgumentMatchers.eq(400), ArgumentMatchers.anyString());
     }
 
     @Test
@@ -277,7 +286,13 @@ public class ApiServletTest {
     }
 
     @Rule
-    public ExpectedLogEventsRule expectedLogEvents = new ExpectedLogEventsRule(Level.WARN);
+    public ExpectedLogEventsRule expectedLogEvents = new ExpectedLogEventsRule(Level.WARN) {
+        @Override
+        public void logEvent(LogEvent logEvent) {
+            super.logEvent(logEvent);
+
+        }
+    };
 
     @Test
     public void shouldGive400OnInvalidEnumConversion() throws IOException {
@@ -330,7 +345,7 @@ public class ApiServletTest {
         when(requestMock.getPathInfo()).thenReturn("/restricted");
         servlet.service(requestMock, responseMock);
 
-        verify(responseMock).sendError(401,"User must be logged in for public org.jsonbuddy.JsonObject org.actioncontroller.ApiServletTest$ExampleController.restrictedOperation()");
+        verify(responseMock).sendError(401,"User must be logged in for public org.jsonbuddy.JsonObject org.actioncontroller.servlet.ApiServletTest$ExampleController.restrictedOperation()");
         verify(responseMock).setContentType("application/json");
         verify(responseMock).getWriter();
         assertThat(JsonParser.parseToObject(responseBody.toString()).requiredString("message"))
@@ -360,7 +375,7 @@ public class ApiServletTest {
         when(requestMock.getPathInfo()).thenReturn("/restricted");
         servlet.service(requestMock, responseMock);
 
-        verify(responseMock).sendError(403, "User failed to authenticate for public org.jsonbuddy.JsonObject org.actioncontroller.ApiServletTest$ExampleController.restrictedOperation(): Missing role admin for user");
+        verify(responseMock).sendError(403, "User failed to authenticate for public org.jsonbuddy.JsonObject org.actioncontroller.servlet.ApiServletTest$ExampleController.restrictedOperation(): Missing role admin for user");
         verify(responseMock).setContentType("application/json");
         verify(responseMock).getWriter();
         assertThat(JsonParser.parseToObject(responseBody.toString()).requiredString("message"))

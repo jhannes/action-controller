@@ -1,6 +1,6 @@
 package org.actioncontrollerdemo.servlet;
 
-import org.actioncontroller.ApiServlet;
+import org.actioncontroller.servlet.ApiServlet;
 import org.actioncontrollerdemo.TestController;
 
 import javax.servlet.ServletContext;

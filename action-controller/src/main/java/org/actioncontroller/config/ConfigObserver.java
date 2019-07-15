@@ -74,7 +74,7 @@ public class ConfigObserver {
         return Stream.of(value.split(",")).map(String::trim).collect(Collectors.toList());
     }
 
-    private void handleFileChanged(List<String> changedFiles) {
+    protected void handleFileChanged(List<String> changedFiles) {
         Map<String, String> newConfiguration = configLoader.loadConfiguration();
         Set<String> changedKeys = findChangedKeys(newConfiguration, currentConfiguration);
         this.currentConfiguration = newConfiguration;

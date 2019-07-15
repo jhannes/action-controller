@@ -10,11 +10,15 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -30,7 +34,18 @@ public class ConfigObserverTest {
     private File directory = new File("target/test/dir-" + UUID.randomUUID());
     private InetSocketAddress httpListenAddress;
     private DummyDataSource dataSource;
-    private ConfigObserver observer = new ConfigObserver(directory, "testApp");
+    private BlockingQueue<Instant> reloadTimes = new ArrayBlockingQueue<>(10);
+    private ConfigObserver observer = new ConfigObserver(directory, "testApp") {
+        @Override
+        protected void handleFileChanged(List<String> changedFiles) {
+            super.handleFileChanged(changedFiles);
+            try {
+                reloadTimes.put(Instant.now());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    };
     private Duration daemonPollingInterval;
 
     @Test
@@ -194,6 +209,7 @@ public class ConfigObserverTest {
     }
 
     private void writeConfigLines(String... lines) {
+        reloadTimes.clear();
         try {
             Files.write(new File(directory, "testApp.properties").toPath(), Arrays.asList(lines));
         } catch (IOException e) {
@@ -204,6 +220,7 @@ public class ConfigObserverTest {
 
 
     private void writeConfigLine(String singleLine) {
+        reloadTimes.clear();
         try {
             Files.write(new File(directory, "testApp.properties").toPath(), singletonList(singleLine));
         } catch (IOException e) {
@@ -213,9 +230,10 @@ public class ConfigObserverTest {
     }
 
     private void waitForFileWatcher() {
-        // TODO: It would be great to connect this to the actual file watcher
         try {
-            Thread.sleep(100);
+            Thread.sleep(10);
+            Instant instant = reloadTimes.poll(1000, TimeUnit.MILLISECONDS);
+            assertThat(instant).describedAs("Timeout on reload wait").isNotNull();
         } catch (InterruptedException e) {
             fail("Thread.sleep interrupted", e);
         }

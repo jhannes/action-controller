@@ -15,7 +15,7 @@ import java.util.Map;
 public class ApiHandler implements HttpExchangeHandler, UserContext {
     private static final Logger logger = LoggerFactory.getLogger(ApiHandler.class);
 
-    private Map<String, List<ApiServletAction>> routes = new HashMap<>();
+    private Map<String, List<ApiControllerAction>> routes = new HashMap<>();
     {
         routes.put("GET", new ArrayList<>());
         routes.put("POST", new ArrayList<>());
@@ -28,7 +28,7 @@ public class ApiHandler implements HttpExchangeHandler, UserContext {
     public ApiHandler(String context, String apiPath, Object controller) {
         this.context = context;
         this.apiPath = apiPath;
-        ApiServletAction.registerActions(controller, routes);
+        ApiControllerAction.registerActions(controller, routes);
     }
 
     @Override
@@ -38,7 +38,7 @@ public class ApiHandler implements HttpExchangeHandler, UserContext {
             return false;
         }
         String pathInfo = path.substring((context+apiPath).length());
-        for (ApiServletAction action : routes.get(exchange.getRequestMethod())) {
+        for (ApiControllerAction action : routes.get(exchange.getRequestMethod())) {
             if (action.matches(pathInfo)) {
                 JdkHttpExchange httpExchange = new JdkHttpExchange(exchange, action.collectPathParameters(pathInfo), context, apiPath);
                 invoke(httpExchange, action);
@@ -48,7 +48,7 @@ public class ApiHandler implements HttpExchangeHandler, UserContext {
         return false;
     }
 
-    private void invoke(ApiHttpExchange exchange, ApiServletAction apiRoute) throws IOException {
+    private void invoke(ApiHttpExchange exchange, ApiControllerAction apiRoute) throws IOException {
         try {
             apiRoute.invoke(this, exchange);
         } catch (HttpActionException e) {

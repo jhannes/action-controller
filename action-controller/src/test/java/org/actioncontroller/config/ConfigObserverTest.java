@@ -203,8 +203,8 @@ public class ConfigObserverTest {
 
         assertThat(fooValue[0]).isNull();
 
-        writeConfigLines("example.number=one", "example.foo=real value");
         expectedLogEvents.expectPattern(ConfigObserver.class, Level.ERROR, "Failed to notify listener {}");
+        writeConfigLines("example.number=one", "example.foo=real value");
         assertThat(fooValue[0]).isEqualTo("real value");
     }
 

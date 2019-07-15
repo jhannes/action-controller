@@ -122,13 +122,13 @@ public class ApiClientProxyTest {
 
     @Test
     public void gives404OnUnmappedController() {
+        expectedLogEvents.expect(ApiServlet.class, Level.WARN, "No route for GET /test/api[/not-mapped]");
         UnmappedController unmappedController = ApiClientProxy.create(UnmappedController.class, baseUrl);
         assertThatThrownBy(unmappedController::notHere)
                 .isInstanceOf(HttpActionException.class)
                 .satisfies(e -> {
                     assertThat(((HttpActionException)e).getStatusCode()).isEqualTo(404);
                 });
-        expectedLogEvents.expect(ApiServlet.class, Level.WARN, "No route for GET /test/api[/not-mapped]");
     }
 
     @Test
@@ -159,14 +159,14 @@ public class ApiClientProxyTest {
 
     @Test
     public void shouldReportRuntimeExceptions() {
-        assertThatThrownBy(() -> client.divide(10, 0))
-                .isEqualTo(new HttpClientException(500, "Server Error", null));
         expectedLogEvents.expect(
                 ApiControllerAction.class,
                 Level.ERROR,
                 "While invoking TestController.divide(int,int)",
                 new ArithmeticException("/ by zero")
         );
+        assertThatThrownBy(() -> client.divide(10, 0))
+                .isEqualTo(new HttpClientException(500, "Server Error", null));
     }
 
     @Test

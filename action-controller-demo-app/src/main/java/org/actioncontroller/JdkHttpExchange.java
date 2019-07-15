@@ -21,14 +21,13 @@ import java.util.Optional;
 
 public class JdkHttpExchange implements ApiHttpExchange {
     private final HttpExchange exchange;
-    private final Map<String, String> pathParams;
+    private Map<String, String> pathParams = new HashMap<>();
     private final String context;
     private final String apiPath;
     private final Map<String, String[]> parameters;
 
-    public JdkHttpExchange(HttpExchange exchange, Map<String, String> pathParams, String context, String apiPath) {
+    public JdkHttpExchange(HttpExchange exchange, String context, String apiPath) {
         this.exchange = exchange;
-        this.pathParams = pathParams;
         this.context = context;
         this.apiPath = apiPath;
         try {
@@ -105,6 +104,11 @@ public class JdkHttpExchange implements ApiHttpExchange {
             throw new HttpActionException(500, "Path parameter :" + name + " not matched");
         }
         return ApiHttpExchange.convertTo(result, name, parameter);
+    }
+
+    @Override
+    public void setPathParameters(Map<String, String> pathParameters) {
+        this.pathParams = pathParameters;
     }
 
     @Override

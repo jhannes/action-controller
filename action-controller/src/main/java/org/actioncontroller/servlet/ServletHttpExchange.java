@@ -14,6 +14,7 @@ import java.io.Reader;
 import java.lang.reflect.Parameter;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -23,12 +24,11 @@ public class ServletHttpExchange implements ApiHttpExchange {
 
     private final HttpServletRequest req;
     private final HttpServletResponse resp;
-    private Map<String, String> pathParams;
+    private Map<String, String> pathParams = new HashMap<>();
 
-    public ServletHttpExchange(HttpServletRequest req, HttpServletResponse resp, Map<String, String> pathParams) {
+    public ServletHttpExchange(HttpServletRequest req, HttpServletResponse resp) {
         this.req = req;
         this.resp = resp;
-        this.pathParams = pathParams;
     }
 
     @Override
@@ -88,6 +88,11 @@ public class ServletHttpExchange implements ApiHttpExchange {
             throw new HttpActionException(500, "Path parameter :" + name + " not matched");
         }
         return ApiHttpExchange.convertTo(result, name, parameter);
+    }
+
+    @Override
+    public void setPathParameters(Map<String, String> pathParameters) {
+        this.pathParams = pathParameters;
     }
 
     @Override

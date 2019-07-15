@@ -9,6 +9,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -38,6 +39,8 @@ public interface ApiHttpExchange {
      * @throws HttpActionException throws 500 if the name was not matched with a path parameter
      */
     Object pathParam(String name, Parameter parameter) throws HttpActionException;
+
+    void setPathParameters(Map<String, String> pathParameters);
 
     Reader getReader() throws IOException;
 
@@ -105,4 +108,5 @@ public interface ApiHttpExchange {
         Object parameterValue = convertParameterType(value, parameterType);
         return optional ? Optional.of(parameterValue) : parameterValue;
     }
+
 }

@@ -40,6 +40,8 @@ class ApiControllerAction {
 
     private String pattern;
 
+    private final String[] patternParts;
+
     private List<HttpRequestParameterMapping> parameterMappers = new ArrayList<>();
 
     private HttpReturnValueMapping responseMapper;
@@ -48,6 +50,7 @@ class ApiControllerAction {
         this.controller = controller;
         this.action = action;
         this.pattern = pattern;
+        this.patternParts = pattern.split("/");
 
         Parameter[] parameters = action.getParameters();
         for (int i = 0; i < parameters.length; i++) {
@@ -59,7 +62,13 @@ class ApiControllerAction {
         verifyPathParameters();
     }
 
-    static void registerActions(Object controller, Map<String, List<ApiControllerAction>> routes) {
+    static Map<String, List<ApiControllerAction>> registerActions(Object controller) {
+        Map<String, List<ApiControllerAction>> routes = new HashMap<>();
+        routes.put("GET", new ArrayList<>());
+        routes.put("POST", new ArrayList<>());
+        routes.put("PUT", new ArrayList<>());
+        routes.put("DELETE", new ArrayList<>());
+
         ApiControllerCompositeException exceptions = new ApiControllerCompositeException(controller);
         for (Method method : controller.getClass().getMethods()) {
             try {
@@ -79,6 +88,7 @@ class ApiControllerAction {
         if (!exceptions.isEmpty()) {
             throw exceptions;
         }
+        return routes;
     }
 
     private static void addRoute(String httpMethod, Optional<Object> path, Object controller, Method actionMethod, Map<String, List<ApiControllerAction>> routes) {
@@ -195,7 +205,6 @@ class ApiControllerAction {
     public Map<String, String> collectPathParameters(String pathInfo) {
         HashMap<String, String> pathParameters = new HashMap<>();
 
-        String[] patternParts = this.pattern.split("/");
         String[] actualParts = pathInfo.split("/");
         if (patternParts.length != actualParts.length) {
             throw new IllegalArgumentException("Paths don't match <" + pattern + ">, but was <" + pathInfo + ">");
@@ -214,9 +223,8 @@ class ApiControllerAction {
 
     boolean matches(String pathInfo) {
         if (pathInfo == null) {
-            return this.pattern.isEmpty();
+            return patternParts.length == 1 && patternParts[0].isEmpty();
         }
-        String[] patternParts = this.pattern.split("/");
         String[] actualParts = pathInfo.split("/");
         if (patternParts.length != actualParts.length) return false;
 

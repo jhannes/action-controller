@@ -1,6 +1,9 @@
 package org.actioncontroller.config;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.logevents.extend.junit.ExpectedLogEventsRule;
+import org.slf4j.event.Level;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,13 +22,10 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
-// TODO: Test exception
-
-// TODO: InetSocketAddress as number, as :number
-
-// TODO: Exception in listener
-
 public class ConfigObserverTest {
+
+    @Rule
+    public ExpectedLogEventsRule expectedLogEvents = new ExpectedLogEventsRule(Level.WARN);
 
     private File directory = new File("target/test/dir-" + UUID.randomUUID());
     private InetSocketAddress httpListenAddress;
@@ -34,37 +34,35 @@ public class ConfigObserverTest {
     private Duration daemonPollingInterval;
 
     @Test
-    public void shouldOnlyUpdateWhenPropertyWasChanged() throws IOException, InterruptedException {
+    public void shouldOnlyUpdateWhenPropertyWasChanged() {
         observer.onDuration("daemonPollingInterval", duration -> this.daemonPollingInterval = duration);
 
         assertThat(daemonPollingInterval).isEqualTo(null);
         daemonPollingInterval = Duration.ofMinutes(5);
 
-        Files.write(new File(directory, "testApp.properties").toPath(), Arrays.asList(
+        writeConfigLines(
                 "example.one=dummy2",
                 "example.two=foobar2"
-        ));
-        Thread.sleep(100);
+        );
         assertThat(daemonPollingInterval).isEqualTo(Duration.ofMinutes(5));
 
-        Files.write(new File(directory, "testApp.properties").toPath(), Arrays.asList(
-                "daemonPollingInterval=PT1M"
-        ));
-        Thread.sleep(100);
+        writeConfigLine("daemonPollingInterval=PT1M");
         assertThat(daemonPollingInterval).isEqualTo(Duration.ofMinutes(1));
     }
 
     @Test
-    public void acceptanceTest() throws IOException, InterruptedException {
+    public void shouldListenToInetAddresses() {
         observer.onInetSocketAddress("httpListenAddress",
                 address -> this.httpListenAddress = address,
                 10080);
         assertThat(httpListenAddress).isEqualTo(new InetSocketAddress(10080));
 
-        Files.write(new File(directory, "testApp.properties").toPath(),
-                Arrays.asList("httpListenAddress=127.0.0.1:11080"));
-        Thread.sleep(100);
+        writeConfigLine("httpListenAddress=127.0.0.1:11080");
         assertThat(httpListenAddress).isEqualTo(new InetSocketAddress("127.0.0.1", 11080));
+        writeConfigLine("httpListenAddress=12080");
+        assertThat(httpListenAddress).isEqualTo(new InetSocketAddress("0.0.0.0", 12080));
+        writeConfigLine("httpListenAddress=:13080");
+        assertThat(httpListenAddress).isEqualTo(new InetSocketAddress("0.0.0.0", 13080));
     }
 
     @Test
@@ -76,7 +74,7 @@ public class ConfigObserverTest {
         });
         assertThat(list).containsOnly("foo,bar");
 
-        writeConfigFile("prop=a,  b ,c");
+        writeConfigLine("prop=a,  b ,c");
         waitForFileWatcher();
         assertThat(list).containsOnly("a,  b ,c");
     }
@@ -87,7 +85,7 @@ public class ConfigObserverTest {
         AtomicInteger value = new AtomicInteger(0);
         observer.onIntValue("test", 11, value::set);
         assertThat(value.get()).isEqualTo(11);
-        writeConfigFile("test = 1337");
+        writeConfigLine("test = 1337");
         waitForFileWatcher();
         assertThat(value.get()).isEqualTo(1337);
     }
@@ -97,13 +95,10 @@ public class ConfigObserverTest {
         AtomicLong value = new AtomicLong(0);
         observer.onLongValue("test", 11L, value::set);
         assertThat(value.get()).isEqualTo(11L);
-        writeConfigFile("test = 1337");
+        writeConfigLine("test = 1337");
         waitForFileWatcher();
         assertThat(value.get()).isEqualTo(1337L);
     }
-
-
-
 
     private static class DummyDataSource {
 
@@ -143,8 +138,7 @@ public class ConfigObserverTest {
                 "my.dataSource.jdbcPassword="
         ));
         Files.write(new File(directory, "testApp.properties").toPath(), configLines);
-        ConfigObserver configObserver = new ConfigObserver(directory, "testApp");
-        configObserver.onConfigChange(new DummyDataSourceConfigListener(
+        observer.onConfigChange(new DummyDataSourceConfigListener(
                 "my.dataSource",
                 dataSource -> this.dataSource = dataSource
         ));
@@ -166,34 +160,62 @@ public class ConfigObserverTest {
         ));
     }
 
-
     @Test
     public void shouldReadStringList() {
         List<String> list = new ArrayList<>();
-        ConfigObserver configObserver = new ConfigObserver(directory, "testApp");
-        configObserver.onStringList("prop", "foo,bar", l -> {
+        observer.onStringList("prop", "foo,bar", l -> {
             list.clear();
             list.addAll(l);
         });
         assertThat(list).containsExactly("foo", "bar");
 
-        writeConfigFile("prop=a,  b ,c");
+        writeConfigLine("prop=a,  b ,c");
         waitForFileWatcher();
         assertThat(list).containsExactly("a", "b", "c");
     }
 
-    private void writeConfigFile(String singleLine) {
+    @Test
+    public void shouldRecoverFromErrorInListener() {
+        writeConfigLine("example.number=123");
+
+        String[] fooValue = { null };
+        observer.onConfigValue("example.foo", null,
+                v -> fooValue[0] = v
+        );
+        observer.onConfigValue("example.number", "100",
+                Integer::parseInt
+        );
+
+        assertThat(fooValue[0]).isNull();
+
+        writeConfigLines("example.number=one", "example.foo=real value");
+        expectedLogEvents.expectPattern(ConfigObserver.class, Level.ERROR, "Failed to notify listener {}");
+        assertThat(fooValue[0]).isEqualTo("real value");
+    }
+
+    private void writeConfigLines(String... lines) {
+        try {
+            Files.write(new File(directory, "testApp.properties").toPath(), Arrays.asList(lines));
+        } catch (IOException e) {
+            fail("While writing testApp.properties", e);
+        }
+        waitForFileWatcher();
+    }
+
+
+    private void writeConfigLine(String singleLine) {
         try {
             Files.write(new File(directory, "testApp.properties").toPath(), singletonList(singleLine));
         } catch (IOException e) {
             fail("While writing testApp.properties", e);
         }
+        waitForFileWatcher();
     }
 
     private void waitForFileWatcher() {
         // TODO: It would be great to connect this to the actual file watcher
         try {
-            Thread.sleep(50);
+            Thread.sleep(100);
         } catch (InterruptedException e) {
             fail("Thread.sleep interrupted", e);
         }

@@ -56,9 +56,9 @@ public class ConfigObserverTest {
 
     @Test
     public void acceptanceTest() throws IOException, InterruptedException {
-        observer.onInetSocketAddress("httpListenAddress", address -> {
-            this.httpListenAddress = address;
-        }, 10080);
+        observer.onInetSocketAddress("httpListenAddress",
+                address -> this.httpListenAddress = address,
+                10080);
         assertThat(httpListenAddress).isEqualTo(new InetSocketAddress(10080));
 
         Files.write(new File(directory, "testApp.properties").toPath(),
@@ -68,7 +68,7 @@ public class ConfigObserverTest {
     }
 
     @Test
-    public void shouldReadStringValue() throws IOException, InterruptedException {
+    public void shouldReadStringValue() {
         List<String> list = new ArrayList<>();
         observer.onConfigValue("prop", "foo,bar", str -> {
             list.clear();
@@ -85,7 +85,7 @@ public class ConfigObserverTest {
     @Test
     public void shouldReadIntValue() {
         AtomicInteger value = new AtomicInteger(0);
-        observer.onIntValue("test", 11, i -> value.set(i));
+        observer.onIntValue("test", 11, value::set);
         assertThat(value.get()).isEqualTo(11);
         writeConfigFile("test = 1337");
         waitForFileWatcher();
@@ -95,7 +95,7 @@ public class ConfigObserverTest {
     @Test
     public void shouldReadLongValue() {
         AtomicLong value = new AtomicLong(0);
-        observer.onLongValue("test", 11L, i -> value.set(i));
+        observer.onLongValue("test", 11L, value::set);
         assertThat(value.get()).isEqualTo(11L);
         writeConfigFile("test = 1337");
         waitForFileWatcher();
@@ -136,7 +136,7 @@ public class ConfigObserverTest {
     }
 
     @Test
-    public void otherAcceptanceTest() throws IOException, InterruptedException {
+    public void otherAcceptanceTest() throws IOException {
         List<String> configLines = new ArrayList<>(Arrays.asList(
                 "my.dataSource.jdbcUrl=jdbc:datamastery:example",
                 "my.dataSource.jdbcUsername=sa",
@@ -144,9 +144,10 @@ public class ConfigObserverTest {
         ));
         Files.write(new File(directory, "testApp.properties").toPath(), configLines);
         ConfigObserver configObserver = new ConfigObserver(directory, "testApp");
-        configObserver.onConfigChange(new DummyDataSourceConfigListener("my.dataSource", dataSource -> {
-            this.dataSource = dataSource;
-        }));
+        configObserver.onConfigChange(new DummyDataSourceConfigListener(
+                "my.dataSource",
+                dataSource -> this.dataSource = dataSource
+        ));
         assertThat(dataSource).isEqualToComparingFieldByField(new DummyDataSource(
                 "jdbc:datamastery:example", "sa", ""
         ));
@@ -167,7 +168,7 @@ public class ConfigObserverTest {
 
 
     @Test
-    public void shouldReadStringList() throws IOException, InterruptedException {
+    public void shouldReadStringList() {
         List<String> list = new ArrayList<>();
         ConfigObserver configObserver = new ConfigObserver(directory, "testApp");
         configObserver.onStringList("prop", "foo,bar", l -> {
@@ -192,7 +193,7 @@ public class ConfigObserverTest {
     private void waitForFileWatcher() {
         // TODO: It would be great to connect this to the actual file watcher
         try {
-            Thread.sleep(10);
+            Thread.sleep(50);
         } catch (InterruptedException e) {
             fail("Thread.sleep interrupted", e);
         }

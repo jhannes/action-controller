@@ -25,7 +25,7 @@
         <dependency>
             <groupId>org.logevents</groupId>
             <artifactId>logevents</artifactId>
-            <version>0.1.20-SNAPSHOT</version>
+            <version>0.1.20</version>
         </dependency>
     </dependencies>
 

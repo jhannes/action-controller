@@ -19,6 +19,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -40,7 +41,7 @@ public class FakeServletRequest implements HttpServletRequest {
     private String method;
     private final String contextPath;
     private final String servletPath;
-    private final String pathInfo;
+    private String pathInfo;
 
     private Map<String, List<String>> headers = new HashMap<>();
     private HashMap<String, String> parameters = new HashMap<>();
@@ -65,17 +66,23 @@ public class FakeServletRequest implements HttpServletRequest {
 
     @Override
     public String getAuthType() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
+    }
+
+    private List<Cookie> cookies = new ArrayList<>();
+
+    public void setCookie(String key, String value) {
+        cookies.add(new Cookie(key, value));
     }
 
     @Override
     public Cookie[] getCookies() {
-        throw new AssertionError("called unexpected method");
+        return cookies.isEmpty() ? null : cookies.toArray(new Cookie[0]);
     }
 
     @Override
     public long getDateHeader(String s) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
@@ -108,9 +115,17 @@ public class FakeServletRequest implements HttpServletRequest {
         return pathInfo;
     }
 
+    public void setPathInfo(String pathInfo) {
+        this.pathInfo = pathInfo;
+    }
+
     @Override
     public String getPathTranslated() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
+    }
+
+    private AssertionError unimplemented(String s) {
+        return new AssertionError(s);
     }
 
     @Override
@@ -139,22 +154,22 @@ public class FakeServletRequest implements HttpServletRequest {
 
     @Override
     public String getRemoteUser() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public boolean isUserInRole(String s) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public Principal getUserPrincipal() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public String getRequestedSessionId() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
@@ -180,42 +195,42 @@ public class FakeServletRequest implements HttpServletRequest {
 
     @Override
     public HttpSession getSession(boolean b) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public HttpSession getSession() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public String changeSessionId() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public boolean isRequestedSessionIdValid() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public boolean isRequestedSessionIdFromCookie() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public boolean isRequestedSessionIdFromURL() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public boolean isRequestedSessionIdFromUrl() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public boolean authenticate(HttpServletResponse httpServletResponse) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
@@ -230,57 +245,62 @@ public class FakeServletRequest implements HttpServletRequest {
 
     @Override
     public Collection<Part> getParts() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public Part getPart(String s) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public <T extends HttpUpgradeHandler> T upgrade(Class<T> aClass) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public Object getAttribute(String s) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public Enumeration<String> getAttributeNames() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public String getCharacterEncoding() {
-        throw new AssertionError("called unexpected method");
+        // TODO
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public void setCharacterEncoding(String s) {
+        // TODO
 
     }
 
     @Override
     public int getContentLength() {
-        throw new AssertionError("called unexpected method");
+        // TODO
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public long getContentLengthLong() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public String getContentType() {
-        throw new AssertionError("called unexpected method");
+        // TODO
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public ServletInputStream getInputStream() {
-        throw new AssertionError("called unexpected method");
+        // TODO
+        throw unimplemented("called unexpected method");
     }
 
     @Override
@@ -290,22 +310,26 @@ public class FakeServletRequest implements HttpServletRequest {
 
     @Override
     public Enumeration<String> getParameterNames() {
-        throw new AssertionError("called unexpected method");
+        // TODO
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public String[] getParameterValues(String s) {
-        throw new AssertionError("called unexpected method");
+        // TODO
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public Map<String, String[]> getParameterMap() {
-        throw new AssertionError("called unexpected method");
+        // TODO
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public String getProtocol() {
-        throw new AssertionError("called unexpected method");
+        // TODO
+        throw unimplemented("called unexpected method");
     }
 
     @Override
@@ -328,7 +352,8 @@ public class FakeServletRequest implements HttpServletRequest {
         if (readerSupplier != null) {
             return new BufferedReader(readerSupplier.get());
         } else {
-            throw new AssertionError("Call setReader first");
+            // TODO
+            throw unimplemented("Call setReader first");
         }
     }
 
@@ -339,7 +364,7 @@ public class FakeServletRequest implements HttpServletRequest {
 
     @Override
     public String getRemoteHost() {
-        throw new AssertionError("called unexpected method");
+        return host;
     }
 
     @Override
@@ -354,82 +379,86 @@ public class FakeServletRequest implements HttpServletRequest {
 
     @Override
     public Locale getLocale() {
-        throw new AssertionError("called unexpected method");
+        // TODO
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public Enumeration<Locale> getLocales() {
-        throw new AssertionError("called unexpected method");
+        // TODO
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public boolean isSecure() {
-        throw new AssertionError("called unexpected method");
+        // TODO
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public RequestDispatcher getRequestDispatcher(String s) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public String getRealPath(String s) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public int getRemotePort() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public String getLocalName() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public String getLocalAddr() {
-        throw new AssertionError("called unexpected method");
+        // TODO
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public int getLocalPort() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public ServletContext getServletContext() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public AsyncContext startAsync() throws IllegalStateException {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public AsyncContext startAsync(ServletRequest servletRequest, ServletResponse servletResponse) throws IllegalStateException {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public boolean isAsyncStarted() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public boolean isAsyncSupported() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public AsyncContext getAsyncContext() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     @Override
     public DispatcherType getDispatcherType() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented("called unexpected method");
     }
 
     public void setParameter(String key, String value) {

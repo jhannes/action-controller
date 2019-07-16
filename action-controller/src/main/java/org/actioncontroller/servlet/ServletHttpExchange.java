@@ -10,6 +10,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.Reader;
 import java.lang.reflect.Parameter;
 import java.net.MalformedURLException;
@@ -34,7 +35,9 @@ public class ServletHttpExchange implements ApiHttpExchange {
     @Override
     public void write(String contentType, WriterConsumer consumer) throws IOException {
         resp.setContentType(contentType);
-        consumer.accept(resp.getWriter());
+        PrintWriter writer = resp.getWriter();
+        consumer.accept(writer);
+        writer.flush();
     }
 
     @Override

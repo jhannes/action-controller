@@ -1,18 +1,11 @@
 package org.actioncontroller;
 
-import org.actioncontroller.servlet.ApiServlet;
-import org.actioncontroller.test.ApiClientProxy;
 import org.actioncontroller.test.HttpClientException;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.extend.junit.ExpectedLogEventsRule;
 import org.slf4j.event.Level;
 
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletException;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -20,9 +13,7 @@ import java.util.function.Consumer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class ApiClientProxyTest {
-
-    private String baseUrl;
+public abstract class AbstractApiClientProxyTest {
 
     public static class TestController {
 
@@ -32,7 +23,7 @@ public class ApiClientProxyTest {
             return "Hello world";
         }
 
-        @Get("/upcase")
+        @Get("/uppercase")
         @ContentBody
         public String upcase(@RequestParam("myParam") String parameter) {
             return parameter.toUpperCase();
@@ -68,7 +59,7 @@ public class ApiClientProxyTest {
         @Get("/loginSession/me")
         @HttpResponseHeader("X-Username")
         public String whoAmI(@UnencryptedCookie("sessionCookie") Optional<String> sessionCookie) {
-            return sessionCookie.get().split(":")[0];
+            return sessionCookie.map(s -> s.split(":")[0]).orElse(null);
         }
 
         @Get("/explicitError")
@@ -87,30 +78,8 @@ public class ApiClientProxyTest {
         }
     }
 
-    private TestController client;
+    protected TestController client;
 
-    @Before
-    public void createServerAndClient() throws Exception {
-        Server server = new Server(0);
-        ServletContextHandler handler = new ServletContextHandler();
-        handler.addEventListener(new javax.servlet.ServletContextListener() {
-            @Override
-            public void contextInitialized(ServletContextEvent event) {
-                event.getServletContext().addServlet("testApi", new ApiServlet() {
-                    @Override
-                    public void init() throws ServletException {
-                        registerController(new TestController());
-                    }
-                }).addMapping("/api/*");
-            }
-        });
-        handler.setContextPath("/test");
-        server.setHandler(handler);
-        server.start();
-
-        baseUrl = server.getURI() + "/api";
-        client = ApiClientProxy.create(TestController.class, baseUrl);
-    }
 
     @Test
     public void shouldMakeSimpleHttpGet() {
@@ -119,17 +88,6 @@ public class ApiClientProxyTest {
 
     @Rule
     public ExpectedLogEventsRule expectedLogEvents = new ExpectedLogEventsRule(Level.WARN);
-
-    @Test
-    public void gives404OnUnmappedController() {
-        expectedLogEvents.expect(ApiServlet.class, Level.WARN, "No route for GET /test/api[/not-mapped]");
-        UnmappedController unmappedController = ApiClientProxy.create(UnmappedController.class, baseUrl);
-        assertThatThrownBy(unmappedController::notHere)
-                .isInstanceOf(HttpActionException.class)
-                .satisfies(e -> {
-                    assertThat(((HttpActionException)e).getStatusCode()).isEqualTo(404);
-                });
-    }
 
     @Test
     public void shouldReceiveParameters() {
@@ -171,7 +129,7 @@ public class ApiClientProxyTest {
 
     @Test
     public void shouldHandleContentHeaders() {
-        assertThat(client.storeNewEntry("someUrl")).isEqualTo(baseUrl + "/entries/" + "someUrl");
+        assertThat(client.storeNewEntry("someUrl")).endsWith("/entries/" + "someUrl");
     }
 
     private String sessionCookie;

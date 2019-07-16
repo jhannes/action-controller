@@ -1,11 +1,15 @@
 package org.actioncontroller.test;
 
 import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
+import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -18,35 +22,49 @@ public class FakeServletResponse implements HttpServletResponse {
     private int statusCode = 200;
     private String statusMessage;
     private Map<String, String> headers = new HashMap<>();
+    private String contentType;
+    private List<Cookie> cookies = new ArrayList<>();
 
     @Override
     public void addCookie(Cookie cookie) {
-        throw new AssertionError("called unexpected method");
+        cookies.add(cookie);
     }
 
+    public String getCookie(String name) {
+        return cookies.stream()
+                .filter(c -> c.getName().equals(name))
+                .findFirst().map(Cookie::getValue)
+                .orElse(null);
+    }
+
+    // TODO
     @Override
     public boolean containsHeader(String s) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
     }
 
+    // TODO
     @Override
     public String encodeURL(String s) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
     }
 
+    // TODO
     @Override
     public String encodeRedirectURL(String s) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
     }
 
+    // TODO
     @Override
     public String encodeUrl(String s) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
     }
 
+    // TODO
     @Override
     public String encodeRedirectUrl(String s) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
     }
 
     @Override
@@ -56,23 +74,25 @@ public class FakeServletResponse implements HttpServletResponse {
     }
 
     @Override
-    public void sendError(int i) {
-        throw new AssertionError("called unexpected method");
+    public void sendError(int sc) {
+        this.statusCode = sc;
+        this.statusMessage = "Server Error";
     }
 
+    // TODO
     @Override
     public void sendRedirect(String s) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
     }
 
     @Override
     public void setDateHeader(String s, long l) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
     }
 
     @Override
     public void addDateHeader(String s, long l) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
     }
 
     @Override
@@ -80,29 +100,30 @@ public class FakeServletResponse implements HttpServletResponse {
         headers.put(name.toLowerCase(), value);
     }
 
+    // TODO
     @Override
     public void addHeader(String s, String s1) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
     }
 
     @Override
     public void setIntHeader(String s, int i) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
     }
 
     @Override
     public void addIntHeader(String s, int i) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
     }
 
     @Override
     public void setStatus(int i) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
     }
 
     @Override
     public void setStatus(int i, String s) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
     }
 
     @Override
@@ -115,94 +136,122 @@ public class FakeServletResponse implements HttpServletResponse {
         return this.headers.get(name.toLowerCase());
     }
 
+    // TODO
     @Override
     public Collection<String> getHeaders(String s) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
     }
 
     @Override
     public Collection<String> getHeaderNames() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
     }
 
+    // TODO
     @Override
     public String getCharacterEncoding() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
     }
 
+    // TODO
     @Override
     public String getContentType() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
     }
+
+    private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    private ServletOutputStream servletOutputStream = new ServletOutputStream() {
+        @Override
+        public boolean isReady() {
+            return true;
+        }
+
+        @Override
+        public void setWriteListener(WriteListener writeListener) {
+
+        }
+
+        @Override
+        public void write(int b) {
+            outputStream.write(b);
+        }
+    };
 
     @Override
     public ServletOutputStream getOutputStream() {
-        throw new AssertionError("called unexpected method");
+        return servletOutputStream;
     }
+
+    private PrintWriter writer = new PrintWriter(servletOutputStream);
 
     @Override
     public PrintWriter getWriter() {
-        throw new AssertionError("called unexpected method");
+        return writer;
     }
 
     @Override
     public void setCharacterEncoding(String s) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
+    }
+
+    private AssertionError unimplemented() {
+        return new AssertionError("called unexpected method");
     }
 
     @Override
     public void setContentLength(int i) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
     }
 
     @Override
     public void setContentLengthLong(long l) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
     }
 
     @Override
-    public void setContentType(String s) {
-        throw new AssertionError("called unexpected method");
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
     }
 
     @Override
     public void setBufferSize(int i) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
     }
 
     @Override
     public int getBufferSize() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
     }
 
+    // TODO
     @Override
     public void flushBuffer() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
     }
 
     @Override
     public void resetBuffer() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
     }
 
     @Override
     public boolean isCommitted() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
     }
 
     @Override
     public void reset() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
     }
 
     @Override
     public void setLocale(Locale locale) {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
     }
 
     @Override
     public Locale getLocale() {
-        throw new AssertionError("called unexpected method");
+        throw unimplemented();
     }
 
     public void assertNoError() {
@@ -212,4 +261,9 @@ public class FakeServletResponse implements HttpServletResponse {
     public String getStatusMessage() {
         return statusMessage;
     }
+
+    public String getBody() {
+        return new String(outputStream.toByteArray());
+    }
+
 }

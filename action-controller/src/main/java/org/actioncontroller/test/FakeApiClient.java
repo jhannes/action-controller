@@ -11,6 +11,8 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Optional;
+import java.util.function.Consumer;
 
 public class FakeApiClient implements ApiClient {
     private final URL contextRoot;
@@ -69,13 +71,21 @@ public class FakeApiClient implements ApiClient {
         }
 
         @Override
-        public void setRequestParameter(String name, String value) {
-            request.setParameter(name, value);
+        public void setRequestParameter(String name, Object value) {
+            possiblyOptionalToString(value, s -> request.setParameter(name, s));
         }
 
         @Override
-        public void addRequestCookie(String name, String value) {
-            request.setCookie(name, value);
+        public void addRequestCookie(String name, Object value) {
+            possiblyOptionalToString(value, s -> request.setCookie(name, s));
+        }
+
+        private void possiblyOptionalToString(Object value, Consumer<String> consumer) {
+            if (value instanceof Optional) {
+                ((Optional)value).ifPresent(v -> consumer.accept(String.valueOf(v)));
+            } else {
+                consumer.accept(String.valueOf(value));
+            }
         }
 
         @Override

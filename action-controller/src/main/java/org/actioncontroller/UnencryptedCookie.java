@@ -1,18 +1,17 @@
 package org.actioncontroller;
 
-import org.actioncontroller.meta.HttpClientParameterMapping;
-import org.actioncontroller.meta.HttpClientParameterMapperFactory;
 import org.actioncontroller.meta.HttpClientParameterMapper;
-import org.actioncontroller.meta.HttpParameterMapping;
+import org.actioncontroller.meta.HttpClientParameterMapperFactory;
+import org.actioncontroller.meta.HttpClientParameterMapping;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapperFactory;
+import org.actioncontroller.meta.HttpParameterMapping;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Parameter;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 @Retention(RetentionPolicy.RUNTIME)
@@ -40,13 +39,7 @@ public @interface UnencryptedCookie {
         @Override
         public HttpClientParameterMapper createClient(UnencryptedCookie annotation, Parameter parameter) {
             String name = annotation.value();
-            if (parameter.getType() == Optional.class) {
-                return (exchange, arg) ->
-                    ((Optional)arg).ifPresent(a -> exchange.addRequestCookie(name, a.toString()));
-            } else {
-                return (exchange, arg) ->
-                    exchange.addRequestCookie(name, arg.toString());
-            }
+            return (exchange, arg) -> exchange.addRequestCookie(name, arg);
         }
     }
 }

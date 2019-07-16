@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class HttpURLConnectionApiClient implements ApiClient {
@@ -61,15 +63,25 @@ public class HttpURLConnectionApiClient implements ApiClient {
         }
 
         @Override
-        public void setRequestParameter(String name, String value) {
-            requestParameters.put(name, value);
+        public void setRequestParameter(String name, Object value) {
+            possiblyOptionalToString(value, s -> requestParameters.put(name, s));
         }
 
         @Override
-        public void addRequestCookie(String name, String value) {
-            HttpCookie cookie = new HttpCookie(name, value);
-            cookie.setPath(baseUrl.getPath());
-            requestCookies.add(cookie);
+        public void addRequestCookie(String name, Object value) {
+            possiblyOptionalToString(value, s -> {
+                HttpCookie cookie = new HttpCookie(name, s);
+                cookie.setPath(baseUrl.getPath());
+                requestCookies.add(cookie);
+            });
+        }
+
+        private void possiblyOptionalToString(Object value, Consumer<String> consumer) {
+            if (value instanceof Optional) {
+                ((Optional)value).ifPresent(v -> consumer.accept(String.valueOf(v)));
+            } else {
+                consumer.accept(String.valueOf(value));
+            }
         }
 
         @Override

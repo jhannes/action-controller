@@ -1,19 +1,18 @@
 package org.actioncontroller;
 
 import org.actioncontroller.meta.ApiHttpExchange;
-import org.actioncontroller.meta.HttpClientParameterMapping;
-import org.actioncontroller.meta.HttpClientParameterMapperFactory;
 import org.actioncontroller.meta.HttpClientParameterMapper;
-import org.actioncontroller.meta.HttpParameterMapping;
+import org.actioncontroller.meta.HttpClientParameterMapperFactory;
+import org.actioncontroller.meta.HttpClientParameterMapping;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapperFactory;
+import org.actioncontroller.meta.HttpParameterMapping;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Parameter;
-import java.util.Optional;
 
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -53,12 +52,7 @@ public @interface RequestParam {
         @Override
         public HttpClientParameterMapper createClient(RequestParam annotation, Parameter parameter) {
             String name = annotation.value();
-            if (parameter.getType() == Optional.class) {
-                return (exchange, arg) ->
-                        ((Optional)arg).ifPresent(a -> exchange.setRequestParameter(name, a.toString()));
-            } else {
-                return (exchange, arg) -> exchange.setRequestParameter(name, arg.toString());
-            }
+            return (exchange, arg) -> exchange.setRequestParameter(name, arg);
         }
     }
 }

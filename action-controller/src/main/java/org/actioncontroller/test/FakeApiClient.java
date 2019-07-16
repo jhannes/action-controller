@@ -2,6 +2,7 @@ package org.actioncontroller.test;
 
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientExchange;
+import org.actioncontroller.client.HttpClientException;
 import org.fakeservlet.FakeHttpSession;
 import org.fakeservlet.FakeServletRequest;
 import org.fakeservlet.FakeServletResponse;
@@ -109,8 +110,10 @@ public class FakeApiClient implements ApiClient {
         }
 
         @Override
-        public String getResponseMessage() {
-            return response.getStatusMessage();
+        public void checkForError() throws HttpClientException {
+            if (getResponseCode() >= 400) {
+                throw new HttpClientException(getResponseCode(), response.getStatusMessage(), getResponseBody(), getRequestURL());
+            }
         }
 
         @Override

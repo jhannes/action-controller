@@ -1,32 +1,38 @@
-package org.actioncontroller;
+package org.actioncontroller.httpserver;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpsExchange;
+import org.actioncontroller.HttpActionException;
 import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.WriterConsumer;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Parameter;
+import java.net.HttpCookie;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class JdkHttpExchange implements ApiHttpExchange {
+class JdkHttpExchange implements ApiHttpExchange {
     private final HttpExchange exchange;
     private Map<String, String> pathParams = new HashMap<>();
     private final String context;
     private final String apiPath;
-    private final Map<String, String[]> parameters;
+    private Map<String, List<String>> parameters;
+    private boolean responseSent = false;
 
-    public JdkHttpExchange(HttpExchange exchange, String context, String apiPath) {
+    public JdkHttpExchange(HttpExchange exchange, String context, String apiPath) throws IOException {
         this.exchange = exchange;
         this.context = context;
         this.apiPath = apiPath;
@@ -35,6 +41,20 @@ public class JdkHttpExchange implements ApiHttpExchange {
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("Should never happen", e);
         }
+        if (!exchange.getRequestMethod().equals("GET")) {
+            if ("application/x-www-form-urlencoded".equals(exchange.getRequestHeaders().getFirst("content-type"))) {
+                this.parameters = parseParameters(asString(exchange.getRequestBody()));
+            }
+        }
+    }
+
+    private String asString(InputStream inputStream) throws IOException {
+        StringBuilder stringBuilder = new StringBuilder();
+        int c;
+        while ((c = inputStream.read()) != -1) {
+            stringBuilder.append((char)c);
+        }
+        return stringBuilder.toString();
     }
 
     @Override
@@ -60,10 +80,15 @@ public class JdkHttpExchange implements ApiHttpExchange {
     @Override
     public void write(String contentType, WriterConsumer consumer) throws IOException {
         exchange.getResponseHeaders().set("Content-type", contentType);
-        exchange.sendResponseHeaders(200, 0);
+        sendResponseHeaders(200, 0);
         PrintWriter writer = new PrintWriter(new OutputStreamWriter(exchange.getResponseBody()));
         consumer.accept(writer);
         writer.flush();
+    }
+
+    @Override
+    public String getHeader(String name) {
+        return exchange.getRequestHeaders().getFirst(name);
     }
 
     @Override
@@ -74,7 +99,7 @@ public class JdkHttpExchange implements ApiHttpExchange {
     @Override
     public void sendRedirect(String path) throws IOException {
         exchange.getResponseHeaders().set("Location", path);
-        exchange.sendResponseHeaders(302, 0);
+        sendResponseHeaders(302, 0);
     }
 
     @Override
@@ -128,25 +153,18 @@ public class JdkHttpExchange implements ApiHttpExchange {
     }
 
     public String getFirstParameter(String name) {
-        String[] parameters = this.parameters.get(name);
-        return parameters != null && parameters.length > 0 ? parameters[0] : null;
+        List<String> parameters = this.parameters.get(name);
+        return parameters != null && !parameters.isEmpty() ? parameters.get(0) : null;
     }
 
     @Override
     public void setCookie(String name, String value, boolean secure) {
+        HttpCookie httpCookie = new HttpCookie(name, value);
+        httpCookie.setSecure(secure);
         if (value == null) {
-            String cookie = name + "=; Max-Age=0";
-            if (secure) {
-                cookie += "; secure=true";
-            }
-            exchange.getResponseHeaders().set("Set-Cookie", cookie);
-        } else {
-            String cookie = name + "=" + value;
-            if (secure) {
-                cookie += "; secure=true";
-            }
-            exchange.getResponseHeaders().set("Set-Cookie", cookie);
+            httpCookie.setMaxAge(0);
         }
+        exchange.getResponseHeaders().add("Set-Cookie", httpCookie.toString());
     }
 
     @Override
@@ -154,49 +172,49 @@ public class JdkHttpExchange implements ApiHttpExchange {
         if (!exchange.getRequestHeaders().containsKey("Cookie")) {
             return Optional.empty();
         }
-        String[] cookies = exchange.getRequestHeaders().getFirst("Cookie").split(";\\s+");
-        for (String cookie : cookies) {
-            int equalPos = cookie.indexOf('=');
-            if (equalPos < 0) continue;
-            if (cookie.substring(0, equalPos).equals(name)) {
-                return Optional.of(cookie.substring(equalPos + 1));
-            }
-        }
-        return Optional.empty();
+        return HttpCookie.parse(exchange.getRequestHeaders().getFirst("Cookie"))
+                .stream()
+                .filter(c -> c.getName().equals(name))
+                .map(HttpCookie::getValue)
+                .findFirst();
     }
 
     @Override
     public void sendError(int statusCode, String message) throws IOException {
-        exchange.sendResponseHeaders(statusCode, message.getBytes().length);
+        sendResponseHeaders(statusCode, message.getBytes().length);
         exchange.getResponseBody().write(message.getBytes());
     }
 
     @Override
     public void sendError(int statusCode) throws IOException {
-        exchange.sendResponseHeaders(statusCode, 0);
+        sendResponseHeaders(statusCode, 0);
     }
 
-    protected Map<String, String[]> parseParameters(String query) throws UnsupportedEncodingException {
+    protected Map<String, List<String>> parseParameters(String query) throws UnsupportedEncodingException {
         if (query == null) {
             return new HashMap<>();
         }
-        Map<String, String[]> result = new HashMap<>();
+        Map<String, List<String>> result = new HashMap<>();
         for (String parameterString : query.split("&")) {
             int equalsPos = parameterString.indexOf('=');
             if (equalsPos > 0) {
                 String paramName = parameterString.substring(0, equalsPos);
                 String paramValue = URLDecoder.decode(parameterString.substring(equalsPos+1), "ISO-8859-1");
-                String[] existingValue = result.get(paramName);
-                if (existingValue != null) {
-                    String[] newValue = new String[existingValue.length+1];
-                    System.arraycopy(existingValue, 0, newValue, 0, existingValue.length);
-                    newValue[newValue.length-1] = paramValue;
-                    result.put(paramName, newValue);
-                } else {
-                    result.put(paramName, new String[] { paramValue });
-                }
+                result.computeIfAbsent(paramName, n -> new ArrayList<>()).add(paramValue);
             }
         }
         return result;
+    }
+
+    public void close() throws IOException {
+        if (!responseSent) {
+            sendResponseHeaders(200, 0);
+        }
+        exchange.close();
+    }
+
+    private void sendResponseHeaders(int rCode, int responseLength) throws IOException {
+        exchange.sendResponseHeaders(rCode, responseLength);
+        responseSent = true;
     }
 }

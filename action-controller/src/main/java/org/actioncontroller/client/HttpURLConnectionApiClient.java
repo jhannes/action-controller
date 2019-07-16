@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 public class HttpURLConnectionApiClient implements ApiClient {
     private URL baseUrl;
     private List<HttpCookie> clientCookies = new ArrayList<>();
+    private String responseBody;
 
     public HttpURLConnectionApiClient(String baseUrl) throws MalformedURLException {
         this.baseUrl = new URL(baseUrl);
@@ -36,6 +37,7 @@ public class HttpURLConnectionApiClient implements ApiClient {
         private HttpURLConnection connection;
         private List<HttpCookie> requestCookies = new ArrayList<>(clientCookies);
         private List<HttpCookie> responseCookies;
+        private String errorBody;
 
         @Override
         public void setTarget(String method, String pathInfo) {
@@ -139,13 +141,15 @@ public class HttpURLConnectionApiClient implements ApiClient {
         }
 
         @Override
-        public String getResponseMessage() throws IOException {
-            return connection.getResponseMessage();
+        public String getResponseHeader(String name) {
+            return connection.getHeaderField(name);
         }
 
         @Override
-        public String getResponseHeader(String name) {
-            return connection.getHeaderField(name);
+        public void checkForError() throws HttpClientException, IOException {
+            if (getResponseCode() >= 400) {
+                throw new HttpClientException(getResponseCode(), connection.getResponseMessage(), getErrorBody(), getRequestURL());
+            }
         }
 
         @Override
@@ -159,7 +163,17 @@ public class HttpURLConnectionApiClient implements ApiClient {
 
         @Override
         public String getResponseBody() throws IOException {
-            return asString(connection.getInputStream());
+            if (responseBody == null) {
+                responseBody = asString(connection.getInputStream());
+            }
+            return responseBody;
+        }
+
+        private String getErrorBody() throws IOException {
+            if (errorBody == null && connection.getErrorStream() != null) {
+                errorBody = asString(connection.getErrorStream());
+            }
+            return errorBody;
         }
     }
 

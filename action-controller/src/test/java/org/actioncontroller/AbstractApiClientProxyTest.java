@@ -116,7 +116,7 @@ public abstract class AbstractApiClientProxyTest {
     @Test
     public void shouldReportActionExceptions() {
         assertThatThrownBy(() -> client.explicitError())
-                .isEqualTo(new HttpClientException(403, "You're not allowed to do this", null));
+                .isEqualTo(new HttpClientException(403, "You're not allowed to do this"));
     }
 
     @Test
@@ -128,7 +128,7 @@ public abstract class AbstractApiClientProxyTest {
                 new ArithmeticException("/ by zero")
         );
         assertThatThrownBy(() -> client.divide(10, 0))
-                .isEqualTo(new HttpClientException(500, "Server Error", null));
+                .isEqualTo(new HttpClientException(500, "Internal Server Error"));
     }
 
     @Test

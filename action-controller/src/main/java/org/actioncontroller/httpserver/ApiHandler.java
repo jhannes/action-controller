@@ -1,14 +1,22 @@
-package org.actioncontroller;
+package org.actioncontroller.httpserver;
 
 import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import org.actioncontroller.ApiControllerAction;
+import org.actioncontroller.HttpActionException;
+import org.actioncontroller.UserContext;
 import org.actioncontroller.meta.ApiHttpExchange;
-import org.actioncontrollerdemo.jdkhttp.HttpExchangeHandler;
+import org.actioncontroller.servlet.ApiServlet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public class ApiHandler implements HttpExchangeHandler, UserContext {
+public class ApiHandler implements UserContext, HttpHandler {
+    private static Logger logger = LoggerFactory.getLogger(ApiServlet.class);
+
     private Map<String, List<ApiControllerAction>> routes;
     private String context;
     private String apiPath;
@@ -20,21 +28,22 @@ public class ApiHandler implements HttpExchangeHandler, UserContext {
     }
 
     @Override
-    public boolean handle(HttpExchange exchange) throws IOException {
+    public void handle(HttpExchange exchange) throws IOException {
         String path = exchange.getRequestURI().getPath();
-        if (!path.startsWith(context+apiPath)) {
-            return false;
-        }
         JdkHttpExchange httpExchange = new JdkHttpExchange(exchange, context, apiPath);
-        String pathInfo = path.substring((context+apiPath).length());
-        for (ApiControllerAction action : routes.get(exchange.getRequestMethod())) {
+        String controllerPath = context + apiPath;
+        String pathInfo = path.substring(controllerPath.length());
+        String method = exchange.getRequestMethod();
+        for (ApiControllerAction action : routes.get(method)) {
             if (action.matches(pathInfo)) {
                 httpExchange.setPathParameters(action.collectPathParameters(pathInfo));
                 invoke(httpExchange, action);
-                return true;
+                httpExchange.close();
+                return;
             }
         }
-        return false;
+        logger.warn("No route for {} {}[{}]", method, controllerPath, pathInfo);
+        httpExchange.sendError(404, "No route for " + method + ": " + controllerPath + pathInfo);
     }
 
     private void invoke(ApiHttpExchange exchange, ApiControllerAction apiRoute) throws IOException {

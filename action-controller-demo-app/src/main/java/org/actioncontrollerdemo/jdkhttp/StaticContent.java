@@ -1,6 +1,7 @@
 package org.actioncontrollerdemo.jdkhttp;
 
 import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -12,7 +13,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Properties;
 
-public class StaticContent implements HttpExchangeHandler {
+public class StaticContent implements HttpHandler {
     private final URL baseResource;
     private final String prefix;
 
@@ -42,28 +43,25 @@ public class StaticContent implements HttpExchangeHandler {
     static URL webJarResource(String webJarName) {
         String prefix = "/META-INF/resources/webjars/" + webJarName;
         Properties properties = new Properties();
-        try (InputStream pomProperties = MainWebHttpHandler.class.getResourceAsStream("/META-INF/maven/org.webjars/" + webJarName + "/pom.properties")) {
+        try (InputStream pomProperties = StaticContent.class.getResourceAsStream("/META-INF/maven/org.webjars/" + webJarName + "/pom.properties")) {
             properties.load(pomProperties);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return MainWebHttpHandler.class.getResource(prefix + "/" + properties.get("version"));
+        return StaticContent.class.getResource(prefix + "/" + properties.get("version"));
     }
 
     public static StaticContent createWebJar(String webJarName, String prefix) throws MalformedURLException {
         return new StaticContent(webJarResource(webJarName), prefix);
     }
 
-    public boolean handle(HttpExchange exchange) throws IOException {
+    public void handle(HttpExchange exchange) throws IOException {
         URI uri = exchange.getRequestURI();
-        if (!uri.getPath().startsWith(prefix + "/")) {
-            return false;
-        }
         URL url = new URL(baseResource + uri.getPath().substring(prefix.length()));
-        return sendContent(exchange, url);
+        sendContent(exchange, url);
     }
 
-    private boolean sendContent(HttpExchange exchange, URL url) throws IOException {
+    private void sendContent(HttpExchange exchange, URL url) throws IOException {
         try (InputStream inputStream = url.openStream()) {
             String contentType =  URLConnection.getFileNameMap().getContentTypeFor(url.getPath());
             if (contentType != null) {
@@ -86,15 +84,13 @@ public class StaticContent implements HttpExchangeHandler {
             while ((c = inputStream.read()) != -1) {
                 exchange.getResponseBody().write((char) c);
             }
-            exchange.close();
-            return true;
         } catch (FileNotFoundException e) {
-            return false;
+            exchange.sendResponseHeaders(404, 0);
         } catch (Exception e) {
             exchange.sendResponseHeaders(500, 0);
             exchange.getResponseBody().write(e.toString().getBytes());
+        } finally {
             exchange.close();
-            return true;
         }
     }
 }

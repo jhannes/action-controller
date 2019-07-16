@@ -81,13 +81,7 @@ public class ApiClientProxy {
                 }
             }
 
-            if (exchange.getResponseCode() >= 400) {
-                throw new HttpClientException(
-                        exchange.getResponseCode(),
-                        exchange.getResponseMessage(),
-                        exchange.getRequestURL()
-                );
-            }
+            exchange.checkForError();
 
             for (Annotation annotation : method.getAnnotations()) {
                 HttpClientReturnMapping returnMapping = annotation.annotationType().getAnnotation(HttpClientReturnMapping.class);

@@ -53,12 +53,11 @@ public interface ApiClientExchange {
 
     int getResponseCode() throws IOException;
 
-    String getResponseMessage() throws IOException;
-
     String getResponseHeader(String name);
 
     String getResponseCookie(String name);
 
     String getResponseBody() throws IOException;
 
+    void checkForError() throws HttpClientException, IOException;
 }

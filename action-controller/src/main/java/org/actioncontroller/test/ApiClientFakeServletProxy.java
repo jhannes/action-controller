@@ -6,6 +6,7 @@ import net.bytebuddy.implementation.InvocationHandlerAdapter;
 import net.bytebuddy.matcher.ElementMatchers;
 import org.actioncontroller.ContentBody;
 import org.actioncontroller.ContentLocationHeader;
+import org.actioncontroller.Delete;
 import org.actioncontroller.Get;
 import org.actioncontroller.HttpResponseHeader;
 import org.actioncontroller.PathParam;
@@ -14,36 +15,23 @@ import org.actioncontroller.Put;
 import org.actioncontroller.RequestParam;
 import org.actioncontroller.SendRedirect;
 import org.actioncontroller.UnencryptedCookie;
+import org.actioncontroller.client.ApiClient;
+import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.meta.ApiHttpExchange;
-import org.actioncontroller.servlet.ApiServlet;
-import org.fakeservlet.FakeHttpSession;
-import org.fakeservlet.FakeServletRequest;
-import org.fakeservlet.FakeServletResponse;
 
-import javax.servlet.ServletException;
-import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
-import java.net.URL;
 import java.util.Optional;
 import java.util.function.Consumer;
 
 public class ApiClientFakeServletProxy {
-    public static <T> T create(T controller, URL contextRoot, String servletPath) throws ServletException {
-        ApiServlet servlet = new ApiServlet() {
-            @Override
-            public void init() {
-                registerController(controller);
-            }
-        };
-        servlet.init(null);
+    public static <T> T create(T controller, ApiClient client) {
         DynamicType.Loaded<?> type = new ByteBuddy()
                 .subclass(controller.getClass())
                 .method(ElementMatchers.any())
-                .intercept(InvocationHandlerAdapter.of(createInvocationHandler(servlet, contextRoot, servletPath)))
+                .intercept(InvocationHandlerAdapter.of(createInvocationHandler(client)))
                 .make()
                 .load(controller.getClass().getClassLoader());
         try {
@@ -53,120 +41,101 @@ public class ApiClientFakeServletProxy {
         }
     }
 
-    private static InvocationHandler createInvocationHandler(ApiServlet servlet, URL contextRoot, String servletPath) {
-        FakeHttpSession[] session = new FakeHttpSession[1];
+    private static InvocationHandler createInvocationHandler(ApiClient client) {
         return (proxy, method, args) -> {
-            String httpMethod = null;
-            String pathInfo = null;
-            Get getAnnotation = method.getAnnotation(Get.class);
-            if (getAnnotation != null) {
-                httpMethod = "GET";
-                pathInfo = getAnnotation.value();
-            }
-            Post postAnnotation = method.getAnnotation(Post.class);
-            if (postAnnotation != null) {
-                httpMethod = "POST";
-                pathInfo = postAnnotation.value();
-            }
-            Put putAnnotation = method.getAnnotation(Put.class);
-            if (putAnnotation != null) {
-                httpMethod = "PUT";
-                pathInfo = putAnnotation.value();
-            }
-            if (httpMethod != null) {
-                FakeServletRequest request = new FakeServletRequest(httpMethod, contextRoot, servletPath, pathInfo);
-                pathInfo = setupRequest(request, method, args, pathInfo);
-                request.setPathInfo(pathInfo);
-                request.setSession(session[0]);
-                FakeServletResponse response = new FakeServletResponse();
-                servlet.service(request, response);
-                session[0] = request.getSession(false);
-                return createReturnValue(method, args, request, response);
-            }
 
-            throw new RuntimeException("Unsupported mapping to " + method);
-        };
-    }
+            ApiClientExchange exchange = client.createExchange();
+            Optional.ofNullable(method.getAnnotation(Get.class))
+                    .ifPresent(a -> exchange.setTarget("GET", a.value()));
+            Optional.ofNullable(method.getAnnotation(Post.class))
+                    .ifPresent(a -> exchange.setTarget("POST", a.value()));
+            Optional.ofNullable(method.getAnnotation(Put.class))
+                    .ifPresent(a -> exchange.setTarget("PUT", a.value()));
+            Optional.ofNullable(method.getAnnotation(Delete.class))
+                    .ifPresent(a -> exchange.setTarget("DELETE", a.value()));
 
-    private static String setupRequest(FakeServletRequest request, Method method, Object[] args, String path) {
-        Parameter[] parameters = method.getParameters();
-        for (int i = 0; i < parameters.length; i++) {
-            Parameter parameter = parameters[i];
-            RequestParam requestParam = parameter.getAnnotation(RequestParam.class);
-            if (requestParam != null) {
-                if (args[i] instanceof Optional) {
-                    ((Optional)args[i]).ifPresent(p -> {
-                        request.setParameter(requestParam.value(), p.toString());
-                    });
-                } else {
-                    request.setParameter(requestParam.value(), args[i].toString());
+            String pathInfo = exchange.getPathInfo();
+
+            Parameter[] parameters = method.getParameters();
+            for (int i = 0; i < parameters.length; i++) {
+                Parameter parameter = parameters[i];
+                RequestParam requestParam = parameter.getAnnotation(RequestParam.class);
+                if (requestParam != null) {
+                    if (args[i] instanceof Optional) {
+                        ((Optional)args[i]).ifPresent(p -> {
+                            exchange.setRequestParameter(requestParam.value(), p.toString());
+                        });
+                    } else {
+                        exchange.setRequestParameter(requestParam.value(), args[i].toString());
+                    }
+                }
+                PathParam pathParam = parameter.getAnnotation(PathParam.class);
+                if (pathParam != null) {
+                    pathInfo = pathInfo.replace("/:" + pathParam.value(), "/" + args[i].toString());
+                }
+                UnencryptedCookie cookieParam = parameter.getAnnotation(UnencryptedCookie.class);
+                if (cookieParam != null) {
+                    if (args[i] instanceof Optional) {
+                        ((Optional)args[i]).ifPresent(p ->
+                                exchange.addRequestCookie(cookieParam.value(), p.toString())
+                        );
+                    } else {
+                        exchange.addRequestCookie(cookieParam.value(), args[i].toString());
+                    }
                 }
             }
-            PathParam pathParam = parameter.getAnnotation(PathParam.class);
-            if (pathParam != null) {
-                path = path.replace("/:" + pathParam.value(), "/" + args[i].toString());
+            exchange.setPathInfo(pathInfo);
+            if (exchange.getRequestMethod() == null) {
+                throw new RuntimeException("Unsupported mapping to " + method);
             }
-            UnencryptedCookie cookieParam = parameter.getAnnotation(UnencryptedCookie.class);
-            if (cookieParam != null) {
-                if (args[i] instanceof Optional) {
-                    ((Optional)args[i]).ifPresent(p ->
-                        request.setCookie(cookieParam.value(), p.toString())
+
+            exchange.executeRequest();
+
+            for (int i = 0; i < parameters.length; i++) {
+                Parameter parameter = parameters[i];
+                UnencryptedCookie cookieParam = parameter.getAnnotation(UnencryptedCookie.class);
+                if (cookieParam != null && Consumer.class.isAssignableFrom(parameter.getType())) {
+                    String cookieValue = exchange.getResponseCookie(cookieParam.value());
+                    Object value = ApiHttpExchange.convertParameterType(
+                            cookieValue,
+                            ((ParameterizedType)parameter.getParameterizedType()).getActualTypeArguments()[0]
                     );
-                } else {
-                    request.setCookie(cookieParam.value(), args[i].toString());
+                    ((Consumer) args[i]).accept(value);
                 }
             }
-        }
-        return path;
-    }
 
-    private static Object createReturnValue(Method method, Object[] args, FakeServletRequest request, FakeServletResponse response) throws IOException, HttpClientException {
-        Parameter[] parameters = method.getParameters();
-        for (int i = 0; i < parameters.length; i++) {
-            Parameter parameter = parameters[i];
-            UnencryptedCookie cookieParam = parameter.getAnnotation(UnencryptedCookie.class);
-            if (cookieParam != null && Consumer.class.isAssignableFrom(parameter.getType())) {
-                String cookieValue = response.getCookie(cookieParam.value());
-                Object value = ApiHttpExchange.convertParameterType(
-                        cookieValue,
-                        ((ParameterizedType)parameter.getParameterizedType()).getActualTypeArguments()[0]
+            if (exchange.getResponseCode() >= 400) {
+                throw new HttpClientException(
+                        exchange.getResponseCode(),
+                        exchange.getResponseMessage(),
+                        exchange.getRequestURL()
                 );
-                ((Consumer) args[i]).accept(value);
             }
-        }
 
-
-        if (response.getStatus() >= 400) {
-            throw new HttpClientException(
-                    response.getStatus(),
-                    response.getStatusMessage(),
-                    new URL(request.getRequestURL().toString())
-            );
-        }
-
-        ContentBody contentBodyAnnotation = method.getAnnotation(ContentBody.class);
-        if (contentBodyAnnotation != null) {
-            return ApiHttpExchange.convertParameterType(response.getBody(), method.getReturnType());
-        }
-        HttpResponseHeader headerAnnotation = method.getAnnotation(HttpResponseHeader.class);
-        if (headerAnnotation != null) {
-            return ApiHttpExchange.convertParameterType(response.getHeader(headerAnnotation.value()), method.getReturnType());
-        }
-        ContentLocationHeader contentLocationHeader = method.getAnnotation(ContentLocationHeader.class);
-        if (contentLocationHeader != null) {
-            return response.getHeader(ContentLocationHeader.FIELD_NAME);
-        }
-        SendRedirect sendRedirectHeader = method.getAnnotation(SendRedirect.class);
-        if (sendRedirectHeader != null) {
-            if (response.getStatus() < 300) {
-                throw new IllegalArgumentException("Expected redirect, but was " + response.getStatus());
+            ContentBody contentBodyAnnotation = method.getAnnotation(ContentBody.class);
+            if (contentBodyAnnotation != null) {
+                return ApiHttpExchange.convertParameterType(exchange.getResponseBody(), method.getReturnType());
             }
-            return response.getHeader("Location");
-        }
-        if (method.getReturnType() == Void.TYPE) {
-            return null;
-        }
-        throw new RuntimeException("Unsupported return type for to " + method);
+            HttpResponseHeader headerAnnotation = method.getAnnotation(HttpResponseHeader.class);
+            if (headerAnnotation != null) {
+                return ApiHttpExchange.convertParameterType(exchange.getResponseHeader(headerAnnotation.value()), method.getReturnType());
+            }
+            ContentLocationHeader contentLocationHeader = method.getAnnotation(ContentLocationHeader.class);
+            if (contentLocationHeader != null) {
+                return exchange.getResponseHeader(ContentLocationHeader.FIELD_NAME);
+            }
+            SendRedirect sendRedirectHeader = method.getAnnotation(SendRedirect.class);
+            if (sendRedirectHeader != null) {
+                if (exchange.getResponseCode() < 300) {
+                    throw new IllegalArgumentException("Expected redirect, but was " + exchange.getResponseCode());
+                }
+                return exchange.getResponseHeader("Location");
+            }
+            if (method.getReturnType() == Void.TYPE) {
+                return null;
+            }
+            throw new RuntimeException("Unsupported return type for to " + method);
+        };
     }
 
 }

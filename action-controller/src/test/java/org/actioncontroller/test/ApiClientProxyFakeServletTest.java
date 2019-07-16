@@ -1,6 +1,7 @@
 package org.actioncontroller.test;
 
 import org.actioncontroller.AbstractApiClientProxyTest;
+import org.actioncontroller.servlet.ApiServlet;
 import org.junit.Before;
 
 import java.net.URL;
@@ -9,6 +10,15 @@ public class ApiClientProxyFakeServletTest extends AbstractApiClientProxyTest {
 
     @Before
     public void createServerAndClient() throws Exception {
-        client = ApiClientFakeServletProxy.create(new TestController(), new URL("http://example.com/test"), "/api");
+        final TestController controller = new TestController();
+        final URL contextRoot = new URL("http://example.com/test");
+        final ApiServlet servlet = new ApiServlet() {
+            @Override
+            public void init() {
+                registerController(controller);
+            }
+        };
+        servlet.init(null);
+        client = ApiClientFakeServletProxy.create(controller, new FakeApiClient(contextRoot, "/api", servlet));
     }
 }

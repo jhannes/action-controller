@@ -476,4 +476,8 @@ public class FakeServletRequest implements HttpServletRequest {
     public void setSession(FakeHttpSession httpSession) {
         this.httpSession = httpSession;
     }
+
+    public void setMethod(String method) {
+        this.method = method;
+    }
 }

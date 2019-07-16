@@ -1,6 +1,7 @@
 package org.actioncontroller.test;
 
 import org.actioncontroller.AbstractApiClientSessionTest;
+import org.actioncontroller.client.ApiClientProxy;
 import org.actioncontroller.servlet.ApiServlet;
 import org.junit.Before;
 

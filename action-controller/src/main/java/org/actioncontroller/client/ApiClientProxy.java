@@ -1,4 +1,4 @@
-package org.actioncontroller.test;
+package org.actioncontroller.client;
 
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.dynamic.DynamicType;
@@ -15,8 +15,6 @@ import org.actioncontroller.Put;
 import org.actioncontroller.RequestParam;
 import org.actioncontroller.SendRedirect;
 import org.actioncontroller.UnencryptedCookie;
-import org.actioncontroller.client.ApiClient;
-import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.meta.ApiHttpExchange;
 
 import java.lang.reflect.InvocationHandler;

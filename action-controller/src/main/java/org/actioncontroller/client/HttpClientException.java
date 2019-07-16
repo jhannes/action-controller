@@ -1,4 +1,4 @@
-package org.actioncontroller.test;
+package org.actioncontroller.client;
 
 import org.actioncontroller.HttpActionException;
 

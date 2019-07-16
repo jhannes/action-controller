@@ -2,7 +2,7 @@ package org.actioncontroller;
 
 import org.actioncontroller.client.HttpURLConnectionApiClient;
 import org.actioncontroller.servlet.ApiServlet;
-import org.actioncontroller.test.ApiClientProxy;
+import org.actioncontroller.client.ApiClientProxy;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;

@@ -1,6 +1,6 @@
 package org.actioncontroller;
 
-import org.actioncontroller.test.HttpClientException;
+import org.actioncontroller.client.HttpClientException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.extend.junit.ExpectedLogEventsRule;

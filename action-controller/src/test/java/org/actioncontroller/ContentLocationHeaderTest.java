@@ -20,7 +20,7 @@ public class ContentLocationHeaderTest {
         @ContentLocationHeader
         public String creatingMethod(
                 @RequestParam("id") Optional<String> id
-                ) {
+        ) {
             return "/two/" + id.orElse("1234");
         }
 

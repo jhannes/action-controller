@@ -80,6 +80,11 @@ public class FakeApiClient implements ApiClient {
             possiblyOptionalToString(value, s -> request.setCookie(name, s));
         }
 
+        @Override
+        public void setHeader(String name, Object value) {
+            possiblyOptionalToString(value, s -> request.setHeader(name, s));
+        }
+
         private void possiblyOptionalToString(Object value, Consumer<String> consumer) {
             if (value instanceof Optional) {
                 ((Optional)value).ifPresent(v -> consumer.accept(String.valueOf(v)));

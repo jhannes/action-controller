@@ -31,6 +31,7 @@ public class HttpURLConnectionApiClient implements ApiClient {
     private class ClientExchange implements ApiClientExchange {
         private String method;
         private String pathInfo;
+        private Map<String, String> requestHeaders = new HashMap<>();
         private Map<String, String> requestParameters = new HashMap<>();
         private HttpURLConnection connection;
         private List<HttpCookie> requestCookies = new ArrayList<>(clientCookies);
@@ -76,6 +77,11 @@ public class HttpURLConnectionApiClient implements ApiClient {
             });
         }
 
+        @Override
+        public void setHeader(String name, Object value) {
+            possiblyOptionalToString(value, s -> requestHeaders.put(name, s));
+        }
+
         private void possiblyOptionalToString(Object value, Consumer<String> consumer) {
             if (value instanceof Optional) {
                 ((Optional)value).ifPresent(v -> consumer.accept(String.valueOf(v)));
@@ -94,7 +100,7 @@ public class HttpURLConnectionApiClient implements ApiClient {
             connection.setRequestMethod(method);
             connection.setRequestProperty("Cookie",
                     requestCookies.stream().map(HttpCookie::toString).collect(Collectors.joining(",")));
-            //requestParameters.forEach(connection::setRequestProperty);
+            requestHeaders.forEach(connection::setRequestProperty);
 
             if (query != null && !isGetRequest()) {
                 connection.setDoOutput(true);

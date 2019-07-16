@@ -20,6 +20,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -479,5 +480,9 @@ public class FakeServletRequest implements HttpServletRequest {
 
     public void setMethod(String method) {
         this.method = method;
+    }
+
+    public void setHeader(String name, String value) {
+        headers.put(name, Arrays.asList(value));
     }
 }

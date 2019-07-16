@@ -68,6 +68,11 @@ public abstract class AbstractApiClientProxyTest {
             throw new HttpActionException(403, "You're not allowed to do this");
         }
 
+        @Get("/lowercase")
+        @HttpHeader("X-Result")
+        public String downcase(@HttpHeader("X-Input") String value) {
+            return value.toLowerCase();
+        }
     }
 
     public static class UnmappedController {
@@ -144,11 +149,14 @@ public abstract class AbstractApiClientProxyTest {
         assertThat(client.whoAmI(Optional.of("someUser:let-me-in"))).isEqualTo("someUser");
     }
 
+    @Test
+    public void shouldReadAndWriteHeaders() {
+        assertThat(client.downcase("VALUE")).isEqualTo("value");
+    }
+
     // TODO: User in role
 
     // TODO: Remove cookie
-
-    // TODO: HttpHeaders
 
     // TODO: JsonBody (without JsonBuddy dependency)
 }

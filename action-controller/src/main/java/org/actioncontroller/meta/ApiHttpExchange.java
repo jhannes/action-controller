@@ -22,8 +22,9 @@ import java.util.UUID;
  */
 public interface ApiHttpExchange {
 
-
     void write(String contentType, WriterConsumer consumer) throws IOException;
+
+    String getHeader(String name);
 
     void setResponseHeader(String key, String value);
 

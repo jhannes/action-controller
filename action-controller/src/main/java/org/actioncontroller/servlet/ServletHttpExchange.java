@@ -138,6 +138,11 @@ public class ServletHttpExchange implements ApiHttpExchange {
     }
 
     @Override
+    public String getHeader(String name) {
+        return req.getHeader(name);
+    }
+
+    @Override
     public void sendError(int statusCode, String message) throws IOException {
         resp.sendError(statusCode, message);
     }

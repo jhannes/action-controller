@@ -47,6 +47,8 @@ public interface ApiClientExchange {
      */
     void addRequestCookie(String name, Object value);
 
+    void setHeader(String name, Object value);
+
     void executeRequest() throws IOException;
 
     int getResponseCode() throws IOException;

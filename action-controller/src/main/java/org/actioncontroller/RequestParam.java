@@ -5,8 +5,8 @@ import org.actioncontroller.meta.HttpClientParameterMapping;
 import org.actioncontroller.meta.HttpClientParameterMapperFactory;
 import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapping;
-import org.actioncontroller.meta.HttpRequestParameterMapping;
-import org.actioncontroller.meta.HttpRequestParameterMappingFactory;
+import org.actioncontroller.meta.HttpParameterMapper;
+import org.actioncontroller.meta.HttpParameterMapperFactory;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -20,32 +20,32 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
-@HttpParameterMapping(RequestParam.RequestParameterMappingFactory.class)
-@HttpClientParameterMapping(RequestParam.RequestParameterMappingFactory.class)
+@HttpParameterMapping(RequestParam.ParameterMapperFactory.class)
+@HttpClientParameterMapping(RequestParam.ParameterMapperFactory.class)
 public @interface RequestParam {
 
     String value();
 
     @Retention(RUNTIME)
     @Target(PARAMETER)
-    @HttpParameterMapping(RequestParam.ClientIpParameterMappingFactory.class)
+    @HttpParameterMapping(ClientIpParameterMapperFactory.class)
     @interface ClientIp {
     }
 
-    class ClientIpParameterMappingFactory implements HttpRequestParameterMappingFactory<ClientIp> {
+    class ClientIpParameterMapperFactory implements HttpParameterMapperFactory<ClientIp> {
 
         @Override
-        public HttpRequestParameterMapping create(ClientIp annotation, Parameter parameter) {
+        public HttpParameterMapper create(ClientIp annotation, Parameter parameter) {
             return ApiHttpExchange::getClientIp;
         }
     }
 
-    class RequestParameterMappingFactory implements
-            HttpRequestParameterMappingFactory<RequestParam>,
+    class ParameterMapperFactory implements
+            HttpParameterMapperFactory<RequestParam>,
             HttpClientParameterMapperFactory<RequestParam>
     {
         @Override
-        public HttpRequestParameterMapping create(RequestParam annotation, Parameter parameter) {
+        public HttpParameterMapper create(RequestParam annotation, Parameter parameter) {
             String name = annotation.value();
             return (exchange) -> exchange.getParameter(name, parameter);
         }

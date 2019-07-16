@@ -4,8 +4,8 @@ import org.actioncontroller.meta.HttpClientParameterMapping;
 import org.actioncontroller.meta.HttpClientParameterMapperFactory;
 import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapping;
-import org.actioncontroller.meta.HttpRequestParameterMapping;
-import org.actioncontroller.meta.HttpRequestParameterMappingFactory;
+import org.actioncontroller.meta.HttpParameterMapper;
+import org.actioncontroller.meta.HttpParameterMapperFactory;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -25,10 +25,10 @@ public @interface UnencryptedCookie {
 
     boolean secure() default true;
 
-    public class Factory implements HttpRequestParameterMappingFactory<UnencryptedCookie>, HttpClientParameterMapperFactory<UnencryptedCookie> {
+    public class Factory implements HttpParameterMapperFactory<UnencryptedCookie>, HttpClientParameterMapperFactory<UnencryptedCookie> {
 
         @Override
-        public HttpRequestParameterMapping create(UnencryptedCookie annotation, Parameter parameter) {
+        public HttpParameterMapper create(UnencryptedCookie annotation, Parameter parameter) {
             String name = annotation.value();
             if (parameter.getType() == Consumer.class) {
                 return exchange -> (Consumer<Object>) o -> exchange.setCookie(name, o.toString(), annotation.secure());

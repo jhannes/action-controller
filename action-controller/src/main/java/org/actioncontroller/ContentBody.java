@@ -6,7 +6,7 @@ import org.actioncontroller.meta.HttpClientReturnMapperFactory;
 import org.actioncontroller.meta.HttpClientReturnMapping;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
-import org.actioncontroller.meta.HttpReturnValueMapping;
+import org.actioncontroller.meta.HttpReturnMapper;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -24,7 +24,7 @@ public @interface ContentBody {
 
     class MappingFactory implements HttpReturnMapperFactory<ContentBody>, HttpClientReturnMapperFactory<ContentBody> {
         @Override
-        public HttpReturnValueMapping create(ContentBody annotation, Class<?> returnType) {
+        public HttpReturnMapper create(ContentBody annotation, Class<?> returnType) {
             return (result, exchange) ->
                     exchange.write(annotation.contentType(), writer -> writer.write(String.valueOf(result)));
         }

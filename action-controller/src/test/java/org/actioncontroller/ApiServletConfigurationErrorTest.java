@@ -1,11 +1,11 @@
 package org.actioncontroller;
 
 import org.actioncontroller.meta.HttpParameterMapping;
-import org.actioncontroller.meta.HttpRequestParameterMapping;
-import org.actioncontroller.meta.HttpRequestParameterMappingFactory;
+import org.actioncontroller.meta.HttpParameterMapper;
+import org.actioncontroller.meta.HttpParameterMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
-import org.actioncontroller.meta.HttpReturnValueMapping;
+import org.actioncontroller.meta.HttpReturnMapper;
 import org.actioncontroller.servlet.ApiServlet;
 import org.actioncontroller.servlet.ApiServletException;
 import org.junit.Rule;
@@ -55,29 +55,29 @@ public class ApiServletConfigurationErrorTest {
     }
 
 
-    public static class ParameterMappingWithoutProperConstructor implements
-            HttpRequestParameterMappingFactory<Annotation>,
+    public static class ParameterMapperWithoutProperConstructor implements
+            HttpParameterMapperFactory<Annotation>,
             HttpReturnMapperFactory<Annotation>
     {
 
-        public ParameterMappingWithoutProperConstructor(@SuppressWarnings("unused") String string) {
+        public ParameterMapperWithoutProperConstructor(@SuppressWarnings("unused") String string) {
         }
 
         @Override
-        public HttpRequestParameterMapping create(Annotation annotation, Parameter parameter) {
+        public HttpParameterMapper create(Annotation annotation, Parameter parameter) {
             return null;
         }
 
         @Override
-        public HttpReturnValueMapping create(Annotation annotation, Class<?> returnType) {
+        public HttpReturnMapper create(Annotation annotation, Class<?> returnType) {
             return null;
         }
     }
 
 
     @Retention(RUNTIME)
-    @HttpParameterMapping(ParameterMappingWithoutProperConstructor.class)
-    @HttpReturnMapping(ParameterMappingWithoutProperConstructor.class)
+    @HttpParameterMapping(ParameterMapperWithoutProperConstructor.class)
+    @HttpReturnMapping(ParameterMapperWithoutProperConstructor.class)
     public @interface CustomAnnotation {
 
     }

@@ -18,7 +18,7 @@ import java.util.UUID;
  * acts as an abstraction that enables Action Controller to work both with
  * both the servlet API and {@link com.sun.net.httpserver.HttpServer}.
  * {@link ApiHttpExchange} also provides convenience methods used by several
- * {@link HttpRequestParameterMapping} and {@link HttpReturnMapping} implementations.
+ * {@link HttpParameterMapper} and {@link HttpReturnMapping} implementations.
  */
 public interface ApiHttpExchange {
 

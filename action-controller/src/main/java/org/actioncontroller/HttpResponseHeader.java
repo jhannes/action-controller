@@ -6,7 +6,7 @@ import org.actioncontroller.meta.HttpClientReturnMapperFactory;
 import org.actioncontroller.meta.HttpClientReturnMapping;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
-import org.actioncontroller.meta.HttpReturnValueMapping;
+import org.actioncontroller.meta.HttpReturnMapper;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -23,7 +23,7 @@ public @interface HttpResponseHeader {
 
     class MappingFactory implements HttpReturnMapperFactory<HttpResponseHeader>, HttpClientReturnMapperFactory<HttpResponseHeader> {
         @Override
-        public HttpReturnValueMapping create(HttpResponseHeader annotation, Class<?> returnType) {
+        public HttpReturnMapper create(HttpResponseHeader annotation, Class<?> returnType) {
             String name = annotation.value();
             return (result, exchange) -> exchange.setResponseHeader(name, result.toString());
         }

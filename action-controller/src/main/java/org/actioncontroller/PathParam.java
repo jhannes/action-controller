@@ -4,8 +4,8 @@ import org.actioncontroller.meta.HttpClientParameterMapping;
 import org.actioncontroller.meta.HttpClientParameterMapperFactory;
 import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapping;
-import org.actioncontroller.meta.HttpRequestParameterMapping;
-import org.actioncontroller.meta.HttpRequestParameterMappingFactory;
+import org.actioncontroller.meta.HttpParameterMapper;
+import org.actioncontroller.meta.HttpParameterMapperFactory;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -15,15 +15,15 @@ import java.lang.reflect.Parameter;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
-@HttpParameterMapping(PathParam.MappingFactory.class)
-@HttpClientParameterMapping(PathParam.MappingFactory.class)
+@HttpParameterMapping(PathParam.MapperFactory.class)
+@HttpClientParameterMapping(PathParam.MapperFactory.class)
 public @interface PathParam {
 
     String value();
 
-    public class MappingFactory implements HttpRequestParameterMappingFactory<PathParam>, HttpClientParameterMapperFactory<PathParam> {
+    public class MapperFactory implements HttpParameterMapperFactory<PathParam>, HttpClientParameterMapperFactory<PathParam> {
         @Override
-        public HttpRequestParameterMapping create(PathParam annotation, Parameter parameter) {
+        public HttpParameterMapper create(PathParam annotation, Parameter parameter) {
             String name = annotation.value();
             return (exchange) -> exchange.pathParam(name, parameter);
         }

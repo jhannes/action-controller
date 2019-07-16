@@ -5,7 +5,7 @@ import org.actioncontroller.meta.HttpClientReturnMapperFactory;
 import org.actioncontroller.meta.HttpClientReturnMapping;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
-import org.actioncontroller.meta.HttpReturnValueMapping;
+import org.actioncontroller.meta.HttpReturnMapper;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -24,7 +24,7 @@ public @interface ContentLocationHeader {
 
     class MappingFactory implements HttpReturnMapperFactory<ContentLocationHeader>, HttpClientReturnMapperFactory<ContentLocationHeader> {
         @Override
-        public HttpReturnValueMapping create(ContentLocationHeader annotation, Class<?> returnType) {
+        public HttpReturnMapper create(ContentLocationHeader annotation, Class<?> returnType) {
             if (returnType == URL.class) {
                 return (result, exchange) -> exchange.setResponseHeader(FIELD_NAME, result.toString());
             }

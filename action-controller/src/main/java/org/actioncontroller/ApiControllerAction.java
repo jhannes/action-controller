@@ -3,11 +3,11 @@ package org.actioncontroller;
 import org.actioncontroller.json.JsonHttpActionException;
 import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.HttpParameterMapping;
-import org.actioncontroller.meta.HttpRequestParameterMapping;
-import org.actioncontroller.meta.HttpRequestParameterMappingFactory;
+import org.actioncontroller.meta.HttpParameterMapper;
+import org.actioncontroller.meta.HttpParameterMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
-import org.actioncontroller.meta.HttpReturnValueMapping;
+import org.actioncontroller.meta.HttpReturnMapper;
 import org.actioncontroller.servlet.ApiServletException;
 import org.jsonbuddy.JsonObject;
 import org.slf4j.Logger;
@@ -43,9 +43,9 @@ public class ApiControllerAction {
 
     private final String[] patternParts;
 
-    private List<HttpRequestParameterMapping> parameterMappers = new ArrayList<>();
+    private List<HttpParameterMapper> parameterMappers = new ArrayList<>();
 
-    private HttpReturnValueMapping responseMapper;
+    private HttpReturnMapper responseMapper;
 
     public ApiControllerAction(Object controller, Method action, String pattern) {
         this.controller = controller;
@@ -125,12 +125,12 @@ public class ApiControllerAction {
         }
     }
 
-    private static Map<Class<?>, HttpReturnValueMapping> typebasedResponseMapping = new HashMap<>();
+    private static Map<Class<?>, HttpReturnMapper> typebasedResponseMapping = new HashMap<>();
     static {
         typebasedResponseMapping.put(URL.class, (o, exchange) -> exchange.sendRedirect(o.toString()));
     }
 
-    private HttpReturnValueMapping createResponseMapper() {
+    private HttpReturnMapper createResponseMapper() {
         if (action.getReturnType() == Void.TYPE) {
             return (a, exchange) -> {};
         }
@@ -160,11 +160,11 @@ public class ApiControllerAction {
                 .orElseThrow(() -> new ApiActionResponseUnknownMappingException(action, action.getReturnType()));
     }
 
-    private HttpRequestParameterMapping createParameterMapper(Parameter parameter, int index) {
+    private HttpParameterMapper createParameterMapper(Parameter parameter, int index) {
         for (Annotation annotation : parameter.getAnnotations()) {
             HttpParameterMapping mappingAnnotation = annotation.annotationType().getAnnotation(HttpParameterMapping.class);
             if (mappingAnnotation != null) {
-                Class<? extends HttpRequestParameterMappingFactory> value = mappingAnnotation.value();
+                Class<? extends HttpParameterMapperFactory> value = mappingAnnotation.value();
                 try {
                     return value.getDeclaredConstructor().newInstance().create(annotation, parameter);
                 } catch (NoSuchMethodException e) {
@@ -179,14 +179,14 @@ public class ApiControllerAction {
             }
         }
 
-        HttpRequestParameterMapping typeBasedMapping = typebasedRequestMapping.get(parameter.getType());
+        HttpParameterMapper typeBasedMapping = typebasedRequestMapping.get(parameter.getType());
         if (typeBasedMapping != null) {
             return typeBasedMapping;
         }
         throw new ApiActionParameterUnknownMappingException(action, index, parameter);
     }
 
-    private static Map<Class<?>, HttpRequestParameterMapping> typebasedRequestMapping = new HashMap<>();
+    private static Map<Class<?>, HttpParameterMapper> typebasedRequestMapping = new HashMap<>();
     static {
         typebasedRequestMapping.put(ApiHttpExchange.class, (exchange) -> exchange);
     }

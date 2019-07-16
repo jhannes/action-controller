@@ -3,8 +3,8 @@ package org.actioncontroller;
 
 import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.HttpParameterMapping;
-import org.actioncontroller.meta.HttpRequestParameterMapping;
-import org.actioncontroller.meta.HttpRequestParameterMappingFactory;
+import org.actioncontroller.meta.HttpParameterMapper;
+import org.actioncontroller.meta.HttpParameterMapperFactory;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -20,7 +20,7 @@ import java.util.function.Consumer;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
-@HttpParameterMapping(SessionParameter.MappingFactory.class)
+@HttpParameterMapping(SessionParameter.MapperFactory.class)
 public @interface SessionParameter {
 
     String value() default "";
@@ -31,9 +31,9 @@ public @interface SessionParameter {
 
     boolean changeSessionId() default false;
 
-    class MappingFactory implements HttpRequestParameterMappingFactory<SessionParameter> {
+    class MapperFactory implements HttpParameterMapperFactory<SessionParameter> {
         @Override
-        public HttpRequestParameterMapping create(SessionParameter annotation, Parameter parameter) {
+        public HttpParameterMapper create(SessionParameter annotation, Parameter parameter) {
             String name = annotation.value();
             if (parameter.getType() == Consumer.class) {
                 if (name.isEmpty()) {
@@ -60,11 +60,11 @@ public @interface SessionParameter {
                 return new AutoCreateSession(name, annotation.invalidate(), constructor);
             }
 
-            return new SessionParameterMapping(parameter, name);
+            return new SessionParameterMapper(parameter, name);
         }
     }
 
-    class AutoCreateSession implements HttpRequestParameterMapping {
+    class AutoCreateSession implements HttpParameterMapper {
 
         private final String name;
         private final boolean invalidate;
@@ -97,7 +97,7 @@ public @interface SessionParameter {
         }
     }
 
-    class CreateSession implements HttpRequestParameterMapping {
+    class CreateSession implements HttpParameterMapper {
 
         private String name;
         private boolean invalidate;
@@ -114,12 +114,12 @@ public @interface SessionParameter {
     }
 
 
-    class SessionParameterMapping implements HttpRequestParameterMapping {
+    class SessionParameterMapper implements HttpParameterMapper {
 
         private Parameter parameter;
         private String name;
 
-        public SessionParameterMapping(Parameter parameter, String name) {
+        public SessionParameterMapper(Parameter parameter, String name) {
             this.parameter = parameter;
             this.name = name;
             assert !name.startsWith(Optional.class.getName());

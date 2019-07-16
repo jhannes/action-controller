@@ -2,8 +2,8 @@ package org.actioncontroller;
 
 import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.HttpParameterMapping;
-import org.actioncontroller.meta.HttpRequestParameterMapping;
-import org.actioncontroller.meta.HttpRequestParameterMappingFactory;
+import org.actioncontroller.meta.HttpParameterMapper;
+import org.actioncontroller.meta.HttpParameterMapperFactory;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -14,11 +14,11 @@ import java.net.URL;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
-@HttpParameterMapping(ServletUrl.MappingFactory.class)
+@HttpParameterMapping(ServletUrl.MapperFactory.class)
 public @interface ServletUrl {
-    class MappingFactory implements HttpRequestParameterMappingFactory<ServletUrl> {
+    class MapperFactory implements HttpParameterMapperFactory<ServletUrl> {
         @Override
-        public HttpRequestParameterMapping create(ServletUrl annotation, Parameter parameter) {
+        public HttpParameterMapper create(ServletUrl annotation, Parameter parameter) {
             if (parameter.getType() == URL.class) {
                 return ApiHttpExchange::getApiURL;
             } else if (parameter.getType() == String.class) {

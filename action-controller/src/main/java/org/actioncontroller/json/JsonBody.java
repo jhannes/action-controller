@@ -1,9 +1,9 @@
 package org.actioncontroller.json;
 
 import org.actioncontroller.meta.HttpParameterMapping;
-import org.actioncontroller.meta.HttpRequestParameterMapping;
-import org.actioncontroller.meta.HttpRequestParameterMappingFactory;
-import org.actioncontroller.meta.HttpReturnValueMapping;
+import org.actioncontroller.meta.HttpParameterMapper;
+import org.actioncontroller.meta.HttpParameterMapperFactory;
+import org.actioncontroller.meta.HttpReturnMapper;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
 import org.jsonbuddy.JsonNode;
@@ -22,26 +22,26 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 @Retention(RUNTIME)
 @Target({PARAMETER, METHOD})
-@HttpParameterMapping(JsonBody.RequestMapperFactory.class)
+@HttpParameterMapping(JsonBody.MapperFactory.class)
 @HttpReturnMapping(JsonBody.ReturnMapperFactory.class)
 public @interface JsonBody {
 
     class ReturnMapperFactory implements HttpReturnMapperFactory<JsonBody> {
-        private static HttpReturnValueMapping writeJsonNode =
+        private static HttpReturnMapper writeJsonNode =
                 (o, exchange) -> exchange.write("application/json", ((JsonNode) o)::toJson);
 
-        private static HttpReturnValueMapping writePojo =
+        private static HttpReturnMapper writePojo =
                 (o, exchange) -> exchange.write("application/json", writer -> JsonGenerator.generate(o).toJson(writer));
 
         @Override
-        public HttpReturnValueMapping create(JsonBody annotation, Class<?> returnType) {
+        public HttpReturnMapper create(JsonBody annotation, Class<?> returnType) {
             return JsonNode.class.isAssignableFrom(returnType) ? writeJsonNode : writePojo;
         }
     }
 
-    class RequestMapperFactory implements HttpRequestParameterMappingFactory<JsonBody> {
+    class MapperFactory implements HttpParameterMapperFactory<JsonBody> {
         @Override
-        public HttpRequestParameterMapping create(JsonBody annotation, Parameter parameter) {
+        public HttpParameterMapper create(JsonBody annotation, Parameter parameter) {
             if (JsonNode.class.isAssignableFrom(parameter.getType())) {
                 return exchange -> JsonParser.parse(exchange.getReader());
             } else if (List.class.isAssignableFrom(parameter.getType())) {

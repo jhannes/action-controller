@@ -5,7 +5,7 @@ import org.actioncontroller.meta.HttpClientReturnMapperFactory;
 import org.actioncontroller.meta.HttpClientReturnMapping;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
-import org.actioncontroller.meta.HttpReturnValueMapping;
+import org.actioncontroller.meta.HttpReturnMapper;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -21,7 +21,7 @@ public @interface SendRedirect {
 
     class MappingFactory implements HttpReturnMapperFactory<SendRedirect>, HttpClientReturnMapperFactory<SendRedirect> {
         @Override
-        public HttpReturnValueMapping create(SendRedirect annotation, Class<?> returnType) {
+        public HttpReturnMapper create(SendRedirect annotation, Class<?> returnType) {
             return (result, exchange) -> {
                 String path = result.toString();
                 if (path.matches("^https?://.*")) {

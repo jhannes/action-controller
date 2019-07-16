@@ -1,8 +1,8 @@
 package org.actioncontroller;
 
+import org.actioncontroller.client.ApiClientProxy;
 import org.actioncontroller.client.HttpURLConnectionApiClient;
 import org.actioncontroller.servlet.ApiServlet;
-import org.actioncontroller.client.ApiClientProxy;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
@@ -11,7 +11,6 @@ import org.junit.Test;
 import org.slf4j.event.Level;
 
 import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletException;
 import java.net.MalformedURLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,7 +30,7 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
             public void contextInitialized(ServletContextEvent event) {
                 event.getServletContext().addServlet("testApi", new ApiServlet() {
                     @Override
-                    public void init() throws ServletException {
+                    public void init() {
                         registerController(new TestController());
                     }
                 }).addMapping("/api/*");

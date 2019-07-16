@@ -37,7 +37,6 @@ public @interface SessionParameter {
             String name = annotation.value();
             if (parameter.getType() == Consumer.class) {
                 if (name.isEmpty()) {
-                    // TODO
                     name = ((AnnotatedParameterizedType) parameter.getAnnotatedType())
                             .getAnnotatedActualTypeArguments()[0].getType().getTypeName();
                 }
@@ -51,7 +50,6 @@ public @interface SessionParameter {
                     name = parameter.getType().getName();
                 }
             }
-            // TODO
             if (annotation.createIfMissing()) {
                 Constructor<?> constructor;
                 try {
@@ -127,7 +125,6 @@ public @interface SessionParameter {
             assert !name.startsWith(Optional.class.getName());
         }
 
-        // TODO
         @Override
         public Object apply(ApiHttpExchange exchange) {
             Optional value = exchange.getSessionAttribute(this.name, false);

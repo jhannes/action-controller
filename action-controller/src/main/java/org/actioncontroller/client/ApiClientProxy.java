@@ -4,19 +4,16 @@ import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.implementation.InvocationHandlerAdapter;
 import net.bytebuddy.matcher.ElementMatchers;
-import org.actioncontroller.ContentBody;
-import org.actioncontroller.ContentLocationHeader;
 import org.actioncontroller.Delete;
 import org.actioncontroller.Get;
-import org.actioncontroller.HttpResponseHeader;
-import org.actioncontroller.PathParam;
 import org.actioncontroller.Post;
 import org.actioncontroller.Put;
-import org.actioncontroller.RequestParam;
-import org.actioncontroller.SendRedirect;
 import org.actioncontroller.UnencryptedCookie;
 import org.actioncontroller.meta.ApiHttpExchange;
+import org.actioncontroller.meta.HttpClientParameterMapping;
+import org.actioncontroller.meta.HttpClientReturnMapping;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Parameter;
@@ -52,37 +49,19 @@ public class ApiClientProxy {
             Optional.ofNullable(method.getAnnotation(Delete.class))
                     .ifPresent(a -> exchange.setTarget("DELETE", a.value()));
 
-            String pathInfo = exchange.getPathInfo();
-
             Parameter[] parameters = method.getParameters();
             for (int i = 0; i < parameters.length; i++) {
                 Parameter parameter = parameters[i];
-                RequestParam requestParam = parameter.getAnnotation(RequestParam.class);
-                if (requestParam != null) {
-                    if (args[i] instanceof Optional) {
-                        ((Optional)args[i]).ifPresent(p -> {
-                            exchange.setRequestParameter(requestParam.value(), p.toString());
-                        });
-                    } else {
-                        exchange.setRequestParameter(requestParam.value(), args[i].toString());
-                    }
-                }
-                PathParam pathParam = parameter.getAnnotation(PathParam.class);
-                if (pathParam != null) {
-                    pathInfo = pathInfo.replace("/:" + pathParam.value(), "/" + args[i].toString());
-                }
-                UnencryptedCookie cookieParam = parameter.getAnnotation(UnencryptedCookie.class);
-                if (cookieParam != null) {
-                    if (args[i] instanceof Optional) {
-                        ((Optional)args[i]).ifPresent(p ->
-                                exchange.addRequestCookie(cookieParam.value(), p.toString())
-                        );
-                    } else {
-                        exchange.addRequestCookie(cookieParam.value(), args[i].toString());
+                for (Annotation annotation : parameter.getAnnotations()) {
+                    HttpClientParameterMapping parameterMapping = annotation.annotationType().getAnnotation(HttpClientParameterMapping.class);
+                    if (parameterMapping != null) {
+                        parameterMapping.value()
+                                .getDeclaredConstructor().newInstance()
+                                .createClient(annotation, parameter)
+                                .apply(exchange, args[i]);
                     }
                 }
             }
-            exchange.setPathInfo(pathInfo);
             if (exchange.getRequestMethod() == null) {
                 throw new RuntimeException("Unsupported mapping to " + method);
             }
@@ -110,25 +89,17 @@ public class ApiClientProxy {
                 );
             }
 
-            ContentBody contentBodyAnnotation = method.getAnnotation(ContentBody.class);
-            if (contentBodyAnnotation != null) {
-                return ApiHttpExchange.convertParameterType(exchange.getResponseBody(), method.getReturnType());
-            }
-            HttpResponseHeader headerAnnotation = method.getAnnotation(HttpResponseHeader.class);
-            if (headerAnnotation != null) {
-                return ApiHttpExchange.convertParameterType(exchange.getResponseHeader(headerAnnotation.value()), method.getReturnType());
-            }
-            ContentLocationHeader contentLocationHeader = method.getAnnotation(ContentLocationHeader.class);
-            if (contentLocationHeader != null) {
-                return exchange.getResponseHeader(ContentLocationHeader.FIELD_NAME);
-            }
-            SendRedirect sendRedirectHeader = method.getAnnotation(SendRedirect.class);
-            if (sendRedirectHeader != null) {
-                if (exchange.getResponseCode() < 300) {
-                    throw new IllegalArgumentException("Expected redirect, but was " + exchange.getResponseCode());
+            for (Annotation annotation : method.getAnnotations()) {
+                HttpClientReturnMapping returnMapping = annotation.annotationType().getAnnotation(HttpClientReturnMapping.class);
+                if (returnMapping != null) {
+                    return returnMapping.value()
+                            .getDeclaredConstructor()
+                            .newInstance()
+                            .createClient(annotation, method.getReturnType())
+                            .getReturnValue(exchange);
                 }
-                return exchange.getResponseHeader("Location");
             }
+
             if (method.getReturnType() == Void.TYPE) {
                 return null;
             }

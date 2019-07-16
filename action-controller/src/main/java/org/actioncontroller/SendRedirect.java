@@ -1,8 +1,11 @@
 package org.actioncontroller;
 
-import org.actioncontroller.meta.HttpReturnValueMapping;
+import org.actioncontroller.meta.HttpClientReturnMapper;
+import org.actioncontroller.meta.HttpClientReturnMapperFactory;
+import org.actioncontroller.meta.HttpClientReturnMapping;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
+import org.actioncontroller.meta.HttpReturnValueMapping;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -13,9 +16,10 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 @Target(METHOD)
 @HttpReturnMapping(SendRedirect.MappingFactory.class)
+@HttpClientReturnMapping(SendRedirect.MappingFactory.class)
 public @interface SendRedirect {
 
-    class MappingFactory implements HttpReturnMapperFactory<SendRedirect> {
+    class MappingFactory implements HttpReturnMapperFactory<SendRedirect>, HttpClientReturnMapperFactory<SendRedirect> {
         @Override
         public HttpReturnValueMapping create(SendRedirect annotation, Class<?> returnType) {
             return (result, exchange) -> {
@@ -27,6 +31,16 @@ public @interface SendRedirect {
                 } else {
                     exchange.sendRedirect(exchange.getApiURL() + "/" + path);
                 }
+            };
+        }
+
+        @Override
+        public HttpClientReturnMapper createClient(SendRedirect annotation, Class<?> returnType) {
+            return exchange -> {
+                if (exchange.getResponseCode() < 300) {
+                    throw new IllegalArgumentException("Expected redirect, but was " + exchange.getResponseCode());
+                }
+                return exchange.getResponseHeader("Location");
             };
         }
     }

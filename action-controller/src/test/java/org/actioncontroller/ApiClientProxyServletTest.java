@@ -1,5 +1,6 @@
 package org.actioncontroller;
 
+import org.actioncontroller.client.HttpURLConnectionApiClient;
 import org.actioncontroller.servlet.ApiServlet;
 import org.actioncontroller.test.ApiClientProxy;
 import org.eclipse.jetty.server.Server;
@@ -11,6 +12,7 @@ import org.slf4j.event.Level;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletException;
+import java.net.MalformedURLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -40,13 +42,15 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
         server.start();
 
         baseUrl = server.getURI() + "/api";
-        client = ApiClientProxy.create(TestController.class, baseUrl);
+        client = ApiClientProxy.create(TestController.class,
+                new HttpURLConnectionApiClient(baseUrl));
     }
 
     @Test
-    public void gives404OnUnmappedController() {
+    public void gives404OnUnmappedController() throws MalformedURLException {
         expectedLogEvents.expect(ApiServlet.class, Level.WARN, "No route for GET /test/api[/not-mapped]");
-        UnmappedController unmappedController = ApiClientProxy.create(UnmappedController.class, baseUrl);
+        UnmappedController unmappedController = ApiClientProxy.create(UnmappedController.class,
+                        new HttpURLConnectionApiClient(baseUrl));
         assertThatThrownBy(unmappedController::notHere)
                 .isInstanceOf(HttpActionException.class)
                 .satisfies(e -> assertThat(((HttpActionException)e).getStatusCode()).isEqualTo(404));

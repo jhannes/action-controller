@@ -20,14 +20,14 @@ public interface ApiClientExchange {
 
     void executeRequest() throws IOException;
 
-    int getResponseCode();
+    int getResponseCode() throws IOException;
 
-    String getResponseMessage();
+    String getResponseMessage() throws IOException;
 
     String getResponseHeader(String name);
 
     String getResponseCookie(String name);
 
-    String getResponseBody();
+    String getResponseBody() throws IOException;
 
 }

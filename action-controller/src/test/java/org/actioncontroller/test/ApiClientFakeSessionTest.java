@@ -21,7 +21,7 @@ public class ApiClientFakeSessionTest extends AbstractApiClientSessionTest {
         };
         servlet.init(null);
         final URL contextRoot = new URL("http://example.com/test");
-        client = ApiClientFakeServletProxy.create(controller,
+        client = ApiClientProxy.create(LoginController.class,
                 new FakeApiClient(contextRoot, "/api", servlet));
     }
 }

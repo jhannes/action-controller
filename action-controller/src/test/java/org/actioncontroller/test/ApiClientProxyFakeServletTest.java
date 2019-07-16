@@ -19,6 +19,6 @@ public class ApiClientProxyFakeServletTest extends AbstractApiClientProxyTest {
             }
         };
         servlet.init(null);
-        client = ApiClientFakeServletProxy.create(controller, new FakeApiClient(contextRoot, "/api", servlet));
+        client = ApiClientProxy.create(TestController.class, new FakeApiClient(contextRoot, "/api", servlet));
     }
 }

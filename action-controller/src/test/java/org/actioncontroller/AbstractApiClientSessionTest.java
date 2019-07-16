@@ -1,5 +1,6 @@
 package org.actioncontroller;
 
+import org.actioncontroller.client.HttpURLConnectionApiClient;
 import org.actioncontroller.servlet.ApiServlet;
 import org.actioncontroller.test.ApiClientProxy;
 import org.actioncontroller.test.HttpClientException;
@@ -90,7 +91,7 @@ public class AbstractApiClientSessionTest {
         server.start();
 
         baseUrl = server.getURI() + "/api";
-        client = ApiClientProxy.create(LoginController.class, baseUrl);
+        client = ApiClientProxy.create(LoginController.class, new HttpURLConnectionApiClient(baseUrl));
     }
 
     @Test

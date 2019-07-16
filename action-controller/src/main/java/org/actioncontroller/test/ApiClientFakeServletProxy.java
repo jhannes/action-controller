@@ -12,9 +12,13 @@ import org.actioncontroller.PathParam;
 import org.actioncontroller.Post;
 import org.actioncontroller.Put;
 import org.actioncontroller.RequestParam;
+import org.actioncontroller.SendRedirect;
 import org.actioncontroller.UnencryptedCookie;
 import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.servlet.ApiServlet;
+import org.fakeservlet.FakeHttpSession;
+import org.fakeservlet.FakeServletRequest;
+import org.fakeservlet.FakeServletResponse;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -50,38 +54,38 @@ public class ApiClientFakeServletProxy {
     }
 
     private static InvocationHandler createInvocationHandler(ApiServlet servlet, URL contextRoot, String servletPath) {
+        FakeHttpSession[] session = new FakeHttpSession[1];
         return (proxy, method, args) -> {
+            String httpMethod = null;
+            String pathInfo = null;
             Get getAnnotation = method.getAnnotation(Get.class);
             if (getAnnotation != null) {
-                FakeServletRequest request = createRequest(method, args, "GET", contextRoot, servletPath, getAnnotation.value());
-                FakeServletResponse response = new FakeServletResponse();
-                servlet.service(request, response);
-                return createReturnValue(method, args, request, response);
+                httpMethod = "GET";
+                pathInfo = getAnnotation.value();
             }
             Post postAnnotation = method.getAnnotation(Post.class);
             if (postAnnotation != null) {
-                FakeServletRequest request = createRequest(method, args, "POST", contextRoot, servletPath, postAnnotation.value());
-                FakeServletResponse response = new FakeServletResponse();
-                servlet.service(request, response);
-                return createReturnValue(method, args, request, response);
+                httpMethod = "POST";
+                pathInfo = postAnnotation.value();
             }
             Put putAnnotation = method.getAnnotation(Put.class);
             if (putAnnotation != null) {
-                FakeServletRequest request = createRequest(method, args, "PUT", contextRoot, servletPath, putAnnotation.value());
+                httpMethod = "PUT";
+                pathInfo = putAnnotation.value();
+            }
+            if (httpMethod != null) {
+                FakeServletRequest request = new FakeServletRequest(httpMethod, contextRoot, servletPath, pathInfo);
+                pathInfo = setupRequest(request, method, args, pathInfo);
+                request.setPathInfo(pathInfo);
+                request.setSession(session[0]);
                 FakeServletResponse response = new FakeServletResponse();
                 servlet.service(request, response);
+                session[0] = request.getSession(false);
                 return createReturnValue(method, args, request, response);
             }
 
             throw new RuntimeException("Unsupported mapping to " + method);
         };
-    }
-
-    private static FakeServletRequest createRequest(Method action, Object[] args, String method, URL contextRoot, String servletPath, String pathInfo) {
-        FakeServletRequest request = new FakeServletRequest(method, contextRoot, servletPath, pathInfo);
-        pathInfo = setupRequest(request, action, args, pathInfo);
-        request.setPathInfo(pathInfo);
-        return request;
     }
 
     private static String setupRequest(FakeServletRequest request, Method method, Object[] args, String path) {
@@ -151,6 +155,13 @@ public class ApiClientFakeServletProxy {
         ContentLocationHeader contentLocationHeader = method.getAnnotation(ContentLocationHeader.class);
         if (contentLocationHeader != null) {
             return response.getHeader(ContentLocationHeader.FIELD_NAME);
+        }
+        SendRedirect sendRedirectHeader = method.getAnnotation(SendRedirect.class);
+        if (sendRedirectHeader != null) {
+            if (response.getStatus() < 300) {
+                throw new IllegalArgumentException("Expected redirect, but was " + response.getStatus());
+            }
+            return response.getHeader("Location");
         }
         if (method.getReturnType() == Void.TYPE) {
             return null;

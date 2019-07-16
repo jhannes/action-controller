@@ -1,6 +1,6 @@
 package org.actioncontroller.test;
 
-import org.actioncontroller.test.ApiClientFakeServletProxy;
+import org.actioncontroller.AbstractApiClientProxyTest;
 import org.junit.Before;
 
 import java.net.URL;

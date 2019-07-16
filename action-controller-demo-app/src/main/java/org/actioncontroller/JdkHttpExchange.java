@@ -53,7 +53,7 @@ public class JdkHttpExchange implements ApiHttpExchange {
     }
 
     @Override
-    public Optional getSessionAttribute(String name) {
+    public Optional getSessionAttribute(String name, boolean createIfMissing) {
         throw new UnsupportedOperationException(getClass().getName() + " does not implement sessions");
     }
 

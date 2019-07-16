@@ -1,4 +1,4 @@
-package org.actioncontroller.test;
+package org.fakeservlet;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
@@ -46,13 +46,13 @@ public class FakeServletResponse implements HttpServletResponse {
     // TODO
     @Override
     public String encodeURL(String s) {
-        throw unimplemented();
+        return encodeUrl(s);
     }
 
     // TODO
     @Override
     public String encodeRedirectURL(String s) {
-        throw unimplemented();
+        return encodeRedirectUrl(s);
     }
 
     // TODO
@@ -64,7 +64,7 @@ public class FakeServletResponse implements HttpServletResponse {
     // TODO
     @Override
     public String encodeRedirectUrl(String s) {
-        throw unimplemented();
+        return encodeURL(s);
     }
 
     @Override
@@ -79,10 +79,11 @@ public class FakeServletResponse implements HttpServletResponse {
         this.statusMessage = "Server Error";
     }
 
-    // TODO
     @Override
-    public void sendRedirect(String s) {
-        throw unimplemented();
+    public void sendRedirect(String location) {
+        statusCode = 302;
+        // TODO: should run through encodeRedirectURL
+        setHeader("Location", location);
     }
 
     @Override

@@ -1,8 +1,8 @@
 package org.actioncontroller;
 
 import org.actioncontroller.servlet.ApiServlet;
-import org.actioncontroller.test.FakeServletRequest;
-import org.actioncontroller.test.FakeServletResponse;
+import org.fakeservlet.FakeServletRequest;
+import org.fakeservlet.FakeServletResponse;
 import org.junit.Test;
 
 import javax.servlet.ServletException;

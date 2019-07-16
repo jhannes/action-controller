@@ -14,6 +14,7 @@ import java.lang.reflect.AnnotatedParameterizedType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -28,6 +29,8 @@ public @interface SessionParameter {
 
     boolean invalidate() default false;
 
+    boolean changeSessionId() default false;
+
     class MappingFactory implements HttpRequestParameterMappingFactory<SessionParameter> {
         @Override
         public HttpRequestParameterMapping create(SessionParameter annotation, Parameter parameter) {
@@ -41,9 +44,12 @@ public @interface SessionParameter {
                 return new CreateSession(name, annotation.invalidate());
             }
 
-            // TODO
             if (name.isEmpty()) {
-                name = parameter.getType().getName();
+                if (parameter.getType() == Optional.class) {
+                    name = ((ParameterizedType)parameter.getParameterizedType()).getActualTypeArguments()[0].getTypeName();
+                } else {
+                    name = parameter.getType().getName();
+                }
             }
             // TODO
             if (annotation.createIfMissing()) {
@@ -72,10 +78,9 @@ public @interface SessionParameter {
             this.constructor = constructor;
         }
 
-        // TODO
         @Override
         public Object apply(ApiHttpExchange exchange) {
-            return exchange.getSessionAttribute(name)
+            return exchange.getSessionAttribute(name, true)
                     .orElseGet(() -> {
                         Object newValue = newInstance();
                         exchange.setSessionAttribute(name, newValue, invalidate);
@@ -114,23 +119,24 @@ public @interface SessionParameter {
     class SessionParameterMapping implements HttpRequestParameterMapping {
 
         private Parameter parameter;
-        private String value;
+        private String name;
 
         public SessionParameterMapping(Parameter parameter, String name) {
             this.parameter = parameter;
-            this.value = name;
+            this.name = name;
+            assert !name.startsWith(Optional.class.getName());
         }
 
         // TODO
         @Override
         public Object apply(ApiHttpExchange exchange) {
-            Optional value = exchange.getSessionAttribute(this.value);
+            Optional value = exchange.getSessionAttribute(this.name, false);
             if (parameter.getType() == Optional.class) {
-                return Optional.ofNullable(value);
+                return value;
             } else if (value.isPresent()) {
                 return value.get();
             } else {
-                throw new HttpActionException(401, "Missing required session parameter " + this.value);
+                throw new HttpActionException(401, "Missing required session parameter " + this.name);
             }
         }
     }

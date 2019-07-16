@@ -62,7 +62,7 @@ public interface ApiHttpExchange {
 
     void setSessionAttribute(String name, Object value, boolean invalidate);
 
-    Optional getSessionAttribute(String name);
+    Optional getSessionAttribute(String name, boolean createIfMissing);
 
     static Object convertParameterType(String value, Type parameterType) {
         if (parameterType == String.class) {

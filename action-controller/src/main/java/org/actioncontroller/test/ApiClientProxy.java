@@ -12,6 +12,7 @@ import org.actioncontroller.PathParam;
 import org.actioncontroller.Post;
 import org.actioncontroller.Put;
 import org.actioncontroller.RequestParam;
+import org.actioncontroller.SendRedirect;
 import org.actioncontroller.UnencryptedCookie;
 import org.actioncontroller.meta.ApiHttpExchange;
 
@@ -53,9 +54,10 @@ public class ApiClientProxy {
     }
 
     private static InvocationHandler createInvocationHandler(String baseUrl) {
+        List<HttpCookie> clientCookies = new ArrayList<>();
         return (proxy, method, args) -> {
+            List<HttpCookie> requestCookies = new ArrayList<>(clientCookies);
             Parameter[] parameters = method.getParameters();
-            List<HttpCookie> cookies = new ArrayList<>();
             for (int i = 0; i < parameters.length; i++) {
                 Parameter parameter = parameters[i];
                 UnencryptedCookie cookieParam = parameter.getAnnotation(UnencryptedCookie.class);
@@ -72,18 +74,19 @@ public class ApiClientProxy {
 
                     HttpCookie cookie = new HttpCookie(cookieParam.value(), value);
                     cookie.setPath(new URI(baseUrl).getPath());
-                    cookies.add(cookie);
+                    requestCookies.add(cookie);
                 }
             }
-
 
             Get getAnnotation = method.getAnnotation(Get.class);
             if (getAnnotation != null) {
                 URL url = getUrlWithQuery(baseUrl, getAnnotation.value(), method, args);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setInstanceFollowRedirects(false);
                 conn.setRequestProperty("Cookie",
-                        cookies.stream().map(HttpCookie::toString).collect(Collectors.joining(",")));
+                        requestCookies.stream().map(HttpCookie::toString).collect(Collectors.joining(",")));
                 checkResponse(conn);
+                clientCookies.addAll(getResponseCookies(conn));
                 CookieManager cookieManager = new CookieManager();
                 cookieManager.put(url.toURI(), conn.getHeaderFields());
                 setConsumedCookies(method, args, cookieManager);
@@ -93,12 +96,14 @@ public class ApiClientProxy {
             if (postAnnotation != null) {
                 URL url = getUrl(baseUrl, postAnnotation.value(), method, args);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setInstanceFollowRedirects(false);
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Cookie",
-                        cookies.stream().map(HttpCookie::toString).collect(Collectors.joining(",")));
+                        requestCookies.stream().map(HttpCookie::toString).collect(Collectors.joining(",")));
                 writeBody(conn, method, args);
 
                 checkResponse(conn);
+                clientCookies.addAll(getResponseCookies(conn));
                 CookieManager cookieManager = new CookieManager();
                 cookieManager.put(url.toURI(), conn.getHeaderFields());
                 setConsumedCookies(method, args, cookieManager);
@@ -108,12 +113,14 @@ public class ApiClientProxy {
             if (putAnnotation != null) {
                 URL url = getUrl(baseUrl, putAnnotation.value(), method, args);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setInstanceFollowRedirects(false);
                 conn.setRequestMethod("PUT");
                 conn.setRequestProperty("Cookie",
-                        cookies.stream().map(HttpCookie::toString).collect(Collectors.joining(",")));
+                        requestCookies.stream().map(HttpCookie::toString).collect(Collectors.joining(",")));
                 writeBody(conn, method, args);
 
                 checkResponse(conn);
+                clientCookies.addAll(getResponseCookies(conn));
                 CookieManager cookieManager = new CookieManager();
                 cookieManager.put(url.toURI(), conn.getHeaderFields());
                 setConsumedCookies(method, args, cookieManager);
@@ -123,6 +130,15 @@ public class ApiClientProxy {
 
             throw new RuntimeException("Unsupported mapping to " + method);
         };
+    }
+
+    private static List<HttpCookie> getResponseCookies(HttpURLConnection conn) {
+        List<HttpCookie> responseCookies = new ArrayList<>();
+        String setCookieField = conn.getHeaderField("Set-Cookie");
+        if (setCookieField != null) {
+            responseCookies = HttpCookie.parse(setCookieField);
+        }
+        return responseCookies;
     }
 
     private static void writeBody(HttpURLConnection conn, Method method, Object[] args) throws IOException {
@@ -152,7 +168,17 @@ public class ApiClientProxy {
         if (contentLocationHeader != null) {
             return conn.getHeaderField(ContentLocationHeader.FIELD_NAME);
         }
-        return null;
+        SendRedirect sendRedirect = method.getAnnotation(SendRedirect.class);
+        if (sendRedirect != null) {
+            if (conn.getResponseCode() < 300) {
+                throw new IllegalArgumentException("Expected redirect, but was " + conn.getResponseCode() + " " + conn.getResponseMessage() + " for " + conn.getURL());
+            }
+            return conn.getHeaderField("Location");
+        }
+        if (method.getReturnType() == Void.TYPE) {
+            return null;
+        }
+        throw new RuntimeException("Unknown return handling for " + method);
     }
 
     private static void setConsumedCookies(Method method, Object[] args, CookieManager cookieManager) {

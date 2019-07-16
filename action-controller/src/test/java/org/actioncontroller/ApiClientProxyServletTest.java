@@ -3,6 +3,7 @@ package org.actioncontroller;
 import org.actioncontroller.servlet.ApiServlet;
 import org.actioncontroller.test.ApiClientProxy;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.junit.Before;
 import org.junit.Test;
@@ -22,6 +23,7 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
     public void createServerAndClient() throws Exception {
         Server server = new Server(0);
         ServletContextHandler handler = new ServletContextHandler();
+        handler.setSessionHandler(new SessionHandler());
         handler.addEventListener(new javax.servlet.ServletContextListener() {
             @Override
             public void contextInitialized(ServletContextEvent event) {

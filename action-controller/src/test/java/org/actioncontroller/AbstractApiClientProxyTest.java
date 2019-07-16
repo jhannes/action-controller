@@ -80,7 +80,6 @@ public abstract class AbstractApiClientProxyTest {
 
     protected TestController client;
 
-
     @Test
     public void shouldMakeSimpleHttpGet() {
         assertThat(client.first()).isEqualTo("Hello world");
@@ -148,8 +147,6 @@ public abstract class AbstractApiClientProxyTest {
     // TODO: User in role
 
     // TODO: Remove cookie
-
-    // TODO: Sessions
 
     // TODO: HttpHeaders
 

@@ -3,6 +3,7 @@ package org.actioncontroller.servlet;
 import org.actioncontroller.ApiControllerAction;
 import org.actioncontroller.Get;
 import org.actioncontroller.HttpActionException;
+import org.actioncontroller.HttpRequestException;
 import org.actioncontroller.PathParam;
 import org.actioncontroller.Post;
 import org.actioncontroller.RequestParam;
@@ -19,9 +20,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.logevents.LogEvent;
 import org.logevents.extend.junit.ExpectedLogEventsRule;
-import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.slf4j.event.Level;
 
@@ -248,13 +247,14 @@ public class ApiServletTest {
 
     @Test
     public void shouldGive400OnParameterConversion() throws IOException {
-        when(requestMock.getMethod()).thenReturn("GET");
-        when(requestMock.getPathInfo()).thenReturn("/goodbye");
+        expectedLogEvents.expectPattern(ApiControllerAction.class, Level.WARN, "While processing {} arguments");
+        FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/api", "/goodbye");
+        request.setParameter("amount", "one");
 
-        when(requestMock.getParameter("amount")).thenReturn("one");
-        servlet.service(requestMock, responseMock);
+        servlet.service(request, response);
 
-        verify(responseMock).sendError(ArgumentMatchers.eq(400), ArgumentMatchers.anyString());
+        assertThat(response.getStatus()).isEqualTo(400);
+        assertThat(response.getStatusMessage()).isEqualTo("Could not convert amount=one to int");
     }
 
     @Test
@@ -264,11 +264,11 @@ public class ApiServletTest {
 
         expectedLogEvents.expect(ApiControllerAction.class, Level.WARN,
                 "While processing ServletHttpExchange[POST " + contextRoot + "/api/withUuid?uuid=Not+an+uuid] arguments",
-                new IllegalArgumentException("Invalid UUID string: Not an uuid"));
+                new HttpRequestException("Could not convert uuid=Not an uuid to java.util.UUID"));
         servlet.service(request, response);
 
         assertThat(response.getStatus()).isEqualTo(400);
-        assertThat(response.getStatusMessage()).contains("Invalid UUID string");
+        assertThat(response.getStatusMessage()).contains("Could not convert uuid=Not an uuid to java.util.UUID");
     }
 
     @Test
@@ -278,21 +278,15 @@ public class ApiServletTest {
 
         expectedLogEvents.expect(ApiControllerAction.class, Level.WARN,
                 "While processing ServletHttpExchange[POST " + contextRoot + "/api/withLong?longValue=one+hundred] arguments",
-                new NumberFormatException("For input string: \"one hundred\""));
+                new HttpRequestException("Could not convert longValue=one hundred to long"));
         servlet.service(request, response);
 
         assertThat(response.getStatus()).isEqualTo(400);
-        assertThat(response.getStatusMessage()).contains("NumberFormatException: For input string: \"one hundred\"");
+        assertThat(response.getStatusMessage()).contains("Could not convert longValue=one hundred to long");
     }
 
     @Rule
-    public ExpectedLogEventsRule expectedLogEvents = new ExpectedLogEventsRule(Level.WARN) {
-        @Override
-        public void logEvent(LogEvent logEvent) {
-            super.logEvent(logEvent);
-
-        }
-    };
+    public ExpectedLogEventsRule expectedLogEvents = new ExpectedLogEventsRule(Level.WARN);
 
     @Test
     public void shouldGive400OnInvalidEnumConversion() throws IOException {
@@ -301,30 +295,37 @@ public class ApiServletTest {
 
         expectedLogEvents.expect(ApiControllerAction.class, Level.WARN,
                 "While processing ServletHttpExchange[POST " + contextRoot + "/api/withEnum?enumValue=unknown] arguments",
-                new IllegalArgumentException("No enum constant java.lang.annotation.ElementType.unknown"));
+                new HttpRequestException("Could not convert enumValue=unknown to java.lang.annotation.ElementType"));
         servlet.service(request, response);
 
         assertThat(response.getStatus()).isEqualTo(400);
-        assertThat(response.getStatusMessage()).contains("No enum constant java.lang.annotation.ElementType.unknown");
+        assertThat(response.getStatusMessage()).contains("Could not convert enumValue=unknown to java.lang.annotation.ElementType");
     }
 
     @Test
     public void shouldRequireNonOptionalParameter() throws IOException {
-        when(requestMock.getMethod()).thenReturn("GET");
-        when(requestMock.getPathInfo()).thenReturn("/goodbye");
-
-        servlet.service(requestMock, responseMock);
-        verify(responseMock).sendError(400, "Missing required parameter amount");
+        FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/api", "/goodbye");
+        expectedLogEvents.expect(ApiControllerAction.class, Level.WARN,
+                "While processing ServletHttpExchange[GET " + contextRoot + "/api/goodbye] arguments",
+                new HttpRequestException("Missing required parameter amount"));
+        servlet.service(request, response);
+        assertThat(response.getStatus()).isEqualTo(400);
+        assertThat(response.getStatusMessage()).isEqualTo("Missing required parameter amount");
     }
 
     @Test
     public void shouldReportParameterConversionFailure() throws IOException {
-        when(requestMock.getMethod()).thenReturn("GET");
-        when(requestMock.getPathInfo()).thenReturn("/goodbye");
+        FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/api", "/goodbye");
+        request.setParameter("amount", "one");
 
-        when(requestMock.getParameter("amount")).thenReturn("one");
-        servlet.service(requestMock, responseMock);
-        verify(responseMock).sendError(400, "Invalid parameter amount 'one' is not an int");
+        expectedLogEvents.expectMatch(expect -> expect
+                .level(Level.WARN).logger(ApiControllerAction.class)
+                .pattern("While processing {} arguments")
+                .exception(HttpRequestException.class, "Could not convert amount=one to int")
+        );
+        servlet.service(request, response);
+        assertThat(response.getStatus()).isEqualTo(400);
+        assertThat(response.getStatusMessage()).isEqualTo("Could not convert amount=one to int");
     }
 
     @Test

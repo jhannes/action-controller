@@ -307,7 +307,7 @@ public class ApiControllerAction {
             }
             return arguments;
         } catch (HttpActionException e) {
-            logger.info("While processing {} arguments", exchange, e);
+            logger.warn("While processing {} arguments", exchange, e);
             StackTraceElement[] stackTrace = e.getStackTrace();
             StackTraceElement[] replacedStackTrace = new StackTraceElement[stackTrace.length+1];
             replacedStackTrace[0] = new StackTraceElement(method.getDeclaringClass().getName(), method.getName(),

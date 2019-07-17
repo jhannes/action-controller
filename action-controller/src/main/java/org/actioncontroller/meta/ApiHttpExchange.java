@@ -1,6 +1,7 @@
 package org.actioncontroller.meta;
 
 import org.actioncontroller.HttpActionException;
+import org.actioncontroller.HttpRequestException;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -71,12 +72,7 @@ public interface ApiHttpExchange {
         } else if (parameterType == Boolean.class) {
             return Boolean.parseBoolean(value);
         } else if (parameterType == Integer.class || parameterType == Integer.TYPE) {
-            try {
-                return Integer.parseInt(value);
-            } catch (NumberFormatException e) {
-                throw new HttpActionException(400,
-                        String.format("Invalid parameter amount '%s' is not an %s", value, parameterType));
-            }
+            return Integer.parseInt(value);
         } else if (parameterType == UUID.class) {
             return UUID.fromString(value);
         } else if (parameterType == Long.class || parameterType == Long.TYPE) {
@@ -93,7 +89,7 @@ public interface ApiHttpExchange {
 
         if (value == null) {
             if (!optional) {
-                throw new HttpActionException(400, "Missing required parameter " + parameterName);
+                throw new HttpRequestException("Missing required parameter " + parameterName);
             }
             return Optional.empty();
         }

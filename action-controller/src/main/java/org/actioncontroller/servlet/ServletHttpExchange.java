@@ -1,10 +1,9 @@
 package org.actioncontroller.servlet;
 
 import org.actioncontroller.HttpActionException;
+import org.actioncontroller.HttpRequestException;
 import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.WriterConsumer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -22,7 +21,6 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 public class ServletHttpExchange implements ApiHttpExchange {
-    private final static Logger logger = LoggerFactory.getLogger(ServletHttpExchange.class);
 
     private final HttpServletRequest req;
     private final HttpServletResponse resp;
@@ -111,7 +109,12 @@ public class ServletHttpExchange implements ApiHttpExchange {
 
     @Override
     public Object getParameter(String name, Parameter parameter) {
-        return ApiHttpExchange.convertTo(req.getParameter(name), name, parameter);
+        String value = req.getParameter(name);
+        try {
+            return ApiHttpExchange.convertTo(value, name, parameter);
+        } catch (IllegalArgumentException e) {
+            throw new HttpRequestException("Could not convert " + name + "=" + value + " to " + parameter.getType().getTypeName());
+        }
     }
 
     @Override

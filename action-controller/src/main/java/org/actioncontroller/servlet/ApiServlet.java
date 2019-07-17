@@ -83,11 +83,11 @@ public class ApiServlet extends HttpServlet implements UserContext {
     }
 
     private boolean invokeAction(ApiHttpExchange httpExchange, String method, String pathInfo, String controllerPath) throws IOException {
-        for (ApiControllerAction apiRoute : routes.get(method)) {
-            if (apiRoute.matches(pathInfo)) {
-                httpExchange.setPathParameters(apiRoute.collectPathParameters(pathInfo));
+        for (ApiControllerAction apiAction : routes.get(method)) {
+            if (apiAction.matches(pathInfo)) {
+                httpExchange.setPathParameters(apiAction.collectPathParameters(pathInfo));
                 try {
-                    apiRoute.invoke(this, httpExchange);
+                    apiAction.invoke(this, httpExchange);
                 } catch (HttpActionException e) {
                     e.sendError(httpExchange);
                 }

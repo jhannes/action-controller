@@ -8,7 +8,10 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.logevents.extend.junit.ExpectedLogEventsRule;
+import org.slf4j.event.Level;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletException;
@@ -70,6 +73,9 @@ public class AbstractApiClientSessionTest {
         }
     }
 
+    @Rule
+    public ExpectedLogEventsRule expectedLogEvents = new ExpectedLogEventsRule(Level.WARN);
+
     @Before
     public void createServerAndClient() throws Exception {
         Server server = new Server(0);
@@ -115,6 +121,8 @@ public class AbstractApiClientSessionTest {
         String logoutRedirect = client.logout(null);
         assertThat(logoutRedirect).isEqualTo(baseUrl + "/favorites");
         assertThat(client.getFavorites(null)).isEqualTo("<no session>");
+
+        expectedLogEvents.expectPattern(ApiControllerAction.class, Level.WARN, "While processing {} arguments");
         assertThatThrownBy(() -> client.userinfo(null))
                 .isEqualTo(new HttpClientException(401, "Missing required session parameter username"));
     }

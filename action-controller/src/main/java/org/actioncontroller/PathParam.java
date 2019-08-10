@@ -1,7 +1,5 @@
 package org.actioncontroller;
 
-import org.actioncontroller.meta.HttpClientParameterMapping;
-import org.actioncontroller.meta.HttpClientParameterMapperFactory;
 import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpParameterMapper;
@@ -16,12 +14,11 @@ import java.lang.reflect.Parameter;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
 @HttpParameterMapping(PathParam.MapperFactory.class)
-@HttpClientParameterMapping(PathParam.MapperFactory.class)
 public @interface PathParam {
 
     String value();
 
-    public class MapperFactory implements HttpParameterMapperFactory<PathParam>, HttpClientParameterMapperFactory<PathParam> {
+    public class MapperFactory implements HttpParameterMapperFactory<PathParam> {
         @Override
         public HttpParameterMapper create(PathParam annotation, Parameter parameter) {
             String name = annotation.value();
@@ -29,7 +26,7 @@ public @interface PathParam {
         }
 
         @Override
-        public HttpClientParameterMapper createClient(PathParam annotation, Parameter parameter) {
+        public HttpClientParameterMapper clientParameterMapper(PathParam annotation, Parameter parameter) {
             String name = annotation.value();
             return ((exchange, arg) -> {
                 String pathInfo = exchange.getPathInfo();

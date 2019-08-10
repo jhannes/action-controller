@@ -2,11 +2,7 @@ package org.actioncontroller;
 
 import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.HttpClientParameterMapper;
-import org.actioncontroller.meta.HttpClientParameterMapperFactory;
-import org.actioncontroller.meta.HttpClientParameterMapping;
 import org.actioncontroller.meta.HttpClientReturnMapper;
-import org.actioncontroller.meta.HttpClientReturnMapperFactory;
-import org.actioncontroller.meta.HttpClientReturnMapping;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapperFactory;
 import org.actioncontroller.meta.HttpParameterMapping;
@@ -24,16 +20,12 @@ import java.lang.reflect.Parameter;
 @Target({ElementType.METHOD, ElementType.PARAMETER})
 @HttpParameterMapping(HttpHeader.Mapper.class)
 @HttpReturnMapping(HttpHeader.Mapper.class)
-@HttpClientReturnMapping(HttpHeader.Mapper.class)
-@HttpClientParameterMapping(HttpHeader.Mapper.class)
 public @interface HttpHeader {
     String value();
 
     public class Mapper implements
             HttpParameterMapperFactory<HttpHeader>,
-            HttpReturnMapperFactory<HttpHeader>,
-            HttpClientParameterMapperFactory<HttpHeader>,
-            HttpClientReturnMapperFactory<HttpHeader>
+            HttpReturnMapperFactory<HttpHeader>
     {
         @Override
         public HttpParameterMapper create(HttpHeader annotation, Parameter parameter) {
@@ -48,7 +40,7 @@ public @interface HttpHeader {
         }
 
         @Override
-        public HttpClientParameterMapper createClient(HttpHeader annotation, Parameter parameter) {
+        public HttpClientParameterMapper clientParameterMapper(HttpHeader annotation, Parameter parameter) {
             return (exchange, arg) -> exchange.setHeader(annotation.value(), arg);
         }
 

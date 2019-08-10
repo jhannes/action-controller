@@ -10,8 +10,8 @@ import org.actioncontroller.Post;
 import org.actioncontroller.Put;
 import org.actioncontroller.UnencryptedCookie;
 import org.actioncontroller.meta.ApiHttpExchange;
-import org.actioncontroller.meta.HttpClientParameterMapping;
-import org.actioncontroller.meta.HttpClientReturnMapping;
+import org.actioncontroller.meta.HttpParameterMapping;
+import org.actioncontroller.meta.HttpReturnMapping;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
@@ -53,11 +53,11 @@ public class ApiClientProxy {
             for (int i = 0; i < parameters.length; i++) {
                 Parameter parameter = parameters[i];
                 for (Annotation annotation : parameter.getAnnotations()) {
-                    HttpClientParameterMapping parameterMapping = annotation.annotationType().getAnnotation(HttpClientParameterMapping.class);
+                    HttpParameterMapping parameterMapping = annotation.annotationType().getAnnotation(HttpParameterMapping.class);
                     if (parameterMapping != null) {
                         parameterMapping.value()
                                 .getDeclaredConstructor().newInstance()
-                                .createClient(annotation, parameter)
+                                .clientParameterMapper(annotation, parameter)
                                 .apply(exchange, args[i]);
                     }
                 }
@@ -84,7 +84,7 @@ public class ApiClientProxy {
             exchange.checkForError();
 
             for (Annotation annotation : method.getAnnotations()) {
-                HttpClientReturnMapping returnMapping = annotation.annotationType().getAnnotation(HttpClientReturnMapping.class);
+                HttpReturnMapping returnMapping = annotation.annotationType().getAnnotation(HttpReturnMapping.class);
                 if (returnMapping != null) {
                     return returnMapping.value()
                             .getDeclaredConstructor()

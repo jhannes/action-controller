@@ -2,8 +2,6 @@ package org.actioncontroller;
 
 import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.HttpClientParameterMapper;
-import org.actioncontroller.meta.HttpClientParameterMapperFactory;
-import org.actioncontroller.meta.HttpClientParameterMapping;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapperFactory;
 import org.actioncontroller.meta.HttpParameterMapping;
@@ -20,7 +18,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
 @HttpParameterMapping(RequestParam.ParameterMapperFactory.class)
-@HttpClientParameterMapping(RequestParam.ParameterMapperFactory.class)
 public @interface RequestParam {
 
     String value();
@@ -39,10 +36,7 @@ public @interface RequestParam {
         }
     }
 
-    class ParameterMapperFactory implements
-            HttpParameterMapperFactory<RequestParam>,
-            HttpClientParameterMapperFactory<RequestParam>
-    {
+    class ParameterMapperFactory implements HttpParameterMapperFactory<RequestParam> {
         @Override
         public HttpParameterMapper create(RequestParam annotation, Parameter parameter) {
             String name = annotation.value();
@@ -50,7 +44,7 @@ public @interface RequestParam {
         }
 
         @Override
-        public HttpClientParameterMapper createClient(RequestParam annotation, Parameter parameter) {
+        public HttpClientParameterMapper clientParameterMapper(RequestParam annotation, Parameter parameter) {
             String name = annotation.value();
             return (exchange, arg) -> exchange.setRequestParameter(name, arg);
         }

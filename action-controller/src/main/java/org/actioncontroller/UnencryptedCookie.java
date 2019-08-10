@@ -1,8 +1,6 @@
 package org.actioncontroller;
 
 import org.actioncontroller.meta.HttpClientParameterMapper;
-import org.actioncontroller.meta.HttpClientParameterMapperFactory;
-import org.actioncontroller.meta.HttpClientParameterMapping;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapperFactory;
 import org.actioncontroller.meta.HttpParameterMapping;
@@ -17,14 +15,13 @@ import java.util.function.Consumer;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
 @HttpParameterMapping(UnencryptedCookie.Factory.class)
-@HttpClientParameterMapping(UnencryptedCookie.Factory.class)
 public @interface UnencryptedCookie {
 
     String value();
 
     boolean secure() default true;
 
-    public class Factory implements HttpParameterMapperFactory<UnencryptedCookie>, HttpClientParameterMapperFactory<UnencryptedCookie> {
+    public class Factory implements HttpParameterMapperFactory<UnencryptedCookie> {
 
         @Override
         public HttpParameterMapper create(UnencryptedCookie annotation, Parameter parameter) {
@@ -37,7 +34,7 @@ public @interface UnencryptedCookie {
         }
 
         @Override
-        public HttpClientParameterMapper createClient(UnencryptedCookie annotation, Parameter parameter) {
+        public HttpClientParameterMapper clientParameterMapper(UnencryptedCookie annotation, Parameter parameter) {
             String name = annotation.value();
             return (exchange, arg) -> exchange.addRequestCookie(name, arg);
         }

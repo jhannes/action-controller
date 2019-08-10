@@ -2,6 +2,7 @@ package org.actioncontroller;
 
 
 import org.actioncontroller.meta.ApiHttpExchange;
+import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapperFactory;
@@ -61,6 +62,11 @@ public @interface SessionParameter {
             }
 
             return new SessionParameterMapper(parameter, name);
+        }
+
+        @Override
+        public HttpClientParameterMapper clientParameterMapper(SessionParameter annotation, Parameter parameter) {
+            return (exchange, arg) -> {};
         }
     }
 

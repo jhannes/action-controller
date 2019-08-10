@@ -117,9 +117,9 @@ public class ConfigObserverTest {
 
     private static class DummyDataSource {
 
-        private final String url;
-        private final String username;
-        private final String password;
+        final String url;
+        final String username;
+        final String password;
 
         public DummyDataSource(String url, String username, String password) {
             this.url = url;
@@ -191,19 +191,17 @@ public class ConfigObserverTest {
 
     @Test
     public void shouldRecoverFromErrorInListener() {
+        expectedLogEvents.expectPattern(ConfigObserver.class, Level.ERROR, "Failed to notify listener {}");
         writeConfigLine("example.number=123");
 
         String[] fooValue = { null };
         observer.onConfigValue("example.foo", null,
                 v -> fooValue[0] = v
         );
-        observer.onConfigValue("example.number", "100",
-                Integer::parseInt
-        );
+        observer.onConfigValue("example.number", "100", s -> { throw new RuntimeException(""); });
 
         assertThat(fooValue[0]).isNull();
 
-        expectedLogEvents.expectPattern(ConfigObserver.class, Level.ERROR, "Failed to notify listener {}");
         writeConfigLines("example.number=one", "example.foo=real value");
         assertThat(fooValue[0]).isEqualTo("real value");
     }

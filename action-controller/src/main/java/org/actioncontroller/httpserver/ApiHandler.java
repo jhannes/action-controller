@@ -6,7 +6,6 @@ import org.actioncontroller.ApiControllerAction;
 import org.actioncontroller.HttpActionException;
 import org.actioncontroller.UserContext;
 import org.actioncontroller.meta.ApiHttpExchange;
-import org.actioncontroller.servlet.ApiServlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 public class ApiHandler implements UserContext, HttpHandler {
-    private static Logger logger = LoggerFactory.getLogger(ApiServlet.class);
+    private static Logger logger = LoggerFactory.getLogger(ApiHandler.class);
 
     private Map<String, List<ApiControllerAction>> routes;
     private String context;

@@ -90,7 +90,6 @@ public class ConfigObserverTest {
         assertThat(list).containsOnly("foo,bar");
 
         writeConfigLine("prop=a,  b ,c");
-        waitForFileWatcher();
         assertThat(list).containsOnly("a,  b ,c");
     }
 
@@ -101,7 +100,6 @@ public class ConfigObserverTest {
         observer.onIntValue("test", 11, value::set);
         assertThat(value.get()).isEqualTo(11);
         writeConfigLine("test = 1337");
-        waitForFileWatcher();
         assertThat(value.get()).isEqualTo(1337);
     }
 
@@ -111,7 +109,6 @@ public class ConfigObserverTest {
         observer.onLongValue("test", 11L, value::set);
         assertThat(value.get()).isEqualTo(11L);
         writeConfigLine("test = 1337");
-        waitForFileWatcher();
         assertThat(value.get()).isEqualTo(1337L);
     }
 
@@ -185,7 +182,6 @@ public class ConfigObserverTest {
         assertThat(list).containsExactly("foo", "bar");
 
         writeConfigLine("prop=a,  b ,c");
-        waitForFileWatcher();
         assertThat(list).containsExactly("a", "b", "c");
     }
 
@@ -229,8 +225,8 @@ public class ConfigObserverTest {
 
     private void waitForFileWatcher() {
         try {
-            Thread.sleep(100);
-            Instant instant = reloadTimes.poll(1000, TimeUnit.MILLISECONDS);
+            Thread.sleep(10);
+            Instant instant = reloadTimes.poll(300, TimeUnit.MILLISECONDS);
             assertThat(instant).describedAs("Timeout on reload wait").isNotNull();
         } catch (InterruptedException e) {
             fail("Thread.sleep interrupted", e);

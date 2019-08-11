@@ -17,7 +17,6 @@ import java.net.URL;
  *
  * exchange.getResponseBody()
  * </pre>
- * </pre>
  */
 public interface ApiClientExchange {
     void setTarget(String method, String pathInfo);

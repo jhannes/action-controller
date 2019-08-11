@@ -146,7 +146,7 @@ public class ConfigObserverTest {
     }
 
     @Test
-    public void otherAcceptanceTest() throws IOException {
+    public void shouldWatchForFileChanges() throws IOException {
         List<String> configLines = new ArrayList<>(Arrays.asList(
                 "my.dataSource.jdbcUrl=jdbc:datamastery:example",
                 "my.dataSource.jdbcUsername=sa",
@@ -229,7 +229,7 @@ public class ConfigObserverTest {
 
     private void waitForFileWatcher() {
         try {
-            Thread.sleep(10);
+            Thread.sleep(100);
             Instant instant = reloadTimes.poll(1000, TimeUnit.MILLISECONDS);
             assertThat(instant).describedAs("Timeout on reload wait").isNotNull();
         } catch (InterruptedException e) {

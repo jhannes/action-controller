@@ -1,16 +1,15 @@
 package org.actioncontroller.config;
 
-import org.junit.Rule;
+import org.junit.Before;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -19,10 +18,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class FileScannerTest {
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder(new File("target/test"));
-
     private File directory;
+
+    @Before
+    public void createTemporaryDirectory() {
+        directory = new File("target/test/FileScannerTest/" + UUID.randomUUID());
+        directory.mkdirs();
+
+        assertThat(directory).isDirectory();
+    }
 
     private List<String> configLines = new ArrayList<>(Arrays.asList(
             "my.dataSource.jdbcUrl=jdbc:datamastery:example",
@@ -32,7 +36,6 @@ public class FileScannerTest {
 
     @Test
     public void shouldNotifyWhenWatchedFileIsCreated() throws IOException, InterruptedException {
-        directory = temporaryFolder.newFolder();
         BlockingQueue<List<String>> callbacks = new LinkedBlockingQueue<>();
         new FileScanner(directory, Arrays.asList("file-one.txt", "file-two.txt"), callbacks::add);
 
@@ -43,7 +46,6 @@ public class FileScannerTest {
 
     @Test
     public void shouldNotifyWhenWatchedFileIsUpdated() throws IOException, InterruptedException {
-        directory = temporaryFolder.newFolder();
         writeFile("file-one.txt", configLines);
         BlockingQueue<List<String>> callbacks = new LinkedBlockingQueue<>();
         new FileScanner(directory, Arrays.asList("file-one.txt", "file-two.txt"), callbacks::add);
@@ -56,7 +58,6 @@ public class FileScannerTest {
 
     @Test
     public void shouldNotifyWhenWatchedFileIsDeleted() throws IOException, InterruptedException {
-        directory = temporaryFolder.newFolder();
         writeFile("file-one.txt", configLines);
         BlockingQueue<List<String>> callbacks = new LinkedBlockingQueue<>();
         new FileScanner(directory, Arrays.asList("file-one.txt", "file-two.txt"), callbacks::add);
@@ -69,7 +70,6 @@ public class FileScannerTest {
 
     @Test
     public void shouldIgnoreWhenUninterestingFileUpdated() throws IOException, InterruptedException {
-        directory = temporaryFolder.newFolder();
         writeFile("random-file.txt", configLines);
         BlockingQueue<List<String>> callbacks = new LinkedBlockingQueue<>();
         new FileScanner(directory, Arrays.asList("file-one.txt", "file-two.txt"), callbacks::add);
@@ -78,7 +78,7 @@ public class FileScannerTest {
         assertThat(notifiedFiles).isNull();
     }
 
-    private Path writeFile(String filename, List<String> configLines) throws IOException {
-        return Files.write(new File(directory, filename).toPath(), configLines);
+    private void writeFile(String filename, List<String> configLines) throws IOException {
+        Files.write(new File(directory, filename).toPath(), configLines);
     }
 }

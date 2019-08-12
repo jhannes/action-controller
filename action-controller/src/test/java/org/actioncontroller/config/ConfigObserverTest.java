@@ -133,40 +133,37 @@ public class ConfigObserverTest {
 
         @Override
         protected DummyDataSource transform(Map<String, String> config) {
-            return new DummyDataSource(
-                    config.get(prefix + ".jdbcUrl"),
-                    config.get(prefix + ".jdbcUsername"),
-                    config.get(prefix + ".jdbcPassword")
-            );
+            String url = config.get(prefix + ".jdbcUrl");
+            if (url == null) {
+                return null;
+            }
+            return new DummyDataSource(url, config.get(prefix + ".jdbcUsername"), config.get(prefix + ".jdbcPassword"));
         }
 
     }
 
     @Test
     public void shouldWatchForFileChanges() throws IOException {
-        List<String> configLines = new ArrayList<>(Arrays.asList(
-                "my.dataSource.jdbcUrl=jdbc:datamastery:example",
-                "my.dataSource.jdbcUsername=sa",
-                "my.dataSource.jdbcPassword="
-        ));
-        Files.write(new File(directory, "testApp.properties").toPath(), configLines);
+        writeConfigLines("my.dataSource.jdbcUrl=jdbc:datamastery:example",
+            "my.dataSource.jdbcUsername=sa",
+            "my.dataSource.jdbcPassword=");
         observer.onConfigChange(new DummyDataSourceConfigListener(
                 "my.dataSource",
-                dataSource -> this.dataSource = dataSource
+                dataSource -> {
+                    this.dataSource = dataSource;
+                }
         ));
         assertThat(dataSource).isEqualToComparingFieldByField(new DummyDataSource(
                 "jdbc:datamastery:example", "sa", ""
         ));
 
         dataSource = null;
-        configLines.add("otherConfig=something");
-        Files.write(new File(directory, "testApp.properties").toPath(), configLines);
-        waitForFileWatcher();
+        writeConfigLine("otherConfig=something");
         assertThat(dataSource).isNull();
 
-        configLines.set(0, "my.dataSource.jdbcUrl=jdbc:datamastery:UPDATED");
-        Files.write(new File(directory, "testApp.properties").toPath(), configLines);
-        waitForFileWatcher();
+        writeConfigLines("my.dataSource.jdbcUrl=jdbc:datamastery:UPDATED",
+            "my.dataSource.jdbcUsername=sa",
+            "my.dataSource.jdbcPassword=");
         assertThat(dataSource).isEqualToComparingFieldByField(new DummyDataSource(
                 "jdbc:datamastery:UPDATED", "sa", ""
         ));

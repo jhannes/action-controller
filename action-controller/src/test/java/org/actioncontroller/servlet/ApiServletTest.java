@@ -57,11 +57,6 @@ public class ApiServletTest {
     private FakeServletResponse response = new FakeServletResponse();
 
     public class ExampleController {
-
-        private UUID uuid;
-        private long longValue;
-        private ElementType enumValue;
-
         @Get("/one")
         @JsonBody
         public JsonObject one(@RequestParam("name") Optional<String> name) {
@@ -93,6 +88,28 @@ public class ApiServletTest {
             postedBody = o;
         }
 
+        @Post("/mappingByType")
+        public void mappingByType(ApiHttpExchange exchange) {
+
+        }
+
+        @Post("/setLoggedInUser")
+        public void sessionUpdater(@SessionParameter("username") Consumer<String> usernameSetter) {
+            usernameSetter.accept("Alice Bobson");
+        }
+
+        @Get("/redirect")
+        @SendRedirect
+        public String redirector() {
+            return "login";
+        }
+    }
+
+    public class ControllerWithTypedParameters {
+        private UUID uuid;
+        private long longValue;
+        private ElementType enumValue;
+
         @Get("/hello")
         public void methodWithOptionalBoolean(
                 @RequestParam("admin") Optional<Boolean> adminParam,
@@ -119,22 +136,6 @@ public class ApiServletTest {
         @Post("/withEnum")
         public void methodWithEnum(@RequestParam("enumValue") ElementType enumValue) {
             this.enumValue = enumValue;
-        }
-
-        @Post("/setLoggedInUser")
-        public void sessionUpdater(@SessionParameter("username") Consumer<String> usernameSetter) {
-            usernameSetter.accept("Alice Bobson");
-        }
-
-        @Post("/mappingByType")
-        public void mappingByType(ApiHttpExchange exchange) {
-
-        }
-
-        @Get("/redirect")
-        @SendRedirect
-        public String redirector() {
-            return "login";
         }
     }
 
@@ -386,6 +387,7 @@ public class ApiServletTest {
     @Before
     public void setupRequest() throws IOException {
         servlet.registerController(new ExampleController());
+        servlet.registerController(new ControllerWithTypedParameters());
 
         when(responseMock.getWriter()).thenReturn(new PrintWriter(responseBody));
         contextRoot = new URL("http://example.com/root");

@@ -57,7 +57,7 @@ import java.util.stream.Collectors;
 public class ApiServlet extends HttpServlet implements UserContext {
 
     private static Logger logger = LoggerFactory.getLogger(ApiServlet.class);
-    private Map<String, List<ApiControllerAction>> routes;
+    private Map<String, List<ApiControllerAction>> routes = ApiControllerAction.createRoutesMap();
 
     public boolean isUserLoggedIn(ApiHttpExchange exchange) {
         return exchange.isUserLoggedIn();
@@ -127,7 +127,7 @@ public class ApiServlet extends HttpServlet implements UserContext {
             controllerException = new ApiServletCompositeException();
         }
         try {
-             routes = ApiControllerAction.registerActions(controller);
+             ApiControllerAction.registerActions(controller, routes);
         } catch (ApiControllerCompositeException e) {
             controllerException.addControllerException(e);
         }

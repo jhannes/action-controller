@@ -63,13 +63,7 @@ public class ApiControllerAction {
         verifyPathParameters();
     }
 
-    public static Map<String, List<ApiControllerAction>> registerActions(Object controller) {
-        Map<String, List<ApiControllerAction>> routes = new HashMap<>();
-        routes.put("GET", new ArrayList<>());
-        routes.put("POST", new ArrayList<>());
-        routes.put("PUT", new ArrayList<>());
-        routes.put("DELETE", new ArrayList<>());
-
+    public static void registerActions(Object controller, Map<String, List<ApiControllerAction>> routes) {
         ApiControllerCompositeException exceptions = new ApiControllerCompositeException(controller);
         for (Method method : controller.getClass().getMethods()) {
             try {
@@ -89,6 +83,14 @@ public class ApiControllerAction {
         if (!exceptions.isEmpty()) {
             throw exceptions;
         }
+    }
+
+    public static Map<String, List<ApiControllerAction>> createRoutesMap() {
+        Map<String, List<ApiControllerAction>> routes = new HashMap<>();
+        routes.put("GET", new ArrayList<>());
+        routes.put("POST", new ArrayList<>());
+        routes.put("PUT", new ArrayList<>());
+        routes.put("DELETE", new ArrayList<>());
         return routes;
     }
 
@@ -320,5 +322,10 @@ public class ApiControllerAction {
             logger.warn("While processing {} arguments", exchange, e);
             throw new HttpRequestException(e);
         }
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{" + pattern + " => " + getMethodName(action) + "}";
     }
 }

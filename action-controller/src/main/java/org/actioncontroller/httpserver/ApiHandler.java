@@ -16,14 +16,14 @@ import java.util.Map;
 public class ApiHandler implements UserContext, HttpHandler {
     private static Logger logger = LoggerFactory.getLogger(ApiHandler.class);
 
-    private Map<String, List<ApiControllerAction>> routes;
+    private Map<String, List<ApiControllerAction>> routes = ApiControllerAction.createRoutesMap();
     private String context;
     private String apiPath;
 
     public ApiHandler(String context, String apiPath, Object controller) {
         this.context = context;
         this.apiPath = apiPath;
-        routes = ApiControllerAction.registerActions(controller);
+        ApiControllerAction.registerActions(controller, routes);
     }
 
     @Override
@@ -42,6 +42,7 @@ public class ApiHandler implements UserContext, HttpHandler {
             }
         }
         logger.warn("No route for {} {}[{}]", method, controllerPath, pathInfo);
+        logger.info("Routes {}", routes);
         httpExchange.sendError(404, "No route for " + method + ": " + controllerPath + pathInfo);
     }
 

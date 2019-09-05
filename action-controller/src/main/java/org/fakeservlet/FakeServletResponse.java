@@ -24,6 +24,7 @@ public class FakeServletResponse implements HttpServletResponse {
     private Map<String, String> headers = new HashMap<>();
     private String contentType;
     private List<Cookie> cookies = new ArrayList<>();
+    private String characterEncoding;
 
     @Override
     public void addCookie(Cookie cookie) {
@@ -151,7 +152,7 @@ public class FakeServletResponse implements HttpServletResponse {
     // TODO
     @Override
     public String getCharacterEncoding() {
-        throw unimplemented();
+        return characterEncoding;
     }
 
     // TODO
@@ -191,8 +192,8 @@ public class FakeServletResponse implements HttpServletResponse {
     }
 
     @Override
-    public void setCharacterEncoding(String s) {
-        throw unimplemented();
+    public void setCharacterEncoding(String characterEncoding) {
+        this.characterEncoding = characterEncoding;
     }
 
     private AssertionError unimplemented() {

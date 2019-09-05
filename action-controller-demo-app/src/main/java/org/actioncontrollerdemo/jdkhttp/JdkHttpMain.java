@@ -71,6 +71,7 @@ public class JdkHttpMain {
             httpServer.createContext("/demo/swagger", webJar);
             httpServer.createContext("/demo/api", apiHandler);
             httpServer.createContext("/demo", staticContent);
+            httpServer.createContext("/", new RedirectHandler("/demo"));
             httpServer.bind(inetSocketAddress, 0);
             httpServer.start();
             logger.warn("Started on http://" + httpServer.getAddress().getHostString() + ":" + httpServer.getAddress().getPort());

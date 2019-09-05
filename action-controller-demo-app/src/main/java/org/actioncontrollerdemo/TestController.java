@@ -3,6 +3,8 @@ package org.actioncontrollerdemo;
 import org.actioncontroller.ContentBody;
 import org.actioncontroller.Get;
 import org.actioncontroller.RequestParam;
+import org.actioncontroller.json.JsonBody;
+import org.jsonbuddy.JsonObject;
 
 import java.util.Optional;
 
@@ -24,5 +26,11 @@ public class TestController {
     @Get("/update")
     public void update() {
         updater.run();
+    }
+
+    @JsonBody
+    @Get("/json")
+    public JsonObject getJson() {
+        return new JsonObject().put("product", "Blåbærsyltetøy");
     }
 }

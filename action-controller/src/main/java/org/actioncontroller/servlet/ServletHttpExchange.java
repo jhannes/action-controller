@@ -34,6 +34,8 @@ public class ServletHttpExchange implements ApiHttpExchange {
     @Override
     public void write(String contentType, WriterConsumer consumer) throws IOException {
         resp.setContentType(contentType);
+        // BUG: Jetty "calculates" UTF-8 for application/json for resp.getWriter, but doesn't explicitly set character encoding in the header
+        resp.setCharacterEncoding(resp.getCharacterEncoding());
         PrintWriter writer = resp.getWriter();
         consumer.accept(writer);
         writer.flush();

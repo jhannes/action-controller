@@ -152,6 +152,8 @@ public class ApiServletTest {
             .isEqualTo(name);
         verify(responseMock).getWriter();
         verify(responseMock).setContentType("application/json");
+        verify(responseMock).getCharacterEncoding();
+        verify(responseMock).setCharacterEncoding(null);
     }
 
     @Test
@@ -349,6 +351,8 @@ public class ApiServletTest {
 
         verify(responseMock).sendError(401,"User must be logged in for public org.jsonbuddy.JsonObject org.actioncontroller.servlet.ApiServletTest$ExampleController.restrictedOperation()");
         verify(responseMock).setContentType("application/json");
+        verify(responseMock).getCharacterEncoding();
+        verify(responseMock).setCharacterEncoding(null);
         verify(responseMock).getWriter();
         assertThat(JsonParser.parseToObject(responseBody.toString()).requiredString("message"))
                 .isEqualTo("Login required");
@@ -364,6 +368,8 @@ public class ApiServletTest {
         servlet.service(requestMock, responseMock);
 
         verify(responseMock).setContentType("application/json");
+        verify(responseMock).getCharacterEncoding();
+        verify(responseMock).setCharacterEncoding(null);
         verify(responseMock).getWriter();
         assertThat(JsonParser.parseToObject(responseBody.toString()).requiredString("message"))
                 .isEqualTo("you're in!");
@@ -379,6 +385,8 @@ public class ApiServletTest {
 
         verify(responseMock).sendError(403, "User failed to authenticate for public org.jsonbuddy.JsonObject org.actioncontroller.servlet.ApiServletTest$ExampleController.restrictedOperation(): Missing role admin for user");
         verify(responseMock).setContentType("application/json");
+        verify(responseMock).getCharacterEncoding();
+        verify(responseMock).setCharacterEncoding(null);
         verify(responseMock).getWriter();
         assertThat(JsonParser.parseToObject(responseBody.toString()).requiredString("message"))
                 .isEqualTo("Insufficient permissions");

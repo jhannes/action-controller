@@ -1,6 +1,7 @@
 package org.actioncontroller.servlet;
 
 import org.actioncontroller.ApiControllerAction;
+import org.actioncontroller.ApiControllerMethodAction;
 import org.actioncontroller.ApiControllerCompositeException;
 import org.actioncontroller.HttpActionException;
 import org.actioncontroller.UserContext;
@@ -15,8 +16,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -57,7 +58,7 @@ import java.util.stream.Collectors;
 public class ApiServlet extends HttpServlet implements UserContext {
 
     private static Logger logger = LoggerFactory.getLogger(ApiServlet.class);
-    private Map<String, List<ApiControllerAction>> routes = ApiControllerAction.createRoutesMap();
+    private List<ApiControllerAction> actions = new ArrayList<>();
 
     public boolean isUserLoggedIn(ApiHttpExchange exchange) {
         return exchange.isUserLoggedIn();
@@ -76,27 +77,26 @@ public class ApiServlet extends HttpServlet implements UserContext {
             MDC.put("request", req.getContextPath() + req.getServletPath() + req.getPathInfo());
 
             verifyNoExceptions();
-            invokeAction(new ServletHttpExchange(req, resp), req.getMethod(), req.getPathInfo(), req.getContextPath() + req.getServletPath());
+            invokeAction(new ServletHttpExchange(req, resp));
         } finally {
             MDC.clear();
         }
     }
 
-    private boolean invokeAction(ApiHttpExchange httpExchange, String method, String pathInfo, String controllerPath) throws IOException {
-        for (ApiControllerAction apiAction : routes.get(method)) {
-            if (apiAction.matches(pathInfo)) {
-                httpExchange.setPathParameters(apiAction.collectPathParameters(pathInfo));
+    private void invokeAction(ApiHttpExchange httpExchange) throws IOException {
+        for (ApiControllerAction action : actions) {
+            if (action.matches(httpExchange)) {
                 try {
-                    apiAction.invoke(this, httpExchange);
+                    action.invoke(this, httpExchange);
                 } catch (HttpActionException e) {
                     e.sendError(httpExchange);
                 }
-                return true;
+                return;
             }
         }
-        logger.warn("No route for {} {}[{}]", method, controllerPath, pathInfo);
-        httpExchange.sendError(404, "No route for " + method + ": " + controllerPath + pathInfo);
-        return false;
+        logger.warn("No route for {}", httpExchange.getHttpMethod() + " " + httpExchange.getApiURL().getPath() + "[" + httpExchange.getPathInfo() + "]");
+        logger.info("Routes {}", actions);
+        httpExchange.sendError(404, "No route for " + httpExchange.getHttpMethod() + ": " + httpExchange.getApiURL() + httpExchange.getPathInfo());
     }
 
     @Override
@@ -127,7 +127,7 @@ public class ApiServlet extends HttpServlet implements UserContext {
             controllerException = new ApiServletCompositeException();
         }
         try {
-             ApiControllerAction.registerActions(controller, routes);
+            this.actions.addAll(ApiControllerMethodAction.registerActions(controller));
         } catch (ApiControllerCompositeException e) {
             controllerException.addControllerException(e);
         }

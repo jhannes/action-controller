@@ -23,19 +23,40 @@ import java.util.UUID;
  */
 public interface ApiHttpExchange {
 
-    void write(String contentType, WriterConsumer consumer) throws IOException;
+    String getHttpMethod();
 
-    String getHeader(String name);
-
-    void setResponseHeader(String key, String value);
-
-    void sendRedirect(String path) throws IOException;
-
+    /**
+     * Returns the scheme, hostname and port part of the requesting URL, for example
+     * <code>http://www.example.com</code> or <code>https://localhost:8443</code>
+     */
     String getServerURL();
 
     URL getContextURL() throws MalformedURLException;
 
+    /**
+     * Returns the path to where the controllers paths are evaluated relative to, that
+     * is, the Servlet's context URL. For example, if an {@link org.actioncontroller.servlet.ApiServlet}
+     * is bound as "/api/*" in a webapp mounted at "/app", getApiURL might return
+     * <code>https://example.com:7443/app/api</code>.
+     */
     URL getApiURL() throws MalformedURLException;
+
+    /**
+     * Returns the part of the URL after getApiURL. For example if a controller is mounted at
+     * <code>https://example.com:7443/app/api</code> and the client requests GET
+     * <code>https://example.com:7443/app/api/hello/world</code> getPathInfo returns <code>"/hello/world"</code>
+     */
+    String getPathInfo();
+
+    void write(String contentType, WriterConsumer consumer) throws IOException;
+
+    String getHeader(String name);
+
+    String getClientIp();
+
+    void setResponseHeader(String key, String value);
+
+    void sendRedirect(String path) throws IOException;
 
     /**
      * @throws HttpActionException throws 500 if the name was not matched with a path parameter
@@ -45,8 +66,6 @@ public interface ApiHttpExchange {
     void setPathParameters(Map<String, String> pathParameters);
 
     Reader getReader() throws IOException;
-
-    String getClientIp();
 
     Object getParameter(String name, Parameter parameter);
 
@@ -106,4 +125,5 @@ public interface ApiHttpExchange {
         return optional ? Optional.of(parameterValue) : parameterValue;
     }
 
+    void calculatePathParams(String[] pathPattern);
 }

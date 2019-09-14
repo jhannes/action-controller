@@ -24,31 +24,18 @@ public class ServletHttpExchange implements ApiHttpExchange {
 
     private final HttpServletRequest req;
     private final HttpServletResponse resp;
+    private final String method;
     private Map<String, String> pathParams = new HashMap<>();
 
     public ServletHttpExchange(HttpServletRequest req, HttpServletResponse resp) {
         this.req = req;
         this.resp = resp;
+        this.method = req.getMethod();
     }
 
     @Override
-    public void write(String contentType, WriterConsumer consumer) throws IOException {
-        resp.setContentType(contentType);
-        // BUG: Jetty "calculates" UTF-8 for application/json for resp.getWriter, but doesn't explicitly set character encoding in the header
-        resp.setCharacterEncoding(resp.getCharacterEncoding());
-        PrintWriter writer = resp.getWriter();
-        consumer.accept(writer);
-        writer.flush();
-    }
-
-    @Override
-    public void setResponseHeader(String key, String value) {
-        resp.setHeader(key, value);
-    }
-
-    @Override
-    public void sendRedirect(String location) throws IOException {
-        resp.sendRedirect(location);
+    public String getHttpMethod() {
+        return method;
     }
 
     @Override
@@ -83,6 +70,31 @@ public class ServletHttpExchange implements ApiHttpExchange {
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public String getPathInfo() {
+        return req.getPathInfo();
+    }
+
+    @Override
+    public void write(String contentType, WriterConsumer consumer) throws IOException {
+        resp.setContentType(contentType);
+        // BUG: Jetty "calculates" UTF-8 for application/json for resp.getWriter, but doesn't explicitly set character encoding in the header
+        resp.setCharacterEncoding(resp.getCharacterEncoding());
+        PrintWriter writer = resp.getWriter();
+        consumer.accept(writer);
+        writer.flush();
+    }
+
+    @Override
+    public void setResponseHeader(String key, String value) {
+        resp.setHeader(key, value);
+    }
+
+    @Override
+    public void sendRedirect(String location) throws IOException {
+        resp.sendRedirect(location);
     }
 
     @Override
@@ -184,11 +196,30 @@ public class ServletHttpExchange implements ApiHttpExchange {
     }
 
     @Override
-    public String toString() {
-        return getClass().getSimpleName() + "[" + req.getMethod() + " " + getFullURL() + "]";
+    public void calculatePathParams(String[] patternParts) {
+        HashMap<String, String> pathParameters = new HashMap<>();
+
+        String[] actualParts = getPathInfo().split("/");
+        if (patternParts.length != actualParts.length) {
+            throw new IllegalArgumentException("Paths don't match <" + String.join("/", patternParts) + ">, but was <" + getPathInfo() + ">");
+        }
+
+        for (int i = 0; i < patternParts.length; i++) {
+            if (patternParts[i].startsWith(":")) {
+                pathParameters.put(patternParts[i].substring(1), actualParts[i]);
+            } else if (!patternParts[i].equals(actualParts[i])) {
+                throw new IllegalArgumentException("Paths don't match <" + String.join("/", patternParts) + ">, but was <" + getPathInfo() + ">");
+            }
+        }
+        setPathParameters(pathParameters);
     }
 
     private String getFullURL() {
-        return getApiURL() + req.getPathInfo() + (req.getQueryString() != null ? "?" + req.getQueryString() : "");
+        return getServerURL() + req.getContextPath() + req.getServletPath() + req.getPathInfo() + (req.getQueryString() != null ? "?" + req.getQueryString() : "");
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + method + " " + getFullURL() + "]";
     }
 }

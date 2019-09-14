@@ -48,6 +48,38 @@ class JdkHttpExchange implements ApiHttpExchange {
         }
     }
 
+    @Override
+    public String getHttpMethod() {
+        return exchange.getRequestMethod();
+    }
+
+    @Override
+    public URL getContextURL() throws MalformedURLException {
+        return new URL(getServerURL() + context);
+    }
+
+    @Override
+    public String getServerURL() {
+        String scheme = Optional.ofNullable(exchange.getRequestHeaders().getFirst("X-Forwarded-Proto"))
+                .orElse(exchange instanceof HttpsExchange ? "https" : "http");
+        String host = Optional.ofNullable(exchange.getRequestHeaders().getFirst("X-Forwarded-Host"))
+                .orElseGet(() -> Optional.ofNullable(exchange.getRequestHeaders().getFirst("Host"))
+                        .orElseGet(() -> exchange.getLocalAddress().toString()));
+        return scheme + "://" + host;
+    }
+
+    @Override
+    public URL getApiURL() throws MalformedURLException {
+        return new URL(getServerURL() + context + apiPath);
+    }
+
+    @Override
+    public String getPathInfo() {
+        String path = exchange.getRequestURI().getPath();
+        String controllerPath = context + apiPath;
+        return path.substring(controllerPath.length());
+    }
+
     private String asString(InputStream inputStream) throws IOException {
         StringBuilder stringBuilder = new StringBuilder();
         int c;
@@ -100,26 +132,6 @@ class JdkHttpExchange implements ApiHttpExchange {
     public void sendRedirect(String path) throws IOException {
         exchange.getResponseHeaders().set("Location", path);
         sendResponseHeaders(302, 0);
-    }
-
-    @Override
-    public URL getContextURL() throws MalformedURLException {
-        return new URL(getServerURL() + context);
-    }
-
-    @Override
-    public String getServerURL() {
-        String scheme = Optional.ofNullable(exchange.getRequestHeaders().getFirst("X-Forwarded-Proto"))
-                .orElse(exchange instanceof HttpsExchange ? "https" : "http");
-        String host = Optional.ofNullable(exchange.getRequestHeaders().getFirst("X-Forwarded-Host"))
-                .orElseGet(() -> Optional.ofNullable(exchange.getRequestHeaders().getFirst("Host"))
-                        .orElseGet(() -> exchange.getLocalAddress().toString()));
-        return scheme + "://" + host;
-    }
-
-    @Override
-    public URL getApiURL() throws MalformedURLException {
-        return new URL(getServerURL() + context + apiPath);
     }
 
     @Override
@@ -216,5 +228,28 @@ class JdkHttpExchange implements ApiHttpExchange {
     private void sendResponseHeaders(int rCode, int responseLength) throws IOException {
         exchange.sendResponseHeaders(rCode, responseLength);
         responseSent = true;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{" + getHttpMethod() + " " +  context + apiPath  + "[" + getPathInfo() + "]}";
+    }
+
+    public void calculatePathParams(String[] patternParts) {
+        HashMap<String, String> pathParameters = new HashMap<>();
+
+        String[] actualParts = getPathInfo().split("/");
+        if (patternParts.length != actualParts.length) {
+            throw new IllegalArgumentException("Paths don't match <" + String.join("/", patternParts) + ">, but was <" + getPathInfo() + ">");
+        }
+
+        for (int i = 0; i < patternParts.length; i++) {
+            if (patternParts[i].startsWith(":")) {
+                pathParameters.put(patternParts[i].substring(1), actualParts[i]);
+            } else if (!patternParts[i].equals(actualParts[i])) {
+                throw new IllegalArgumentException("Paths don't match <" + String.join("/", patternParts) + ">, but was <" + getPathInfo() + ">");
+            }
+        }
+        setPathParameters(pathParameters);
     }
 }

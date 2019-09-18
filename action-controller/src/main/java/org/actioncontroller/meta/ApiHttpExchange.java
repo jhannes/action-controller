@@ -48,6 +48,26 @@ public interface ApiHttpExchange {
      */
     String getPathInfo();
 
+    /**
+     * Returns the query string of the requested url. For example if the client requests
+     * GET <code>https://example.com:7443/app/api/hello/world?greeting=Hello+There</code>
+     * <code>getQueryString()</code> returns <code>greeting=Hello+There</code>.
+     */
+    String getQueryString();
+
+    /**
+     * Returns the specified query string of the requested url for a get request or x-www-form-urlencoded body
+     * parameter for a POST or PUT request. For example if the client requests
+     * GET <code>https://example.com:7443/app/api/hello/world?greeting=Hello+There</code>
+     * <code>getParameter("greeting", ...)</code> returns <code>Hello There</code>.
+     *
+     * @param name The query parameter name.
+     * @param parameter The method parameter that this will be mapped to. Will be used to convert the value using {@link #convertTo}
+     */
+    Object getParameter(String name, Parameter parameter);
+
+    boolean hasParameter(String name);
+
     void write(String contentType, WriterConsumer consumer) throws IOException;
 
     String getHeader(String name);
@@ -66,8 +86,6 @@ public interface ApiHttpExchange {
     void setPathParameters(Map<String, String> pathParameters);
 
     Reader getReader() throws IOException;
-
-    Object getParameter(String name, Parameter parameter);
 
     void setCookie(String name, String value, boolean secure);
 
@@ -103,6 +121,16 @@ public interface ApiHttpExchange {
         }
     }
 
+    /**
+     * Converts the parameter value to the type specified by the parameter. Supports String, int, (long), (short), (byte),
+     * double, (float), UUID, (Instant), (LocalDate) and enums, as well as Optionals of the same.
+     * @param value The string value read from the http value
+     * @param parameterName Used for exception messages
+     * @param parameter the Parameter object from the method that this value should be mapped to. Needed to deal with optionals
+     * @return The value converted to a type compatible with parameter
+     * @throws HttpRequestException if the value is null and the parameter is not Optional
+     * @throws HttpRequestException if the value doesn't have a legal representation in the target type
+     */
     static Object convertTo(String value, String parameterName, Parameter parameter) {
         boolean optional = parameter.getType() == Optional.class;
 
@@ -126,4 +154,5 @@ public interface ApiHttpExchange {
     }
 
     void calculatePathParams(String[] pathPattern);
+
 }

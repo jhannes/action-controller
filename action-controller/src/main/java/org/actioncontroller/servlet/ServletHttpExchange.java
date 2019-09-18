@@ -112,16 +112,6 @@ public class ServletHttpExchange implements ApiHttpExchange {
     }
 
     @Override
-    public Reader getReader() throws IOException {
-        return req.getReader();
-    }
-
-    @Override
-    public String getClientIp() {
-        return Optional.ofNullable(req.getHeader("X-Forwarded-For")).orElse(req.getRemoteAddr());
-    }
-
-    @Override
     public Object getParameter(String name, Parameter parameter) {
         String value = req.getParameter(name);
         try {
@@ -129,6 +119,26 @@ public class ServletHttpExchange implements ApiHttpExchange {
         } catch (IllegalArgumentException e) {
             throw new HttpRequestException("Could not convert " + name + "=" + value + " to " + parameter.getType().getTypeName());
         }
+    }
+
+    @Override
+    public boolean hasParameter(String name) {
+        return req.getParameter(name) != null;
+    }
+
+    @Override
+    public String getQueryString() {
+        return req.getQueryString();
+    }
+
+    @Override
+    public Reader getReader() throws IOException {
+        return req.getReader();
+    }
+
+    @Override
+    public String getClientIp() {
+        return Optional.ofNullable(req.getHeader("X-Forwarded-For")).orElse(req.getRemoteAddr());
     }
 
     @Override

@@ -1,6 +1,7 @@
 package org.actioncontroller;
 
 import org.actioncontroller.client.HttpClientException;
+import org.actioncontroller.meta.ApiHttpExchange;
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.extend.junit.ExpectedLogEventsRule;
@@ -21,6 +22,12 @@ public abstract class AbstractApiClientProxyTest {
         @ContentBody
         public String first() {
             return "Hello world";
+        }
+
+        @Get("/first?greeting")
+        @ContentBody
+        public String first(@RequestParam("greeting") String greeting, ApiHttpExchange exchange) {
+            return greeting + " " + exchange.getPathInfo();
         }
 
         @Get("/uppercase")
@@ -88,6 +95,11 @@ public abstract class AbstractApiClientProxyTest {
     @Test
     public void shouldMakeSimpleHttpGet() {
         assertThat(client.first()).isEqualTo("Hello world");
+    }
+
+    @Test
+    public void shouldRouteWithRequiredParameter() {
+        assertThat(client.first("Hi!", null)).isEqualTo("Hi! /first");
     }
 
     @Rule

@@ -160,8 +160,18 @@ class JdkHttpExchange implements ApiHttpExchange {
     }
 
     @Override
+    public String getQueryString() {
+        return exchange.getRequestURI().getQuery();
+    }
+
+    @Override
     public Object getParameter(String name, Parameter parameter) {
         return ApiHttpExchange.convertTo(getFirstParameter(name), name, parameter);
+    }
+
+    @Override
+    public boolean hasParameter(String name) {
+        return this.parameters.containsKey(name);
     }
 
     public String getFirstParameter(String name) {

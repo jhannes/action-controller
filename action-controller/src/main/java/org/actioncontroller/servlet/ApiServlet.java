@@ -90,19 +90,33 @@ public class ApiServlet extends HttpServlet implements UserContext {
     }
 
     private void invokeAction(ApiHttpExchange httpExchange) throws IOException {
+        List<ApiControllerAction> candidates = new ArrayList<>();
+
         for (ApiControllerAction action : actions) {
             if (action.matches(httpExchange)) {
-                try {
-                    action.invoke(this, httpExchange);
-                } catch (HttpActionException e) {
-                    e.sendError(httpExchange);
-                }
-                return;
+                candidates.add(action);
             }
         }
-        logger.warn("No route for {}", httpExchange.getHttpMethod() + " " + httpExchange.getApiURL().getPath() + "[" + httpExchange.getPathInfo() + "]");
-        logger.info("Routes {}", actions);
-        httpExchange.sendError(404, "No route for " + httpExchange.getHttpMethod() + ": " + httpExchange.getApiURL() + httpExchange.getPathInfo());
+
+        if (candidates.size() > 1) {
+            candidates = candidates.stream().filter(ApiControllerAction::requiresParameter).collect(Collectors.toList());
+        }
+
+        if (candidates.isEmpty()) {
+            logger.warn("No route for {}", httpExchange.getHttpMethod() + " " + httpExchange.getApiURL().getPath() + "[" + httpExchange.getPathInfo() + "]");
+            logger.info("Routes {}", actions);
+            httpExchange.sendError(404, "No route for " + httpExchange.getHttpMethod() + ": " + httpExchange.getApiURL() + httpExchange.getPathInfo());
+        } else if (candidates.size() > 1) {
+            logger.warn("Ambiguous route for {}", httpExchange.getHttpMethod() + " " + httpExchange.getApiURL().getPath() + "[" + httpExchange.getPathInfo() + "]");
+            logger.warn("Routes {}", candidates);
+            httpExchange.sendError(404, "No route for " + httpExchange.getHttpMethod() + ": " + httpExchange.getApiURL() + httpExchange.getPathInfo());
+        } else {
+            try {
+                candidates.get(0).invoke(this, httpExchange);
+            } catch (HttpActionException e) {
+                e.sendError(httpExchange);
+            }
+        }
     }
 
     @Override

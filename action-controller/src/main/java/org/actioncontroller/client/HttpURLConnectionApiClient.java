@@ -42,7 +42,8 @@ public class HttpURLConnectionApiClient implements ApiClient {
         @Override
         public void setTarget(String method, String pathInfo) {
             this.method = method;
-            this.pathInfo = pathInfo;
+            int questionPos = pathInfo.indexOf('?');
+            this.pathInfo = questionPos == -1 ? pathInfo : pathInfo.substring(0, questionPos);
         }
 
         @Override

@@ -39,6 +39,7 @@ import java.util.stream.Stream;
 public class ApiControllerMethodAction implements ApiControllerAction {
 
     private final static Logger logger = LoggerFactory.getLogger(ApiControllerAction.class);
+    private final Optional<String> requiredParameter;
 
     public static List<ApiControllerAction> registerActions(Object controller) {
         List<ApiControllerAction> actions = new ArrayList<>();
@@ -80,7 +81,13 @@ public class ApiControllerMethodAction implements ApiControllerAction {
         this.controller = controller;
         this.action = action;
         this.pattern = pattern;
-        this.patternParts = pattern.split("/");
+        if (pattern.indexOf('?') > 0) {
+            this.patternParts = pattern.substring(0, pattern.indexOf('?')).split("/");
+            this.requiredParameter = Optional.of(pattern.substring(pattern.indexOf('?') + 1));
+        } else {
+            this.patternParts = pattern.split("/");
+            this.requiredParameter = Optional.empty();
+        }
 
         Parameter[] parameters = action.getParameters();
         for (int i = 0; i < parameters.length; i++) {
@@ -199,8 +206,15 @@ public class ApiControllerMethodAction implements ApiControllerAction {
         return action;
     }
 
+    @Override
+    public boolean requiresParameter() {
+        return requiredParameter.isPresent();
+    }
+
+    @Override
     public boolean matches(ApiHttpExchange exchange) {
-        return this.httpMethod.equals(exchange.getHttpMethod()) && matches(exchange.getPathInfo());
+        return this.httpMethod.equals(exchange.getHttpMethod()) && matches(exchange.getPathInfo()) &&
+                requiredParameter.map(exchange::hasParameter).orElse(true);
     }
 
     private boolean matches(String pathInfo) {

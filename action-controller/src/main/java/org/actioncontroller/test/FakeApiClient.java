@@ -44,7 +44,8 @@ public class FakeApiClient implements ApiClient {
         @Override
         public void setTarget(String method, String pathInfo) {
             request.setMethod(method);
-            request.setPathInfo(pathInfo);
+            int questionPos = pathInfo.indexOf('?');
+            request.setPathInfo(questionPos == -1 ? pathInfo : pathInfo.substring(0, questionPos));
         }
 
         @Override

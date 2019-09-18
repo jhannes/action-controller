@@ -1,14 +1,14 @@
 package org.actioncontroller;
 
-import org.actioncontroller.servlet.ApiServletException;
+import org.actioncontroller.servlet.ActionControllerConfigurationException;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ApiControllerCompositeException extends ApiServletException {
+public class ApiControllerCompositeException extends ActionControllerConfigurationException {
 
-    private List<ApiServletException> exceptions = new ArrayList<>();
+    private List<ActionControllerConfigurationException> exceptions = new ArrayList<>();
     private Object controller;
 
     public ApiControllerCompositeException(Object controller) {
@@ -16,7 +16,7 @@ public class ApiControllerCompositeException extends ApiServletException {
         this.controller = controller;
     }
 
-    public void addActionException(ApiServletException exception) {
+    public void addActionException(ActionControllerConfigurationException exception) {
         exceptions.add(exception);
     }
 

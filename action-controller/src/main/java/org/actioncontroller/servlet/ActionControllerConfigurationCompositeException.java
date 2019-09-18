@@ -6,11 +6,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ApiServletCompositeException extends ApiServletException  {
+public class ActionControllerConfigurationCompositeException extends ActionControllerConfigurationException {
 
     private List<ApiControllerCompositeException> exceptions = new ArrayList<>();
 
-    public ApiServletCompositeException() {
+    public ActionControllerConfigurationCompositeException() {
         super(null);
     }
 

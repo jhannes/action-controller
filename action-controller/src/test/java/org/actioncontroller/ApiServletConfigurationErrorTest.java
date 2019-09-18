@@ -7,7 +7,7 @@ import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
 import org.actioncontroller.meta.HttpReturnMapper;
 import org.actioncontroller.servlet.ApiServlet;
-import org.actioncontroller.servlet.ApiServletException;
+import org.actioncontroller.servlet.ActionControllerConfigurationException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.extend.junit.ExpectedLogEventsRule;
@@ -41,7 +41,7 @@ public class ApiServletConfigurationErrorTest {
         };
 
         assertThatThrownBy(() -> apiServlet.init(null))
-                .isInstanceOf(ApiServletException.class)
+                .isInstanceOf(ActionControllerConfigurationException.class)
                 .hasMessageContaining(ControllerWithErrors.class.getName())
                 .hasMessageContaining("actionWithUnboundParameter")
                 .hasMessageContaining("actionWithUnknownReturnType")

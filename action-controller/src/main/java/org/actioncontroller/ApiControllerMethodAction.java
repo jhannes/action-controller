@@ -9,7 +9,7 @@ import org.actioncontroller.meta.HttpReturnMapper;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
 import org.actioncontroller.meta.HttpRouterMapping;
-import org.actioncontroller.servlet.ApiServletException;
+import org.actioncontroller.servlet.ActionControllerConfigurationException;
 import org.jsonbuddy.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +51,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
                         ApiControllerAction action = newInstance(routerMapping.value()).create(routingAnnotation, controller, method);
                         logger.info("Installing route {}", action);
                         actions.add(action);
-                    } catch (ApiServletException e) {
+                    } catch (ActionControllerConfigurationException e) {
                         logger.warn("Failed to setup {}", getMethodName(method), e);
                         exceptions.addActionException(e);
                     }

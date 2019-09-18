@@ -25,7 +25,6 @@ public class ApiClientProxyHttpServerTest extends AbstractApiClientProxyTest {
         server.createContext("/test", new ApiHandler("/test", "/api", new TestController()));
         server.start();
 
-
         baseUrl = "http://localhost:" + server.getAddress().getPort() + "/test" + "/api";
         client = ApiClientProxy.create(TestController.class,
                 new HttpURLConnectionApiClient(baseUrl));

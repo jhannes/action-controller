@@ -74,7 +74,7 @@ public class ApiServlet extends HttpServlet implements UserContext {
         return exchange.isUserInRole(role);
     }
 
-    private ApiServletCompositeException controllerException;
+    private ActionControllerConfigurationCompositeException controllerException;
 
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -113,7 +113,7 @@ public class ApiServlet extends HttpServlet implements UserContext {
                     .flatMap(reg -> reg.getMappings().stream())
                     .collect(Collectors.toList());
             if (mappings.stream().noneMatch(path -> path.endsWith("/*"))) {
-                throw new ApiServletException(getClass() + " should have mapping ending with /*, was " + mappings);
+                throw new ActionControllerConfigurationException(getClass() + " should have mapping ending with /*, was " + mappings);
             }
         }
 
@@ -134,7 +134,7 @@ public class ApiServlet extends HttpServlet implements UserContext {
 
     protected void registerController(Object controller) {
         if (controllerException == null) {
-            controllerException = new ApiServletCompositeException();
+            controllerException = new ActionControllerConfigurationCompositeException();
         }
         try {
             this.actions.addAll(ApiControllerMethodAction.registerActions(controller));

@@ -61,6 +61,9 @@ public class ApiControllerMethodAction implements ApiControllerAction {
         if (!exceptions.isEmpty()) {
             throw exceptions;
         }
+        if (actions.isEmpty()) {
+            throw new ActionControllerConfigurationException("Controller has no actions: " + controller);
+        }
         return actions;
     }
 
@@ -220,35 +223,9 @@ public class ApiControllerMethodAction implements ApiControllerAction {
         verifyUserAccess(exchange, userContext);
         exchange.calculatePathParams(patternParts);
         Object[] arguments = createArguments(getAction(), exchange);
+        logger.debug("Invoking {}", this);
         Object result = invoke(getController(), getAction(), arguments);
-        responseMapper.accept(result, exchange);
-    }
-
-    // TODO: It feels like there is some more generic concept missing here
-    // TODO: Perhaps a mechanism like transaction wrapping could be supported?
-    // TODO: Timing logging? MDC boundary?
-    protected void verifyUserAccess(ApiHttpExchange exchange, UserContext userContext) {
-        String role = getRequiredUserRole().orElse(null);
-        if (role == null) {
-            return;
-        }
-        if (!userContext.isUserLoggedIn(exchange)) {
-            throw new JsonHttpActionException(401,
-                    "User must be logged in for " + action,
-                    new JsonObject().put("message", "Login required"));
-        }
-        if (!userContext.isUserInRole(exchange, role)) {
-            throw new JsonHttpActionException(403,
-                    "User failed to authenticate for " + action + ": Missing role " + role + " for user",
-                    new JsonObject().put("message", "Insufficient permissions"));
-        }
-    }
-
-
-    protected Optional<String> getRequiredUserRole() {
-        return Optional.ofNullable(
-                this.getAction().getDeclaredAnnotation(RequireUserRole.class)
-        ).map(RequireUserRole::value);
+        convertReturnValue(result, exchange);
     }
 
     /**
@@ -269,13 +246,6 @@ public class ApiControllerMethodAction implements ApiControllerAction {
             logger.error("While invoking {}", getMethodName(action), e);
             throw new HttpServerErrorException(e);
         }
-    }
-
-    private static Object getMethodName(Method action) {
-        String parameters = Stream.of(action.getParameterTypes())
-                .map(Class::getSimpleName)
-                .collect(Collectors.joining(","));
-        return action.getDeclaringClass().getSimpleName() + "." + action.getName() + "(" + parameters + ")";
     }
 
     private Object[] createArguments(Method method, ApiHttpExchange exchange) throws IOException {
@@ -301,8 +271,50 @@ public class ApiControllerMethodAction implements ApiControllerAction {
         }
     }
 
+    private void convertReturnValue(Object result, ApiHttpExchange exchange) throws IOException {
+        try {
+            responseMapper.accept(result, exchange);
+        } catch (RuntimeException e) {
+            logger.error("While converting {} return value {}", this, result, e);
+            throw new HttpActionException(500, "Internal server error while mapping response");
+        }
+    }
+
+    // TODO: It feels like there is some more generic concept missing here
+    // TODO: Perhaps a mechanism like transaction wrapping could be supported?
+    // TODO: Timing logging? MDC boundary?
+    protected void verifyUserAccess(ApiHttpExchange exchange, UserContext userContext) {
+        String role = getRequiredUserRole().orElse(null);
+        if (role == null) {
+            return;
+        }
+        if (!userContext.isUserLoggedIn(exchange)) {
+            throw new JsonHttpActionException(401,
+                    "User must be logged in for " + action,
+                    new JsonObject().put("message", "Login required"));
+        }
+        if (!userContext.isUserInRole(exchange, role)) {
+            throw new JsonHttpActionException(403,
+                    "User failed to authenticate for " + action + ": Missing role " + role + " for user",
+                    new JsonObject().put("message", "Insufficient permissions"));
+        }
+    }
+
+    protected Optional<String> getRequiredUserRole() {
+        return Optional.ofNullable(
+                this.getAction().getDeclaredAnnotation(RequireUserRole.class)
+        ).map(RequireUserRole::value);
+    }
+
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{" + httpMethod + " " + pattern + " => " + getMethodName(action) + "}";
+    }
+
+    private static Object getMethodName(Method action) {
+        String parameters = Stream.of(action.getParameterTypes())
+                .map(Class::getSimpleName)
+                .collect(Collectors.joining(","));
+        return action.getDeclaringClass().getSimpleName() + "." + action.getName() + "(" + parameters + ")";
     }
 }

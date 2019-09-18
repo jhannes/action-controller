@@ -117,9 +117,13 @@ public class ApiServlet extends HttpServlet implements UserContext {
             }
         }
 
-        this.controllerException = new ApiServletCompositeException();
+        this.controllerException = new ActionControllerConfigurationCompositeException();
         super.init(config);
         verifyNoExceptions();
+
+        if (actions.isEmpty()) {
+            throw new ActionControllerConfigurationException(getClass() + " has no controllers. Use ActionServlet(Object) constructor or registerAction() to create create a controller");
+        }
     }
 
     protected void verifyNoExceptions() {

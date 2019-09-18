@@ -13,9 +13,11 @@ import org.junit.Test;
 import org.logevents.extend.junit.ExpectedLogEventsRule;
 import org.slf4j.event.Level;
 
+import javax.servlet.ServletException;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.lang.reflect.Parameter;
+import java.math.BigInteger;
 
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -52,6 +54,23 @@ public class ApiServletConfigurationErrorTest {
         expectedLogEventsRule.expectPattern(ApiControllerAction.class, Level.WARN, "Failed to setup {}");
         expectedLogEventsRule.expect(ApiControllerAction.class, Level.WARN,
                 "Unused path parameters for ControllerWithMismatchedPathParams.actionWithParameterMismatch(String): [myTest]");
+    }
+
+    @Test
+    public void shouldReportErrorForServletWithNoControllers() {
+        ApiServlet apiServlet = new ApiServlet();
+        assertThatThrownBy(() -> apiServlet.init(null))
+                .isInstanceOf(ActionControllerConfigurationException.class)
+                .hasMessageContaining("no controllers");
+    }
+
+    @Test
+    public void shouldReportErrorForControllerWithNoActions() {
+        Object controller = new BigInteger("100");
+        assertThatThrownBy(() -> new ApiServlet(controller))
+                .isInstanceOf(ActionControllerConfigurationException.class)
+                .hasMessageContaining("no actions")
+                .hasMessageContaining(controller.toString());
     }
 
 

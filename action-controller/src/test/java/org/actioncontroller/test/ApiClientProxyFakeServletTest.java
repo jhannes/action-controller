@@ -13,12 +13,7 @@ public class ApiClientProxyFakeServletTest extends AbstractApiClientProxyTest {
     public void createServerAndClient() throws Exception {
         final TestController controller = new TestController();
         final URL contextRoot = new URL("http://example.com/test");
-        final ApiServlet servlet = new ApiServlet() {
-            @Override
-            public void init() {
-                registerController(controller);
-            }
-        };
+        final ApiServlet servlet = new ApiServlet(controller);
         servlet.init(null);
         client = ApiClientProxy.create(TestController.class, new FakeApiClient(contextRoot, "/api", servlet));
     }

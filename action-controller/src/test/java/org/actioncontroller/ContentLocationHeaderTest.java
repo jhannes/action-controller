@@ -3,6 +3,7 @@ package org.actioncontroller;
 import org.actioncontroller.servlet.ApiServlet;
 import org.fakeservlet.FakeServletRequest;
 import org.fakeservlet.FakeServletResponse;
+import org.junit.Before;
 import org.junit.Test;
 
 import javax.servlet.ServletException;
@@ -31,13 +32,12 @@ public class ContentLocationHeaderTest {
         }
     }
 
-    private ApiServlet servlet = new ApiServlet() {
-        {
-            registerController(new Controller());
-            verifyNoExceptions();
-        }
-    };
+    private ApiServlet servlet = new ApiServlet(new Controller());
 
+    @Before
+    public void setup() throws ServletException {
+        servlet.init(null);
+    }
 
     @Test
     public void shouldCombineParameterWithReturn() throws IOException, ServletException {

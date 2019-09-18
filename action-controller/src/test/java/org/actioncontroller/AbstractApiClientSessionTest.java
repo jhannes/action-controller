@@ -84,12 +84,7 @@ public class AbstractApiClientSessionTest {
         handler.addEventListener(new javax.servlet.ServletContextListener() {
             @Override
             public void contextInitialized(ServletContextEvent event) {
-                event.getServletContext().addServlet("testApi", new ApiServlet() {
-                    @Override
-                    public void init() throws ServletException {
-                        registerController(new LoginController());
-                    }
-                }).addMapping("/api/*");
+                event.getServletContext().addServlet("testApi", new ApiServlet(new LoginController())).addMapping("/api/*");
             }
         });
         handler.setContextPath("/test");

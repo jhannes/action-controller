@@ -60,6 +60,12 @@ public class ApiServlet extends HttpServlet implements UserContext {
     private static Logger logger = LoggerFactory.getLogger(ApiServlet.class);
     private List<ApiControllerAction> actions = new ArrayList<>();
 
+    public ApiServlet() {}
+
+    public ApiServlet(Object controller) {
+        this.actions.addAll(ApiControllerMethodAction.registerActions(controller));
+    }
+
     public boolean isUserLoggedIn(ApiHttpExchange exchange) {
         return exchange.isUserLoggedIn();
     }

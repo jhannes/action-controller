@@ -12,14 +12,7 @@ public class ApiClientFakeSessionTest extends AbstractApiClientSessionTest {
     @Before
     public void createServerAndClient() throws Exception {
         baseUrl = "http://example.com/test" + "/api";
-        final LoginController controller = new LoginController();
-
-        ApiServlet servlet = new ApiServlet() {
-            @Override
-            public void init() {
-                registerController(controller);
-            }
-        };
+        ApiServlet servlet = new ApiServlet(new LoginController());
         servlet.init(null);
         final URL contextRoot = new URL("http://example.com/test");
         client = ApiClientProxy.create(LoginController.class,

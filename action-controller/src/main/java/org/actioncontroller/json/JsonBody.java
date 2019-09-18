@@ -1,12 +1,15 @@
 package org.actioncontroller.json;
 
+import org.actioncontroller.meta.HttpClientReturnMapper;
 import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapper;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
+import org.jsonbuddy.JsonArray;
 import org.jsonbuddy.JsonNode;
+import org.jsonbuddy.JsonObject;
 import org.jsonbuddy.parse.JsonParser;
 import org.jsonbuddy.pojo.JsonGenerator;
 import org.jsonbuddy.pojo.PojoMapper;
@@ -37,15 +40,26 @@ public @interface JsonBody {
         public HttpReturnMapper create(JsonBody annotation, Class<?> returnType) {
             return JsonNode.class.isAssignableFrom(returnType) ? writeJsonNode : writePojo;
         }
+
+        @Override
+        public HttpClientReturnMapper createClient(JsonBody annotation, Class<?> returnType) {
+            if (JsonObject.class.isAssignableFrom(returnType)) {
+                return exchange -> JsonObject.parse(exchange.getResponseBody());
+            } else if (JsonArray.class.isAssignableFrom(returnType)) {
+                return exchange -> JsonArray.parse(exchange.getResponseBody());
+            } else {
+                throw new IllegalArgumentException("Invalid type " + returnType);
+            }
+        }
     }
 
     class MapperFactory implements HttpParameterMapperFactory<JsonBody> {
         @Override
         public HttpParameterMapper create(JsonBody annotation, Parameter parameter) {
             if (JsonNode.class.isAssignableFrom(parameter.getType())) {
-                return exchange -> JsonParser.parse(exchange.getReader());
+                return exchange -> JsonParser.parseNode(exchange.getReader());
             } else if (List.class.isAssignableFrom(parameter.getType())) {
-                return exchange -> JsonParser.parse(exchange.getReader());
+                return exchange -> JsonParser.parseNode(exchange.getReader());
             } else {
                 return exchange -> PojoMapper.map(
                         JsonParser.parseToObject(exchange.getReader()),

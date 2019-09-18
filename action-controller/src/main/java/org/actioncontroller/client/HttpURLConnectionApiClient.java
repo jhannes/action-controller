@@ -97,7 +97,7 @@ public class HttpURLConnectionApiClient implements ApiClient {
             String query = getQuery();
             URL url = new URL(baseUrl + pathInfo +
                     (query != null && isGetRequest() ? "?" + query : ""));
-            connection = (HttpURLConnection) url.openConnection();
+            connection = openConnection(url);
             connection.setInstanceFollowRedirects(false);
             connection.setRequestMethod(method);
             connection.setRequestProperty("Cookie",
@@ -177,6 +177,9 @@ public class HttpURLConnectionApiClient implements ApiClient {
         }
     }
 
+    protected HttpURLConnection openConnection(URL url) throws IOException {
+        return (HttpURLConnection) url.openConnection();
+    }
 
     private static String asString(InputStream inputStream) throws IOException {
         StringBuilder stringBuilder = new StringBuilder();

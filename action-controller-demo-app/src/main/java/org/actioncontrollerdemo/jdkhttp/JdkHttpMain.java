@@ -23,8 +23,9 @@ public class JdkHttpMain {
     private static HttpServer httpServer;
     private DataSource dataSource;
 
-    public static void main(String[] args) throws IOException {
+    public synchronized static void main(String[] args) throws IOException, InterruptedException {
         new JdkHttpMain().start();
+        JdkHttpMain.class.wait();
     }
 
     private static class DataSourceConfigListener extends PrefixConfigListener<DataSource> {
@@ -49,20 +50,8 @@ public class JdkHttpMain {
     private void start() throws MalformedURLException {
         StaticContent webJar = StaticContent.createWebJar("swagger-ui", "/demo/swagger");
         StaticContent staticContent = new StaticContent(getClass().getResource("/webapp-actioncontrollerdemo"), "/demo");
-        ApiHandler apiHandler = new ApiHandler("/demo", "/api", new TestController(() -> {
-            System.out.println("Hello");
-        }));
-
-        new Thread(new Runnable() {
-            @Override
-            public synchronized void run() {
-                try {
-                    wait();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
+        ApiHandler apiHandler = new ApiHandler("/demo", "/api",
+                new TestController(() -> System.out.println("Hello")));
 
         ConfigObserver config = new ConfigObserver(new File("."), "demoserver");
         config.onInetSocketAddress("httpSocketAddress", inetSocketAddress -> {
@@ -80,7 +69,6 @@ public class JdkHttpMain {
                 oldServer.stop(2);
             }
         }, 20080);
-
 
         config.onConfigChange(new DataSourceConfigListener("my.dataSource", ds -> this.dataSource = ds));
     }

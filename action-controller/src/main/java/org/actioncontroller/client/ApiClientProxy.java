@@ -8,8 +8,6 @@ import org.actioncontroller.Delete;
 import org.actioncontroller.Get;
 import org.actioncontroller.Post;
 import org.actioncontroller.Put;
-import org.actioncontroller.UnencryptedCookie;
-import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpReturnMapping;
 
@@ -17,7 +15,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Parameter;
-import java.lang.reflect.ParameterizedType;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -52,13 +49,15 @@ public class ApiClientProxy {
             Parameter[] parameters = method.getParameters();
             for (int i = 0; i < parameters.length; i++) {
                 Parameter parameter = parameters[i];
-                for (Annotation annotation : parameter.getAnnotations()) {
-                    HttpParameterMapping parameterMapping = annotation.annotationType().getAnnotation(HttpParameterMapping.class);
-                    if (parameterMapping != null) {
-                        parameterMapping.value()
-                                .getDeclaredConstructor().newInstance()
-                                .clientParameterMapper(annotation, parameter)
-                                .apply(exchange, args[i]);
+                if (!Consumer.class.isAssignableFrom(parameter.getType())) {
+                    for (Annotation annotation : parameter.getAnnotations()) {
+                        HttpParameterMapping parameterMapping = annotation.annotationType().getAnnotation(HttpParameterMapping.class);
+                        if (parameterMapping != null) {
+                            parameterMapping.value()
+                                    .getDeclaredConstructor().newInstance()
+                                    .clientParameterMapper(annotation, parameter)
+                                    .apply(exchange, args[i]);
+                        }
                     }
                 }
             }
@@ -70,14 +69,16 @@ public class ApiClientProxy {
 
             for (int i = 0; i < parameters.length; i++) {
                 Parameter parameter = parameters[i];
-                UnencryptedCookie cookieParam = parameter.getAnnotation(UnencryptedCookie.class);
-                if (cookieParam != null && Consumer.class.isAssignableFrom(parameter.getType())) {
-                    String cookieValue = exchange.getResponseCookie(cookieParam.value());
-                    Object value = ApiHttpExchange.convertParameterType(
-                            cookieValue,
-                            ((ParameterizedType)parameter.getParameterizedType()).getActualTypeArguments()[0]
-                    );
-                    ((Consumer) args[i]).accept(value);
+                if (Consumer.class.isAssignableFrom(parameter.getType())) {
+                    for (Annotation annotation : parameter.getAnnotations()) {
+                        HttpParameterMapping parameterMapping = annotation.annotationType().getAnnotation(HttpParameterMapping.class);
+                        if (parameterMapping != null) {
+                            parameterMapping.value()
+                                    .getDeclaredConstructor().newInstance()
+                                    .clientParameterMapper(annotation, parameter)
+                                    .apply(exchange, args[i]);
+                        }
+                    }
                 }
             }
 
@@ -89,7 +90,7 @@ public class ApiClientProxy {
                     return returnMapping.value()
                             .getDeclaredConstructor()
                             .newInstance()
-                            .createClient(annotation, method.getReturnType())
+                            .createClientMapper(annotation, method.getReturnType())
                             .getReturnValue(exchange);
                 }
             }

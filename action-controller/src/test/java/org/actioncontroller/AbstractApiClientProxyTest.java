@@ -18,13 +18,13 @@ public abstract class AbstractApiClientProxyTest {
 
     public static class TestController {
 
-        @Get("/first")
+        @Get("/")
         @ContentBody
         public String first() {
             return "Hello world";
         }
 
-        @Get("/first?greeting")
+        @Get("/?greeting")
         @ContentBody
         public String first(@RequestParam("greeting") String greeting, ApiHttpExchange exchange) {
             return greeting + " " + exchange.getPathInfo();
@@ -99,7 +99,7 @@ public abstract class AbstractApiClientProxyTest {
 
     @Test
     public void shouldRouteWithRequiredParameter() {
-        assertThat(client.first("Hi!", null)).isEqualTo("Hi! /first");
+        assertThat(client.first("Hi!", null)).isEqualTo("Hi! /");
     }
 
     @Rule

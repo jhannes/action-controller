@@ -155,10 +155,9 @@ public class FakeServletResponse implements HttpServletResponse {
         return characterEncoding;
     }
 
-    // TODO
     @Override
     public String getContentType() {
-        throw unimplemented();
+        return contentType;
     }
 
     private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();

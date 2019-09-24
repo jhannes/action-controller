@@ -17,6 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class ApiRequestErrorTest {
 
+    private FakeServletResponse resp = new FakeServletResponse();
+
     public static class Controller {
         @Get("/hello")
         @ContentBody
@@ -42,8 +44,19 @@ public class ApiRequestErrorTest {
     public ExpectedLogEventsRule expectedLogEvents = new ExpectedLogEventsRule(Level.WARN);
 
     @Test
+    public void shouldReportErrorOnUnmappedRootAction() throws IOException, ServletException {
+        FakeServletRequest request = new FakeServletRequest("GET", new URL("http://my.example.com:8080/my/context"), "/actions", null);
+
+        expectedLogEvents.expectMatch(e -> e
+                .logger(ApiServlet.class)
+                .formattedMessage("No route for GET /my/context/actions[]"));
+        servlet.service(request, resp);
+
+        assertThat(resp.getStatus()).isEqualTo(404);
+    }
+
+    @Test
     public void shouldReportErrorOnParameterMismatch() throws IOException, ServletException {
-        FakeServletResponse resp = new FakeServletResponse();
         FakeServletRequest request = new FakeServletRequest("GET", new URL("http://my.example.com:8080/my/context"), "/actions", "/hello");
         request.setParameter("number", "hello");
 

@@ -57,7 +57,7 @@ public class ApiServletTest {
     private FakeServletResponse response = new FakeServletResponse();
 
     public class ExampleController {
-        @Get("/one")
+        @Get("")
         @JsonBody
         public JsonObject one(@RequestParam("name") Optional<String> name) {
             return new JsonObject().put("name", name.orElse("Anonymous"));
@@ -142,18 +142,14 @@ public class ApiServletTest {
     @Test
     public void shouldCallMethodWithArgumentsAndConvertReturn() throws IOException {
         String name = UUID.randomUUID().toString();
-        when(requestMock.getMethod()).thenReturn("GET");
-        when(requestMock.getPathInfo()).thenReturn("/one");
-        when(requestMock.getParameter("name")).thenReturn(name);
+        FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/api", null);
+        request.setParameter("name", name);
 
-        servlet.service(requestMock, responseMock);
+        servlet.service(request, response);
 
-        assertThat(JsonParser.parseToObject(responseBody.toString()).requiredString("name"))
-            .isEqualTo(name);
-        verify(responseMock).getWriter();
-        verify(responseMock).setContentType("application/json");
-        verify(responseMock).getCharacterEncoding();
-        verify(responseMock).setCharacterEncoding(null);
+        assertThat(response.getStatus()).isEqualTo(200);
+        assertThat(JsonObject.parse(response.getBody()).requiredString("name")).isEqualTo(name);
+        assertThat(response.getContentType()).isEqualTo("application/json");
     }
 
     @Test

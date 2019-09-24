@@ -74,7 +74,7 @@ public class ServletHttpExchange implements ApiHttpExchange {
 
     @Override
     public String getPathInfo() {
-        return req.getPathInfo();
+        return req.getPathInfo() != null ? req.getPathInfo() : "";
     }
 
     @Override

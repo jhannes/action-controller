@@ -3,6 +3,7 @@ package org.actioncontroller.httpserver;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import org.actioncontroller.ApiControllerAction;
+import org.actioncontroller.ApiControllerContext;
 import org.actioncontroller.ApiControllerMethodAction;
 import org.actioncontroller.HttpActionException;
 import org.actioncontroller.UserContext;
@@ -17,18 +18,22 @@ public class ApiHandler implements UserContext, HttpHandler {
     private static Logger logger = LoggerFactory.getLogger(ApiHandler.class);
 
     private List<ApiControllerAction> actions;
-    private String context;
+    private String contextPath;
     private String apiPath;
 
-    public ApiHandler(String context, String apiPath, Object controller) {
-        this.context = context;
+    public ApiHandler(String contextPath, String apiPath, Object controller, ApiControllerContext apiContext) {
+        this.contextPath = contextPath;
         this.apiPath = apiPath;
-        actions = ApiControllerMethodAction.registerActions(controller);
+        actions = ApiControllerMethodAction.registerActions(controller, apiContext);
+    }
+
+    public ApiHandler(String contextPath, String apiPath, Object controller) {
+        this(contextPath, apiPath, controller, new ApiControllerContext());
     }
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        JdkHttpExchange httpExchange = new JdkHttpExchange(exchange, context, apiPath);
+        JdkHttpExchange httpExchange = new JdkHttpExchange(exchange, contextPath, apiPath);
         for (ApiControllerAction action : actions) {
             if (action.matches(httpExchange)) {
                 try {

@@ -24,6 +24,7 @@ import org.logevents.extend.junit.ExpectedLogEventsRule;
 import org.mockito.Mockito;
 import org.slf4j.event.Level;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -389,9 +390,10 @@ public class ApiServletTest {
     }
 
     @Before
-    public void setupRequest() throws IOException {
+    public void setupRequest() throws IOException, ServletException {
         servlet.registerController(new ExampleController());
         servlet.registerController(new ControllerWithTypedParameters());
+        servlet.init(null);
 
         when(responseMock.getWriter()).thenReturn(new PrintWriter(responseBody));
         contextRoot = new URL("http://example.com/root");

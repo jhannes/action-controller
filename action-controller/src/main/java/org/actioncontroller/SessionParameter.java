@@ -34,7 +34,7 @@ public @interface SessionParameter {
 
     class MapperFactory implements HttpParameterMapperFactory<SessionParameter> {
         @Override
-        public HttpParameterMapper create(SessionParameter annotation, Parameter parameter) {
+        public HttpParameterMapper create(SessionParameter annotation, Parameter parameter, ApiControllerContext context) {
             String name = annotation.value();
             if (parameter.getType() == Consumer.class) {
                 if (name.isEmpty()) {

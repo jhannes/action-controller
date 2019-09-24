@@ -1,6 +1,7 @@
 package org.actioncontroller.servlet;
 
 import org.actioncontroller.ApiControllerAction;
+import org.actioncontroller.ApiControllerContext;
 import org.actioncontroller.ApiControllerMethodAction;
 import org.actioncontroller.ApiControllerCompositeException;
 import org.actioncontroller.HttpActionException;
@@ -58,12 +59,18 @@ import java.util.stream.Collectors;
 public class ApiServlet extends HttpServlet implements UserContext {
 
     private static Logger logger = LoggerFactory.getLogger(ApiServlet.class);
+    private List<Object> controllers = new ArrayList<>();
     private List<ApiControllerAction> actions = new ArrayList<>();
+    private ApiControllerContext context = new ApiControllerContext();
 
     public ApiServlet() {}
 
     public ApiServlet(Object controller) {
-        this.actions.addAll(ApiControllerMethodAction.registerActions(controller));
+        controllers.add(controller);
+    }
+
+    public ApiControllerContext getContext() {
+        return context;
     }
 
     public boolean isUserLoggedIn(ApiHttpExchange exchange) {
@@ -119,6 +126,10 @@ public class ApiServlet extends HttpServlet implements UserContext {
         }
     }
 
+    public void registerController(Object controller) {
+        this.controllers.add(controller);
+    }
+
     @Override
     public final void init(ServletConfig config) throws ServletException {
         if (config != null) {
@@ -133,6 +144,7 @@ public class ApiServlet extends HttpServlet implements UserContext {
 
         this.controllerException = new ActionControllerConfigurationCompositeException();
         super.init(config);
+        setupActions();
         verifyNoExceptions();
 
         if (actions.isEmpty()) {
@@ -146,14 +158,16 @@ public class ApiServlet extends HttpServlet implements UserContext {
         }
     }
 
-    protected void registerController(Object controller) {
-        if (controllerException == null) {
-            controllerException = new ActionControllerConfigurationCompositeException();
-        }
-        try {
-            this.actions.addAll(ApiControllerMethodAction.registerActions(controller));
-        } catch (ApiControllerCompositeException e) {
-            controllerException.addControllerException(e);
+    protected void setupActions() {
+        for (Object controller : controllers) {
+            if (controllerException == null) {
+                controllerException = new ActionControllerConfigurationCompositeException();
+            }
+            try {
+                this.actions.addAll(ApiControllerMethodAction.registerActions(controller, context));
+            } catch (ApiControllerCompositeException e) {
+                controllerException.addControllerException(e);
+            }
         }
     }
 }

@@ -20,7 +20,7 @@ public @interface PathParam {
 
     public class MapperFactory implements HttpParameterMapperFactory<PathParam> {
         @Override
-        public HttpParameterMapper create(PathParam annotation, Parameter parameter) {
+        public HttpParameterMapper create(PathParam annotation, Parameter parameter, ApiControllerContext context) {
             String name = annotation.value();
             return (exchange) -> exchange.pathParam(name, parameter);
         }

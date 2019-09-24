@@ -18,7 +18,7 @@ import java.net.URL;
 public @interface ServletUrl {
     class MapperFactory implements HttpParameterMapperFactory<ServletUrl> {
         @Override
-        public HttpParameterMapper create(ServletUrl annotation, Parameter parameter) {
+        public HttpParameterMapper create(ServletUrl annotation, Parameter parameter, ApiControllerContext context) {
             if (parameter.getType() == URL.class) {
                 return ApiHttpExchange::getApiURL;
             } else if (parameter.getType() == String.class) {

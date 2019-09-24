@@ -18,8 +18,8 @@ public @interface Get {
 
     class ActionFactory implements ApiControllerActionFactory<Get> {
         @Override
-        public ApiControllerMethodAction create(Get annotation, Object controller, Method action) {
-            return new ApiControllerMethodAction("GET", annotation.value(), controller, action);
+        public ApiControllerMethodAction create(Get annotation, Object controller, Method action, ApiControllerContext context) {
+            return new ApiControllerMethodAction("GET", annotation.value(), controller, action, context);
         }
     }
 

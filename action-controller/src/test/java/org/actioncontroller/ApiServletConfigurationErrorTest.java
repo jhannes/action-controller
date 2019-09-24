@@ -13,7 +13,6 @@ import org.junit.Test;
 import org.logevents.extend.junit.ExpectedLogEventsRule;
 import org.slf4j.event.Level;
 
-import javax.servlet.ServletException;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.lang.reflect.Parameter;
@@ -67,7 +66,8 @@ public class ApiServletConfigurationErrorTest {
     @Test
     public void shouldReportErrorForControllerWithNoActions() {
         Object controller = new BigInteger("100");
-        assertThatThrownBy(() -> new ApiServlet(controller))
+        ApiServlet apiServlet = new ApiServlet(controller);
+        assertThatThrownBy(() -> apiServlet.init(null))
                 .isInstanceOf(ActionControllerConfigurationException.class)
                 .hasMessageContaining("no actions")
                 .hasMessageContaining(controller.toString());
@@ -83,7 +83,7 @@ public class ApiServletConfigurationErrorTest {
         }
 
         @Override
-        public HttpParameterMapper create(Annotation annotation, Parameter parameter) {
+        public HttpParameterMapper create(Annotation annotation, Parameter parameter, ApiControllerContext context) {
             return null;
         }
 
@@ -140,7 +140,4 @@ public class ApiServletConfigurationErrorTest {
         }
 
     }
-
-
-
 }

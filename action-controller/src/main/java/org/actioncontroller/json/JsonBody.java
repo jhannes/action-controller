@@ -1,5 +1,6 @@
 package org.actioncontroller.json;
 
+import org.actioncontroller.ApiControllerContext;
 import org.actioncontroller.meta.HttpClientReturnMapper;
 import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpParameterMapper;
@@ -55,7 +56,7 @@ public @interface JsonBody {
 
     class MapperFactory implements HttpParameterMapperFactory<JsonBody> {
         @Override
-        public HttpParameterMapper create(JsonBody annotation, Parameter parameter) {
+        public HttpParameterMapper create(JsonBody annotation, Parameter parameter, ApiControllerContext context) {
             if (JsonNode.class.isAssignableFrom(parameter.getType())) {
                 return exchange -> JsonParser.parseNode(exchange.getReader());
             } else if (List.class.isAssignableFrom(parameter.getType())) {

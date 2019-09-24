@@ -14,7 +14,7 @@ import java.lang.reflect.Parameter;
 public @interface QueryString {
     class ParameterMapperFactory implements HttpParameterMapperFactory<QueryString> {
         @Override
-        public HttpParameterMapper create(QueryString annotation, Parameter parameter) {
+        public HttpParameterMapper create(QueryString annotation, Parameter parameter, ApiControllerContext context) {
             return ApiHttpExchange::getQueryString;
         }
     }

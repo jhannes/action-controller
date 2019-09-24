@@ -28,7 +28,7 @@ public @interface HttpHeader {
             HttpReturnMapperFactory<HttpHeader>
     {
         @Override
-        public HttpParameterMapper create(HttpHeader annotation, Parameter parameter) {
+        public HttpParameterMapper create(HttpHeader annotation, Parameter parameter, ApiControllerContext context) {
             String name = annotation.value();
             Class<?> type = parameter.getType();
             return exchange -> ApiHttpExchange.convertParameterType(exchange.getHeader(name), type);
@@ -45,7 +45,7 @@ public @interface HttpHeader {
         }
 
         @Override
-        public HttpClientReturnMapper createClient(HttpHeader annotation, Class<?> returnType) {
+        public HttpClientReturnMapper createClientMapper(HttpHeader annotation, Class<?> returnType) {
             return (exchange -> exchange.getResponseHeader(annotation.value()));
         }
     }

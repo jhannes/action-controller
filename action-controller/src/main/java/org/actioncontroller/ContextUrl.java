@@ -19,7 +19,7 @@ public @interface ContextUrl {
 
     public class MapperFactory implements HttpParameterMapperFactory<ContextUrl> {
         @Override
-        public HttpParameterMapper create(ContextUrl annotation, Parameter parameter) {
+        public HttpParameterMapper create(ContextUrl annotation, Parameter parameter, ApiControllerContext context) {
             if (parameter.getType() == URL.class) {
                 return ApiHttpExchange::getContextURL;
             } else if (parameter.getType() == String.class) {

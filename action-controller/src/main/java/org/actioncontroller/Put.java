@@ -18,8 +18,8 @@ public @interface Put {
 
     class ActionFactory implements ApiControllerActionFactory<Put> {
         @Override
-        public ApiControllerMethodAction create(Put annotation, Object controller, Method action) {
-            return new ApiControllerMethodAction("PUT", annotation.value(), controller, action);
+        public ApiControllerMethodAction create(Put annotation, Object controller, Method action, ApiControllerContext context) {
+            return new ApiControllerMethodAction("PUT", annotation.value(), controller, action, context);
         }
     }
 

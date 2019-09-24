@@ -41,7 +41,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
     private final static Logger logger = LoggerFactory.getLogger(ApiControllerAction.class);
     private final Optional<String> requiredParameter;
 
-    public static List<ApiControllerAction> registerActions(Object controller) {
+    public static List<ApiControllerAction> registerActions(Object controller, ApiControllerContext context) {
         List<ApiControllerAction> actions = new ArrayList<>();
         ApiControllerCompositeException exceptions = new ApiControllerCompositeException(controller);
         for (Method method : controller.getClass().getMethods()) {
@@ -49,7 +49,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
                 HttpRouterMapping routerMapping = routingAnnotation.annotationType().getAnnotation(HttpRouterMapping.class);
                 if (routerMapping != null) {
                     try {
-                        ApiControllerAction action = newInstance(routerMapping.value()).create(routingAnnotation, controller, method);
+                        ApiControllerAction action = newInstance(routerMapping.value()).create(routingAnnotation, controller, method, context);
                         logger.info("Installing route {}", action);
                         actions.add(action);
                     } catch (ActionControllerConfigurationException|NoSuchMethodException e) {
@@ -76,7 +76,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
 
     private HttpReturnMapper responseMapper;
 
-    public ApiControllerMethodAction(String httpMethod, String pattern, Object controller, Method action) {
+    public ApiControllerMethodAction(String httpMethod, String pattern, Object controller, Method action, ApiControllerContext context) {
         this.httpMethod = httpMethod;
         this.controller = controller;
         this.action = action;
@@ -91,7 +91,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
 
         Parameter[] parameters = action.getParameters();
         for (int i = 0; i < parameters.length; i++) {
-            parameterMappers.add(createParameterMapper(parameters[i], i));
+            parameterMappers.add(createParameterMapper(parameters[i], i, context));
         }
 
         responseMapper = createResponseMapper();
@@ -164,7 +164,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
                 .orElseThrow(() -> new ApiActionResponseUnknownMappingException(action, action.getReturnType()));
     }
 
-    private HttpParameterMapper createParameterMapper(Parameter parameter, int index) {
+    private HttpParameterMapper createParameterMapper(Parameter parameter, int index, ApiControllerContext context) {
         for (Annotation annotation : parameter.getAnnotations()) {
             HttpParameterMapping mappingAnnotation = annotation.annotationType().getAnnotation(HttpParameterMapping.class);
             if (mappingAnnotation != null) {

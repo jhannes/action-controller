@@ -18,8 +18,8 @@ public @interface Delete {
 
     class RouterMapperFactory implements ApiControllerActionFactory<Delete> {
         @Override
-        public ApiControllerMethodAction create(Delete annotation, Object controller, Method action) {
-            return new ApiControllerMethodAction("DELETE", annotation.value(), controller, action);
+        public ApiControllerMethodAction create(Delete annotation, Object controller, Method action, ApiControllerContext context) {
+            return new ApiControllerMethodAction("DELETE", annotation.value(), controller, action, context);
         }
     }
 }

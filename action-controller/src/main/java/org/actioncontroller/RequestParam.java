@@ -31,14 +31,14 @@ public @interface RequestParam {
     class ClientIpParameterMapperFactory implements HttpParameterMapperFactory<ClientIp> {
 
         @Override
-        public HttpParameterMapper create(ClientIp annotation, Parameter parameter) {
+        public HttpParameterMapper create(ClientIp annotation, Parameter parameter, ApiControllerContext context) {
             return ApiHttpExchange::getClientIp;
         }
     }
 
     class ParameterMapperFactory implements HttpParameterMapperFactory<RequestParam> {
         @Override
-        public HttpParameterMapper create(RequestParam annotation, Parameter parameter) {
+        public HttpParameterMapper create(RequestParam annotation, Parameter parameter, ApiControllerContext context) {
             String name = annotation.value();
             return (exchange) -> exchange.getParameter(name, parameter);
         }

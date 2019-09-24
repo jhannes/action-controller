@@ -18,8 +18,8 @@ public @interface Post {
 
     class ActionFactory implements ApiControllerActionFactory<Post> {
         @Override
-        public ApiControllerMethodAction create(Post annotation, Object controller, Method action) {
-            return new ApiControllerMethodAction("POST", annotation.value(), controller, action);
+        public ApiControllerMethodAction create(Post annotation, Object controller, Method action, ApiControllerContext context) {
+            return new ApiControllerMethodAction("POST", annotation.value(), controller, action, context);
         }
     }
 

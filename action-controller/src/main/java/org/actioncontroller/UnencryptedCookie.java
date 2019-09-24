@@ -1,5 +1,6 @@
 package org.actioncontroller;
 
+import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapperFactory;
@@ -28,7 +29,7 @@ public @interface UnencryptedCookie {
     class Factory implements HttpParameterMapperFactory<UnencryptedCookie> {
 
         @Override
-        public HttpParameterMapper create(UnencryptedCookie annotation, Parameter parameter) {
+        public HttpParameterMapper create(UnencryptedCookie annotation, Parameter parameter, ApiControllerContext context) {
             String name = annotation.value();
             if (parameter.getType() == Consumer.class) {
                 return exchange -> (Consumer<Object>) o -> exchange.setCookie(name, Objects.toString(o, null), annotation.secure());

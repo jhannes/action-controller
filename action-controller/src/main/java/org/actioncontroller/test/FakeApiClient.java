@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 public class FakeApiClient implements ApiClient {
+    public static final Charset CHARSET = StandardCharsets.ISO_8859_1;
     private final URL contextRoot;
     private final String servletPath;
     private Servlet servlet;
@@ -124,7 +125,7 @@ public class FakeApiClient implements ApiClient {
 
         @Override
         public String getResponseCookie(String name) {
-            return response.getCookie(name);
+            return URLDecoder.decode(response.getCookie(name), CHARSET);
         }
 
         @Override

@@ -6,7 +6,10 @@ import java.net.HttpCookie;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,6 +19,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class HttpURLConnectionApiClient implements ApiClient {
+    private static final Charset CHARSET = StandardCharsets.ISO_8859_1;
     private URL baseUrl;
     private List<HttpCookie> clientCookies = new ArrayList<>();
     private String responseBody;
@@ -157,7 +161,8 @@ public class HttpURLConnectionApiClient implements ApiClient {
         public String getResponseCookie(String name) {
             return responseCookies.stream()
                     .filter(c -> c.getName().equals(name))
-                    .map(HttpCookie::getValue)
+                    .filter(HttpURLConnectionApiClient::isUnexpired)
+                    .map(httpCookie -> URLDecoder.decode(httpCookie.getValue(), CHARSET))
                     .findFirst()
                     .orElse(null);
         }

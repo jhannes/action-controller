@@ -190,15 +190,16 @@ class JdkHttpExchange implements ApiHttpExchange {
     }
 
     @Override
-    public Object getCookie(String name, Parameter parameter) {
+    public String getCookie(String name) {
         if (!exchange.getRequestHeaders().containsKey("Cookie")) {
-            return Optional.empty();
+            return null;
         }
         return HttpCookie.parse(exchange.getRequestHeaders().getFirst("Cookie"))
                 .stream()
                 .filter(c -> c.getName().equals(name))
                 .map(HttpCookie::getValue)
-                .findFirst();
+                .findFirst()
+                .orElse(null);
     }
 
     @Override

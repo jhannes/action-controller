@@ -15,6 +15,10 @@ import java.io.Reader;
 import java.lang.reflect.Parameter;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -22,6 +26,7 @@ import java.util.stream.Stream;
 
 public class ServletHttpExchange implements ApiHttpExchange {
 
+    public static final Charset CHARSET = StandardCharsets.ISO_8859_1;
     private final HttpServletRequest req;
     private final HttpServletResponse resp;
     private final String method;
@@ -148,7 +153,7 @@ public class ServletHttpExchange implements ApiHttpExchange {
             cookie = new Cookie(name, "");
             cookie.setMaxAge(0);
         } else {
-            cookie = new Cookie(name, value);
+            cookie = new Cookie(name, URLEncoder.encode(value, CHARSET));
         }
         cookie.setSecure(secure);
         cookie.setPath(req.getContextPath() + req.getServletPath());
@@ -156,12 +161,11 @@ public class ServletHttpExchange implements ApiHttpExchange {
     }
 
     @Override
-    public Object getCookie(String name, Parameter parameter) {
-        String cookie = Optional.ofNullable(req.getCookies()).map(Stream::of)
+    public String getCookie(String name) {
+        return Optional.ofNullable(req.getCookies()).map(Stream::of)
                 .flatMap(cookieStream -> cookieStream.filter(c -> c.getName().equalsIgnoreCase(name)).findAny())
-                .map(Cookie::getValue)
+                .map(c -> URLDecoder.decode(c.getValue(), CHARSET))
                 .orElse(null);
-        return ApiHttpExchange.convertTo(cookie, name, parameter);
     }
 
     @Override

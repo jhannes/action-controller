@@ -89,7 +89,7 @@ public interface ApiHttpExchange {
 
     void setCookie(String name, String value, boolean secure);
 
-    Object getCookie(String name, Parameter parameter);
+    String getCookie(String name);
 
     void sendError(int statusCode, String message) throws IOException;
 

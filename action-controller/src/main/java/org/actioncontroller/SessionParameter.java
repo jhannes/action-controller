@@ -45,10 +45,10 @@ public @interface SessionParameter {
             }
 
             if (name.isEmpty()) {
-                if (parameter.getType() == Optional.class) {
-                    name = ((ParameterizedType)parameter.getParameterizedType()).getActualTypeArguments()[0].getTypeName();
-                } else {
+                if (parameter.getType() != Optional.class) {
                     name = parameter.getType().getName();
+                } else {
+                    name = ApiHttpExchange.getOptionalType(parameter).getTypeName();
                 }
             }
             if (annotation.createIfMissing()) {

@@ -133,24 +133,24 @@ public interface ApiHttpExchange {
      */
     static Object convertTo(String value, String parameterName, Parameter parameter) {
         boolean optional = parameter.getType() == Optional.class;
-
         if (value == null) {
             if (!optional) {
                 throw new HttpRequestException("Missing required parameter " + parameterName);
             }
             return Optional.empty();
-        }
-
-        Type parameterType;
-        if (optional) {
-            Type parameterizedType = parameter.getParameterizedType();
-            parameterType = ((ParameterizedType)parameterizedType).getActualTypeArguments()[0];
+        } else if (optional) {
+            return Optional.of(convertParameterType(value, getOptionalType(parameter)));
         } else {
-            parameterType = parameter.getType();
+            return convertParameterType(value, parameter.getType());
         }
+    }
 
-        Object parameterValue = convertParameterType(value, parameterType);
-        return optional ? Optional.of(parameterValue) : parameterValue;
+    static Type getOptionalType(Parameter parameter) {
+        return ((ParameterizedType) parameter.getParameterizedType()).getActualTypeArguments()[0];
+    }
+
+    static Type getConsumerType(Parameter parameter) {
+        return ((ParameterizedType) parameter.getParameterizedType()).getActualTypeArguments()[0];
     }
 
     void calculatePathParams(String[] pathPattern);

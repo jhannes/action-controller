@@ -250,7 +250,7 @@ public class ApiServletTest {
 
     @Test
     public void shouldGive400OnParameterConversion() throws IOException {
-        expectedLogEvents.expectPattern(ApiControllerAction.class, Level.WARN, "While processing {} arguments");
+        expectedLogEvents.expectPattern(ApiControllerAction.class, Level.WARN, "While processing {} arguments to {}");
         FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/api", "/goodbye");
         request.setParameter("amount", "one");
 
@@ -266,7 +266,7 @@ public class ApiServletTest {
         request.setParameter("uuid", "Not an uuid");
 
         expectedLogEvents.expect(ApiControllerAction.class, Level.WARN,
-                "While processing ServletHttpExchange[POST " + contextRoot + "/api/withUuid?uuid=Not+an+uuid] arguments",
+                "While processing ServletHttpExchange[POST " + contextRoot + "/api/withUuid?uuid=Not+an+uuid] arguments to ApiControllerMethodAction{POST /withUuid => ControllerWithTypedParameters.methodWithUuid(UUID)}",
                 new HttpRequestException("Could not convert uuid=Not an uuid to java.util.UUID"));
         servlet.service(request, response);
 
@@ -280,7 +280,7 @@ public class ApiServletTest {
         request.setParameter("longValue", "one hundred");
 
         expectedLogEvents.expect(ApiControllerAction.class, Level.WARN,
-                "While processing ServletHttpExchange[POST " + contextRoot + "/api/withLong?longValue=one+hundred] arguments",
+                "While processing ServletHttpExchange[POST " + contextRoot + "/api/withLong?longValue=one+hundred] arguments to ApiControllerMethodAction{POST /withLong => ControllerWithTypedParameters.methodWithLong(long)}",
                 new HttpRequestException("Could not convert longValue=one hundred to long"));
         servlet.service(request, response);
 
@@ -297,7 +297,7 @@ public class ApiServletTest {
         request.setParameter("enumValue", "unknown");
 
         expectedLogEvents.expect(ApiControllerAction.class, Level.WARN,
-                "While processing ServletHttpExchange[POST " + contextRoot + "/api/withEnum?enumValue=unknown] arguments",
+                "While processing ServletHttpExchange[POST " + contextRoot + "/api/withEnum?enumValue=unknown] arguments to ApiControllerMethodAction{POST /withEnum => ControllerWithTypedParameters.methodWithEnum(ElementType)}",
                 new HttpRequestException("Could not convert enumValue=unknown to java.lang.annotation.ElementType"));
         servlet.service(request, response);
 
@@ -309,7 +309,7 @@ public class ApiServletTest {
     public void shouldRequireNonOptionalParameter() throws IOException {
         FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/api", "/goodbye");
         expectedLogEvents.expect(ApiControllerAction.class, Level.WARN,
-                "While processing ServletHttpExchange[GET " + contextRoot + "/api/goodbye] arguments",
+                "While processing ServletHttpExchange[GET " + contextRoot + "/api/goodbye] arguments to ApiControllerMethodAction{GET /goodbye => ControllerWithTypedParameters.methodWithRequiredInt(int)}",
                 new HttpRequestException("Missing required parameter amount"));
         servlet.service(request, response);
         assertThat(response.getStatus()).isEqualTo(400);
@@ -323,7 +323,7 @@ public class ApiServletTest {
 
         expectedLogEvents.expectMatch(expect -> expect
                 .level(Level.WARN).logger(ApiControllerAction.class)
-                .pattern("While processing {} arguments")
+                .pattern("While processing {} arguments to {}")
                 .exception(HttpRequestException.class, "Could not convert amount=one to int")
         );
         servlet.service(request, response);

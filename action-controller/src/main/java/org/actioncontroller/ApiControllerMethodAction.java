@@ -52,7 +52,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
                         ApiControllerAction action = newInstance(routerMapping.value()).create(routingAnnotation, controller, method);
                         logger.info("Installing route {}", action);
                         actions.add(action);
-                    } catch (ActionControllerConfigurationException e) {
+                    } catch (ActionControllerConfigurationException|NoSuchMethodException e) {
                         logger.warn("Failed to setup {}", getMethodName(method), e);
                         exceptions.addActionException(e);
                     }
@@ -100,11 +100,9 @@ public class ApiControllerMethodAction implements ApiControllerAction {
     }
 
 
-    private static <T> T newInstance(Class<? extends T> clazz) {
+    private static <T> T newInstance(Class<? extends T> clazz) throws NoSuchMethodException {
         try {
             return clazz.getDeclaredConstructor().newInstance();
-        } catch (NoSuchMethodException e) {
-            throw new IllegalArgumentException("No default constructor for " + clazz);
         } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | SecurityException e) {
             throw ExceptionUtil.softenException(e);
         } catch (InvocationTargetException e) {
@@ -154,7 +152,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
                 Class<? extends HttpReturnMapperFactory> value = mappingAnnotation.value();
                 try {
                     return newInstance(value).create(annotation, action.getReturnType());
-                } catch (IllegalArgumentException e) {
+                } catch (NoSuchMethodException e) {
                     throw new ApiActionResponseUnknownMappingException(
                             "No mapping annotation for " + action.getName() + "() return type"
                                     + ": Illegal mapping function for " + value + " (no default constructor)");
@@ -171,12 +169,21 @@ public class ApiControllerMethodAction implements ApiControllerAction {
             HttpParameterMapping mappingAnnotation = annotation.annotationType().getAnnotation(HttpParameterMapping.class);
             if (mappingAnnotation != null) {
                 Class<? extends HttpParameterMapperFactory> value = mappingAnnotation.value();
+                HttpParameterMapperFactory mapperFactory;
                 try {
-                    return newInstance(value).create(annotation, parameter);
-                } catch (IllegalArgumentException e) {
+                    mapperFactory = newInstance(value);
+                } catch (NoSuchMethodException e) {
                     throw new ApiActionParameterUnknownMappingException(
                             "No mapping annotation for " + action.getName() + "() parameter " + index
                                     + ": Illegal mapping factory " + value + " (no default constructor)");
+                }
+
+                try {
+                    return mapperFactory.create(annotation, parameter, context);
+                } catch (ActionControllerConfigurationException e) {
+                    throw e;
+                } catch (Exception e) {
+                    throw new ActionControllerConfigurationException("Failed to call " + value + " constructor", e);
                 }
             }
         }
@@ -233,6 +240,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
         return true;
     }
 
+    @Override
     public void invoke(UserContext userContext, ApiHttpExchange exchange) throws IOException {
         verifyUserAccess(exchange, userContext);
         exchange.calculatePathParams(patternParts);
@@ -270,7 +278,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
             }
             return arguments;
         } catch (HttpActionException e) {
-            logger.warn("While processing {} arguments", exchange, e);
+            logger.warn("While processing {} arguments to {}", exchange, this, e);
             StackTraceElement[] stackTrace = e.getStackTrace();
             StackTraceElement[] replacedStackTrace = new StackTraceElement[stackTrace.length+1];
             replacedStackTrace[0] = new StackTraceElement(method.getDeclaringClass().getName(), method.getName(),

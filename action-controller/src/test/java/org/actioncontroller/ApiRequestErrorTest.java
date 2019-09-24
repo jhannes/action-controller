@@ -49,7 +49,7 @@ public class ApiRequestErrorTest {
 
         expectedLogEvents.expectMatch(e -> e
                 .logger(ApiControllerAction.class)
-                .pattern("While processing {} arguments")
+                .pattern("While processing {} arguments to {}")
                 .exception(HttpRequestException.class, "Could not convert number=hello to long"));
         servlet.service(request, resp);
 

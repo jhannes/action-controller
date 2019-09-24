@@ -5,5 +5,8 @@ public class ActionControllerConfigurationException extends RuntimeException {
         super(message);
     }
 
+    public ActionControllerConfigurationException(String message, Exception e) {
+        super(message, e);
+    }
 }
 

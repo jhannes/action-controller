@@ -32,7 +32,7 @@ public @interface SendRedirect {
         }
 
         @Override
-        public HttpClientReturnMapper createClient(SendRedirect annotation, Class<?> returnType) {
+        public HttpClientReturnMapper createClientMapper(SendRedirect annotation, Class<?> returnType) {
             return exchange -> {
                 if (exchange.getResponseCode() < 300) {
                     throw new IllegalArgumentException("Expected redirect, but was " + exchange.getResponseCode());

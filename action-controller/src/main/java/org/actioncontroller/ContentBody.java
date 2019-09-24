@@ -27,7 +27,7 @@ public @interface ContentBody {
         }
 
         @Override
-        public HttpClientReturnMapper createClient(ContentBody annotation, Class<?> returnType) {
+        public HttpClientReturnMapper createClientMapper(ContentBody annotation, Class<?> returnType) {
             return exchange -> ApiHttpExchange.convertParameterType(exchange.getResponseBody(), returnType);
         }
     }

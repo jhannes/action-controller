@@ -30,7 +30,7 @@ public @interface ContentLocationHeader {
         }
 
         @Override
-        public HttpClientReturnMapper createClient(ContentLocationHeader annotation, Class<?> returnType) {
+        public HttpClientReturnMapper createClientMapper(ContentLocationHeader annotation, Class<?> returnType) {
             return exchange -> exchange.getResponseHeader(ContentLocationHeader.FIELD_NAME);
         }
     }

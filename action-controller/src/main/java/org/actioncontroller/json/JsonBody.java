@@ -42,7 +42,7 @@ public @interface JsonBody {
         }
 
         @Override
-        public HttpClientReturnMapper createClient(JsonBody annotation, Class<?> returnType) {
+        public HttpClientReturnMapper createClientMapper(JsonBody annotation, Class<?> returnType) {
             if (JsonObject.class.isAssignableFrom(returnType)) {
                 return exchange -> JsonObject.parse(exchange.getResponseBody());
             } else if (JsonArray.class.isAssignableFrom(returnType)) {

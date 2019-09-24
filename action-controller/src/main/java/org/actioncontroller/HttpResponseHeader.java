@@ -26,7 +26,7 @@ public @interface HttpResponseHeader {
         }
 
         @Override
-        public HttpClientReturnMapper createClient(HttpResponseHeader annotation, Class<?> returnType) {
+        public HttpClientReturnMapper createClientMapper(HttpResponseHeader annotation, Class<?> returnType) {
             return (exchange) ->
                     ApiHttpExchange.convertParameterType(exchange.getResponseHeader(annotation.value()), returnType);
         }

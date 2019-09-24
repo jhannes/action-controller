@@ -184,9 +184,11 @@ class JdkHttpExchange implements ApiHttpExchange {
         HttpCookie httpCookie = new HttpCookie(name, value);
         httpCookie.setSecure(secure);
         if (value == null) {
-            httpCookie.setMaxAge(0);
+            // HACK: HttpCookie doesn't serialize to Set-Cookie format! More work is needed
+            exchange.getResponseHeaders().add("Set-Cookie", httpCookie.toString() + "; Max-age=0");
+        } else {
+            exchange.getResponseHeaders().add("Set-Cookie", httpCookie.toString());
         }
-        exchange.getResponseHeaders().add("Set-Cookie", httpCookie.toString());
     }
 
     @Override

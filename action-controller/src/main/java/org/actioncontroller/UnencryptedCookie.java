@@ -31,7 +31,7 @@ public @interface UnencryptedCookie {
         public HttpParameterMapper create(UnencryptedCookie annotation, Parameter parameter) {
             String name = annotation.value();
             if (parameter.getType() == Consumer.class) {
-                return exchange -> (Consumer<Object>) o -> exchange.setCookie(name, o.toString(), annotation.secure());
+                return exchange -> (Consumer<Object>) o -> exchange.setCookie(name, Objects.toString(o, null), annotation.secure());
             } else {
                 return exchange -> ApiHttpExchange.convertTo(exchange.getCookie(name), name, parameter);
             }
@@ -40,7 +40,20 @@ public @interface UnencryptedCookie {
         @Override
         public HttpClientParameterMapper clientParameterMapper(UnencryptedCookie annotation, Parameter parameter) {
             String name = annotation.value();
-            return (exchange, arg) -> exchange.addRequestCookie(name, arg);
+            if (parameter.getType() == Consumer.class) {
+                Type targetType = ApiHttpExchange.getConsumerType(parameter);
+                return (exchange, arg) -> {
+                    if (arg != null) {
+                        ((Consumer) arg).accept(convertParameterType(exchange.getResponseCookie(name), targetType));
+                    }
+                };
+            } else {
+                return (exchange, arg) -> {
+                    if (arg != null) {
+                        exchange.addRequestCookie(name, arg);
+                    }
+                };
+            }
         }
     }
 }

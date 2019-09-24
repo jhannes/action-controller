@@ -38,6 +38,10 @@ public class FakeServletResponse implements HttpServletResponse {
                 .orElse(null);
     }
 
+    public List<Cookie> getCookies() {
+        return cookies;
+    }
+
     // TODO
     @Override
     public boolean containsHeader(String s) {

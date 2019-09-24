@@ -66,7 +66,14 @@ public abstract class AbstractApiClientProxyTest {
         @Get("/loginSession/me")
         @HttpResponseHeader("X-Username")
         public String whoAmI(@UnencryptedCookie("sessionCookie") Optional<String> sessionCookie) {
-            return sessionCookie.map(s -> s.split(":")[0]).orElse(null);
+            return sessionCookie.map(s -> s.split(":")[0]).orElse("<none>");
+        }
+
+        @Get("/loginSession/endsession")
+        @ContentBody
+        public String endsession(@UnencryptedCookie("sessionCookie") Consumer<String> setSessionCookie) {
+            setSessionCookie.accept(null);
+            return "ok";
         }
 
         @Get("/explicitError")
@@ -162,13 +169,19 @@ public abstract class AbstractApiClientProxyTest {
     }
 
     @Test
+    public void shouldEndSession() {
+        client.putLoginSession("the user", "let-me-in", null);
+        assertThat(client.whoAmI(null)).isEqualTo("the user");
+        client.endsession(null);
+        assertThat(client.whoAmI(null)).isEqualTo("<none>");
+    }
+
+    @Test
     public void shouldReadAndWriteHeaders() {
         assertThat(client.downcase("VALUE")).isEqualTo("value");
     }
 
     // TODO: User in role
-
-    // TODO: Remove cookie
 
     // TODO: JsonBody (without JsonBuddy dependency)
 }

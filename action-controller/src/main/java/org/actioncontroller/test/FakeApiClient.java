@@ -9,11 +9,19 @@ import org.fakeservlet.FakeServletResponse;
 
 import javax.servlet.Servlet;
 import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLDecoder;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class FakeApiClient implements ApiClient {
     public static final Charset CHARSET = StandardCharsets.ISO_8859_1;
@@ -21,6 +29,7 @@ public class FakeApiClient implements ApiClient {
     private final String servletPath;
     private Servlet servlet;
     private FakeHttpSession session;
+    private Map<String, Cookie> clientCookies = new HashMap<>();
 
     public FakeApiClient(URL contextRoot, String servletPath, Servlet servlet) {
         this.contextRoot = contextRoot;
@@ -32,14 +41,23 @@ public class FakeApiClient implements ApiClient {
         return new FakeApiClientExchange(contextRoot, servletPath);
     }
 
+    private static boolean isUnexpired(Cookie c) {
+        return c.getMaxAge() == -1 || c.getMaxAge() > 0;
+    }
+
     private class FakeApiClientExchange implements ApiClientExchange {
         private FakeServletRequest request;
 
         private FakeServletResponse response = new FakeServletResponse();
 
         private FakeApiClientExchange(URL contextRoot, String servletPath) {
+            List<Cookie> requestCookies = clientCookies.values().stream()
+                    .filter(FakeApiClient::isUnexpired)
+                    .collect(Collectors.toList());
+
             request = new FakeServletRequest("GET", contextRoot, servletPath, "/");
             request.setSession(session);
+            request.setCookies(requestCookies);
         }
 
         @Override
@@ -104,6 +122,7 @@ public class FakeApiClient implements ApiClient {
                 throw new RuntimeException(e);
             }
             session = request.getSession(false);
+            response.getCookies().forEach(c -> clientCookies.put(c.getName(), c));
         }
 
         @Override

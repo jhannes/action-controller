@@ -35,6 +35,10 @@ public class ApiClientProxy {
 
     private static InvocationHandler createInvocationHandler(ApiClient client) {
         return (proxy, method, args) -> {
+            if (method.getDeclaringClass() == Object.class) {
+                return method.invoke(client, args);
+            }
+
 
             ApiClientExchange exchange = client.createExchange();
             Optional.ofNullable(method.getAnnotation(Get.class))

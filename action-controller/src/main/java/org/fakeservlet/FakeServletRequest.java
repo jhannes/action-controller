@@ -82,6 +82,10 @@ public class FakeServletRequest implements HttpServletRequest {
         return cookies.isEmpty() ? null : cookies.toArray(new Cookie[0]);
     }
 
+    public void setCookies(List<Cookie> cookies) {
+        this.cookies = cookies;
+    }
+
     @Override
     public long getDateHeader(String s) {
         throw unimplemented();

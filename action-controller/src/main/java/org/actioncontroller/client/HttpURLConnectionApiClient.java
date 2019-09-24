@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 public class HttpURLConnectionApiClient implements ApiClient {
     private static final Charset CHARSET = StandardCharsets.ISO_8859_1;
     private URL baseUrl;
-    private List<HttpCookie> clientCookies = new ArrayList<>();
+    private Map<String, HttpCookie> clientCookies = new HashMap<>();
     private String responseBody;
 
     public HttpURLConnectionApiClient(String baseUrl) throws MalformedURLException {
@@ -39,7 +39,9 @@ public class HttpURLConnectionApiClient implements ApiClient {
         private Map<String, String> requestHeaders = new HashMap<>();
         private Map<String, String> requestParameters = new HashMap<>();
         private HttpURLConnection connection;
-        private List<HttpCookie> requestCookies = new ArrayList<>(clientCookies);
+        private List<HttpCookie> requestCookies = clientCookies.values().stream()
+                .filter(HttpURLConnectionApiClient::isUnexpired)
+                .collect(Collectors.toList());
         private List<HttpCookie> responseCookies;
         private String errorBody;
 
@@ -105,8 +107,10 @@ public class HttpURLConnectionApiClient implements ApiClient {
             connection = openConnection(url);
             connection.setInstanceFollowRedirects(false);
             connection.setRequestMethod(method);
-            connection.setRequestProperty("Cookie",
-                    requestCookies.stream().map(HttpCookie::toString).collect(Collectors.joining(",")));
+            if (!requestCookies.isEmpty()) {
+                connection.setRequestProperty("Cookie",
+                        requestCookies.stream().map(HttpCookie::toString).collect(Collectors.joining(",")));
+            }
             requestHeaders.forEach(connection::setRequestProperty);
 
             if (query != null && !isGetRequest()) {
@@ -122,7 +126,7 @@ public class HttpURLConnectionApiClient implements ApiClient {
             String setCookieField = connection.getHeaderField("Set-Cookie");
             if (setCookieField != null) {
                 responseCookies = HttpCookie.parse(setCookieField);
-                clientCookies.addAll(responseCookies);
+                responseCookies.forEach(c -> clientCookies.put(c.getName(), c));
             }
         }
 
@@ -183,8 +187,17 @@ public class HttpURLConnectionApiClient implements ApiClient {
         }
     }
 
+    private static boolean isUnexpired(HttpCookie c) {
+        return c.getMaxAge() == -1 || c.getMaxAge() > 0;
+    }
+
     protected HttpURLConnection openConnection(URL url) throws IOException {
         return (HttpURLConnection) url.openConnection();
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{baseUrl=" + baseUrl + " ,cookies=" + clientCookies.values().stream().map(HttpCookie::getName).collect(Collectors.joining(",")) + "}";
     }
 
     private static String asString(InputStream inputStream) throws IOException {

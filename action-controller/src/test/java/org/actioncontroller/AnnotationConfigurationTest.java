@@ -67,7 +67,7 @@ public class AnnotationConfigurationTest {
 
             public static String encrypt(Cipher encryptCipher, String string) {
                 try {
-                    return Base64.getEncoder().encodeToString(encryptCipher.doFinal(string.getBytes()));
+                    return Base64.getUrlEncoder().encodeToString(encryptCipher.doFinal(string.getBytes()));
                 } catch (GeneralSecurityException e) {
                     throw new RuntimeException(e);
                 }
@@ -75,7 +75,7 @@ public class AnnotationConfigurationTest {
 
             public static String decrypt(Cipher decryptCipher, String value) {
                 try {
-                    return new String(decryptCipher.doFinal(Base64.getDecoder().decode(value)));
+                    return new String(decryptCipher.doFinal(Base64.getUrlDecoder().decode(value)));
                 } catch (GeneralSecurityException e) {
                     throw new RuntimeException(e);
                 }
@@ -142,7 +142,7 @@ public class AnnotationConfigurationTest {
     private String decrypt(String value, SecretKeySpec keySpec) throws GeneralSecurityException {
         Cipher decryptCipher = Cipher.getInstance("Blowfish");
         decryptCipher.init(Cipher.DECRYPT_MODE, keySpec);
-        return new String(decryptCipher.doFinal(Base64.getDecoder().decode(value)));
+        return new String(decryptCipher.doFinal(Base64.getUrlDecoder().decode(value)));
     }
 
     @Test
@@ -168,6 +168,7 @@ public class AnnotationConfigurationTest {
     @Test
     public void shouldUseConfigurationValueWithJdkHttpServer() throws IOException, GeneralSecurityException {
         String encryptionKey = UUID.randomUUID().toString();
+        System.out.println(encryptionKey);
         SecretKeySpec keySpec = new SecretKeySpec(encryptionKey.getBytes(), "Blowfish");
         ApiControllerContext apiContext = new ApiControllerContext().setAttribute(keySpec);
 

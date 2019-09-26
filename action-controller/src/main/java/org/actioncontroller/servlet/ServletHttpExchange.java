@@ -229,7 +229,7 @@ public class ServletHttpExchange implements ApiHttpExchange {
     }
 
     private String getFullURL() {
-        return getServerURL() + req.getContextPath() + req.getServletPath() + req.getPathInfo() + (req.getQueryString() != null ? "?" + req.getQueryString() : "");
+        return getServerURL() + req.getContextPath() + req.getServletPath() + getPathInfo() + (req.getQueryString() != null ? "?" + req.getQueryString() : "");
     }
 
     @Override

@@ -17,16 +17,10 @@ public class DemoListener implements ServletContextListener {
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         ServletContext context = sce.getServletContext();
-        context.addServlet("api", new ApiServlet() {
-            @Override
-            public void init() {
-                registerController(new TestController(updater));
-            }
-        }).addMapping("/api/*");
+        context.addServlet("api", new ApiServlet(new TestController(updater))).addMapping("/api/*");
         context.addServlet("swagger", new WebJarServlet("swagger-ui"))
                 .addMapping("/swagger/*");
-        context.addServlet("default", new ContentServlet())
-                .addMapping("/*");
+        context.addServlet("default", new ContentServlet()).addMapping("/*");
     }
 
     @Override

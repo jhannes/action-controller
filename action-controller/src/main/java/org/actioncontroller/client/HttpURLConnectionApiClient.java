@@ -200,7 +200,7 @@ public class HttpURLConnectionApiClient implements ApiClient {
         return getClass().getSimpleName() + "{baseUrl=" + baseUrl + " ,cookies=" + clientCookies.values().stream().map(HttpCookie::getName).collect(Collectors.joining(",")) + "}";
     }
 
-    private static String asString(InputStream inputStream) throws IOException {
+    public static String asString(InputStream inputStream) throws IOException {
         StringBuilder stringBuilder = new StringBuilder();
         int c;
         while ((c = inputStream.read()) != -1) {

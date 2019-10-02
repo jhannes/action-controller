@@ -1,29 +1,25 @@
 package org.actioncontrollerdemo.jdkhttp;
 
-import com.sun.net.httpserver.HttpServer;
 import com.zaxxer.hikari.HikariDataSource;
 import org.actioncontroller.config.ConfigObserver;
 import org.actioncontroller.config.ConfigValueListener;
 import org.actioncontroller.config.PrefixConfigListener;
-import org.actioncontroller.httpserver.ApiHandler;
-import org.actioncontrollerdemo.TestController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.sql.SQLException;
 import java.util.Map;
 
 public class JdkHttpMain {
 
     private static final Logger logger = LoggerFactory.getLogger(JdkHttpMain.class);
-    private static HttpServer httpServer;
+    private static DemoServer httpServer;
     private DataSource dataSource;
 
-    public synchronized static void main(String[] args) throws IOException, InterruptedException {
+    public synchronized static void main(String[] args) throws InterruptedException {
         new JdkHttpMain().start();
         JdkHttpMain.class.wait();
     }
@@ -47,23 +43,13 @@ public class JdkHttpMain {
         }
     }
 
-    private void start() throws MalformedURLException {
-        StaticContent webJar = StaticContent.createWebJar("swagger-ui", "/demo/swagger");
-        StaticContent staticContent = new StaticContent(getClass().getResource("/webapp-actioncontrollerdemo"), "/demo");
-        ApiHandler apiHandler = new ApiHandler("/demo", "/api",
-                new TestController(() -> System.out.println("Hello")));
-
+    private void start() {
         ConfigObserver config = new ConfigObserver(new File("."), "demoserver");
         config.onInetSocketAddress("httpSocketAddress", inetSocketAddress -> {
-            HttpServer oldServer = httpServer;
-            httpServer = HttpServer.create();
-            httpServer.createContext("/demo/swagger", webJar);
-            httpServer.createContext("/demo/api", apiHandler);
-            httpServer.createContext("/demo", staticContent);
-            httpServer.createContext("/", new RedirectHandler("/demo"));
-            httpServer.bind(inetSocketAddress, 0);
+            DemoServer oldServer = httpServer;
+            httpServer = new DemoServer(inetSocketAddress);
             httpServer.start();
-            logger.warn("Started on http://" + httpServer.getAddress().getHostString() + ":" + httpServer.getAddress().getPort());
+            logger.warn("Started on {}", httpServer.getURL());
 
             if (oldServer != null) {
                 oldServer.stop(2);

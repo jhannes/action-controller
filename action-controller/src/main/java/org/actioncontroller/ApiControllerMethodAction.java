@@ -132,7 +132,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
         }
         if (!extraParameters.isEmpty()) {
             throw new ApiActionParameterUnknownMappingException(
-                    "Unknown parameters specified for " + action.getName() + ": " + extraParameters);
+                    "Unknown parameters specified for " + action.getName() + ": " + extraParameters + " (did you forget @Retention(RUNTIME)?)");
         }
     }
 
@@ -275,6 +275,9 @@ public class ApiControllerMethodAction implements ApiControllerAction {
             Object[] arguments = new Object[method.getParameterCount()];
             for (int i = 0; i < arguments.length; i++) {
                 arguments[i] = parameterMappers.get(i).apply(exchange);
+                if (!method.getParameterTypes()[i].isPrimitive() && !method.getParameterTypes()[i].isAssignableFrom(arguments[i].getClass())) {
+                    throw new HttpActionException(500, parameterMappers.get(i).getClass() + " returned wrong type " + arguments[i].getClass());
+                }
             }
             return arguments;
         } catch (HttpActionException e) {
@@ -288,7 +291,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
 
             throw e;
         } catch (RuntimeException e) {
-            logger.warn("While processing {} arguments", exchange, e);
+            logger.warn("While processing {} arguments for {}", exchange, this, e);
             throw new HttpRequestException(e);
         }
     }

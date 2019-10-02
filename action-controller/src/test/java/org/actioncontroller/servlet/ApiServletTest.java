@@ -213,7 +213,7 @@ public class ApiServletTest {
         request.setReader(() -> new BufferedReader(new StringReader("This is not JSON!")));
 
         expectedLogEvents.expect(ApiControllerAction.class, Level.WARN,
-                "While processing ServletHttpExchange[POST " + contextRoot + "/api/postMethod] arguments");
+                "While processing ServletHttpExchange[POST " + contextRoot + "/api/postMethod] arguments for ApiControllerMethodAction{POST /postMethod => ExampleController.postAction(JsonObject)}");
         servlet.service(request, response);
 
         assertThat(response.getStatus()).isEqualTo(400);
@@ -351,7 +351,7 @@ public class ApiServletTest {
         verify(responseMock).getCharacterEncoding();
         verify(responseMock).setCharacterEncoding(null);
         verify(responseMock).getWriter();
-        assertThat(JsonParser.parseToObject(responseBody.toString()).requiredString("message"))
+        assertThat(JsonObject.parse(responseBody.toString()).requiredString("message"))
                 .isEqualTo("Login required");
     }
 
@@ -368,7 +368,7 @@ public class ApiServletTest {
         verify(responseMock).getCharacterEncoding();
         verify(responseMock).setCharacterEncoding(null);
         verify(responseMock).getWriter();
-        assertThat(JsonParser.parseToObject(responseBody.toString()).requiredString("message"))
+        assertThat(JsonObject.parse(responseBody.toString()).requiredString("message"))
                 .isEqualTo("you're in!");
     }
 
@@ -385,7 +385,7 @@ public class ApiServletTest {
         verify(responseMock).getCharacterEncoding();
         verify(responseMock).setCharacterEncoding(null);
         verify(responseMock).getWriter();
-        assertThat(JsonParser.parseToObject(responseBody.toString()).requiredString("message"))
+        assertThat(JsonObject.parse(responseBody.toString()).requiredString("message"))
                 .isEqualTo("Insufficient permissions");
     }
 

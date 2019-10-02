@@ -173,7 +173,7 @@ public class AnnotationConfigurationTest {
         ApiControllerContext apiContext = new ApiControllerContext().setAttribute(keySpec);
 
         HttpServer server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
-        server.createContext("/test/api", new ApiHandler("/test", "/api", new Controller(), apiContext));
+        server.createContext("/test/api", new ApiHandler(new Controller(), apiContext));
         server.start();
 
         String baseUrl = "http://localhost:" + server.getAddress().getPort() + "/test/api";
@@ -188,7 +188,7 @@ public class AnnotationConfigurationTest {
         expectedLogEvents.expectMatch(event -> event.logger(ApiControllerAction.class).formattedMessage("Failed to setup Controller.setCookie(String,Consumer)"));
         expectedLogEvents.expectMatch(event -> event.logger(ApiControllerAction.class).formattedMessage("Failed to setup Controller.getCookie(String)"));
 
-        assertThatThrownBy(() -> new ApiHandler("/test", "/api", new Controller()))
+        assertThatThrownBy(() -> new ApiHandler(new Controller()))
                 .isInstanceOf(ActionControllerConfigurationException.class)
                 .hasMessageContaining("Missing context parameter, call servlet.getContext().setAttribute(\"" + SecretKeySpec.class.getName() + "\", ...)");
     }

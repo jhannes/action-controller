@@ -18,22 +18,18 @@ public class ApiHandler implements UserContext, HttpHandler {
     private static Logger logger = LoggerFactory.getLogger(ApiHandler.class);
 
     private List<ApiControllerAction> actions;
-    private String contextPath;
-    private String apiPath;
 
-    public ApiHandler(String contextPath, String apiPath, Object controller, ApiControllerContext apiContext) {
-        this.contextPath = contextPath;
-        this.apiPath = apiPath;
+    public ApiHandler(Object controller, ApiControllerContext apiContext) {
         actions = ApiControllerMethodAction.registerActions(controller, apiContext);
     }
 
-    public ApiHandler(String contextPath, String apiPath, Object controller) {
-        this(contextPath, apiPath, controller, new ApiControllerContext());
+    public ApiHandler(Object controller) {
+        this(controller, new ApiControllerContext());
     }
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        JdkHttpExchange httpExchange = new JdkHttpExchange(exchange, contextPath, apiPath);
+        JdkHttpExchange httpExchange = new JdkHttpExchange(exchange);
         for (ApiControllerAction action : actions) {
             if (action.matches(httpExchange)) {
                 try {

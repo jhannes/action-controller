@@ -22,17 +22,17 @@ public class ApiClientProxyHttpServerTest extends AbstractApiClientProxyTest {
     @Before
     public void createServerAndClient() throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
-        server.createContext("/test", new ApiHandler("/test", "/api", new TestController()));
+        server.createContext("/", new ApiHandler(new TestController()));
         server.start();
 
-        baseUrl = "http://localhost:" + server.getAddress().getPort() + "/test" + "/api";
+        baseUrl = "http://localhost:" + server.getAddress().getPort();
         client = ApiClientProxy.create(TestController.class,
                 new HttpURLConnectionApiClient(baseUrl));
     }
 
     @Test
     public void gives404OnUnmappedController() throws MalformedURLException {
-        expectedLogEvents.expect(ApiHandler.class, Level.WARN, "No route for JdkHttpExchange{GET /test/api[/not-mapped]}");
+        expectedLogEvents.expect(ApiHandler.class, Level.WARN, "No route for JdkHttpExchange{GET [/not-mapped]}");
         UnmappedController unmappedController = ApiClientProxy.create(UnmappedController.class,
                         new HttpURLConnectionApiClient(baseUrl));
         assertThatThrownBy(unmappedController::notHere)

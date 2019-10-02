@@ -222,15 +222,14 @@ public class ApiServletTest {
 
     @Test
     public void shouldCallWithOptionalParameter() throws IOException {
-        when(requestMock.getMethod()).thenReturn("GET");
-        when(requestMock.getPathInfo()).thenReturn("/hello");
+        FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/api", "/hello");
 
         assertThat(admin).isNull();
-        servlet.service(requestMock, responseMock);
+        servlet.service(request, response);
         assertThat(admin).isEmpty();
 
-        when(requestMock.getParameter("admin")).thenReturn("true");
-        servlet.service(requestMock, responseMock);
+        request.setParameter("admin", "true");
+        servlet.service(request, response);
         assertThat(admin).hasValue(true);
     }
 

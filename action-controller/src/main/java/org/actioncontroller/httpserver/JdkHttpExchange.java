@@ -18,6 +18,7 @@ import java.net.HttpCookie;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,20 +28,14 @@ import java.util.Optional;
 class JdkHttpExchange implements ApiHttpExchange {
     private final HttpExchange exchange;
     private Map<String, String> pathParams = new HashMap<>();
-    private final String context;
-    private final String apiPath;
+    private final String contextPath;
     private Map<String, List<String>> parameters;
     private boolean responseSent = false;
 
-    public JdkHttpExchange(HttpExchange exchange, String context, String apiPath) throws IOException {
+    public JdkHttpExchange(HttpExchange exchange) throws IOException {
         this.exchange = exchange;
-        this.context = context;
-        this.apiPath = apiPath;
-        try {
-            this.parameters = parseParameters(exchange.getRequestURI().getQuery());
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("Should never happen", e);
-        }
+        this.contextPath = exchange.getHttpContext().getPath().equals("/") ? "" : exchange.getHttpContext().getPath();
+        this.parameters = parseParameters(exchange.getRequestURI().getQuery());
         if (!exchange.getRequestMethod().equals("GET")) {
             if ("application/x-www-form-urlencoded".equals(exchange.getRequestHeaders().getFirst("content-type"))) {
                 this.parameters = parseParameters(asString(exchange.getRequestBody()));
@@ -55,7 +50,7 @@ class JdkHttpExchange implements ApiHttpExchange {
 
     @Override
     public URL getContextURL() throws MalformedURLException {
-        return new URL(getServerURL() + context);
+        return new URL(getServerURL() + contextPath);
     }
 
     @Override
@@ -70,14 +65,13 @@ class JdkHttpExchange implements ApiHttpExchange {
 
     @Override
     public URL getApiURL() throws MalformedURLException {
-        return new URL(getServerURL() + context + apiPath);
+        return new URL(getServerURL() + contextPath);
     }
 
     @Override
     public String getPathInfo() {
         String path = exchange.getRequestURI().getPath();
-        String controllerPath = context + apiPath;
-        return path.substring(controllerPath.length());
+        return path.substring(contextPath.length());
     }
 
     private String asString(InputStream inputStream) throws IOException {
@@ -215,7 +209,7 @@ class JdkHttpExchange implements ApiHttpExchange {
         sendResponseHeaders(statusCode, 0);
     }
 
-    protected Map<String, List<String>> parseParameters(String query) throws UnsupportedEncodingException {
+    protected Map<String, List<String>> parseParameters(String query) {
         if (query == null) {
             return new HashMap<>();
         }
@@ -224,7 +218,7 @@ class JdkHttpExchange implements ApiHttpExchange {
             int equalsPos = parameterString.indexOf('=');
             if (equalsPos > 0) {
                 String paramName = parameterString.substring(0, equalsPos);
-                String paramValue = URLDecoder.decode(parameterString.substring(equalsPos+1), "ISO-8859-1");
+                String paramValue = URLDecoder.decode(parameterString.substring(equalsPos+1), StandardCharsets.ISO_8859_1);
                 result.computeIfAbsent(paramName, n -> new ArrayList<>()).add(paramValue);
             }
         }
@@ -245,7 +239,7 @@ class JdkHttpExchange implements ApiHttpExchange {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{" + getHttpMethod() + " " +  context + apiPath  + "[" + getPathInfo() + "]}";
+        return getClass().getSimpleName() + "{" + getHttpMethod() + " " + contextPath + "[" + getPathInfo() + "]}";
     }
 
     public void calculatePathParams(String[] patternParts) {

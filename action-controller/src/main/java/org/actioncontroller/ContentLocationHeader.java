@@ -14,6 +14,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * Set the method return value into the Content-location response header as String or URL. Strings are interpreted relative to api path
+ *
+ * @see HttpReturnMapping
  */
 @Retention(RUNTIME)
 @Target(METHOD)

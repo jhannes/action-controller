@@ -17,6 +17,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * Maps the HTTP request parameter to the parameter, converting the type if necessary.
+ *
+ * @see HttpParameterMapping
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)

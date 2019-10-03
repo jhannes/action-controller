@@ -22,6 +22,8 @@ import static org.actioncontroller.meta.ApiHttpExchange.convertParameterType;
  * If the session parameter is missing, aborts the request with 401 Unauthorized, unless the parameter type is Optional.
  * If the parameter type is Consumer, calling parameter.accept() sets the cookie value instead of returning it
  * converting the type and URL encoding.
+ *
+ * @see HttpParameterMapping
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)

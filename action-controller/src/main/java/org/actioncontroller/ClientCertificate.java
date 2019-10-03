@@ -14,6 +14,8 @@ import java.util.Optional;
 
 /**
  * Extract the HTTPS Client Certificate from the request
+ *
+ * @see HttpParameterMapping
  */
 @Retention(RetentionPolicy.RUNTIME)
 @HttpParameterMapping(ClientCertificate.MapperFactory.class)

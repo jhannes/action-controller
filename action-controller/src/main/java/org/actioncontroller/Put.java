@@ -11,6 +11,8 @@ import java.lang.reflect.Method;
 
 /**
  * Specifies that this method should handle HTTP PUT requests
+ *
+ * @see HttpRouterMapping
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)

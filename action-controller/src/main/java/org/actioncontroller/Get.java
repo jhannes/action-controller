@@ -10,7 +10,9 @@ import java.lang.annotation.Target;
 import java.lang.reflect.Method;
 
 /**
- * Specifies that this method should handle HTTP GET requests
+ * Specifies that this method should handle HTTP GET requests.
+ *
+ * @see HttpRouterMapping
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)

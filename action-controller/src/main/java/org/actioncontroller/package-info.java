@@ -14,26 +14,26 @@
  * }
  * </pre>
  *
- * In this example, {@link org.actioncontroller.Get} is a routing mapper annotation because it is
+ * <p>In this example, {@link org.actioncontroller.Get} is a routing mapper annotation because it is
  * annotated {@link org.actioncontroller.meta.HttpRouterMapping}. This annotation refers to
  * {@link org.actioncontroller.Get.ActionFactory} and {@link org.actioncontroller.Get.ActionFactory#create}
- * is used to create an {@link org.actioncontroller.ApiControllerMethodAction}.
+ * is used to create an {@link org.actioncontroller.ApiControllerMethodAction}.</p>
  *
- * {@link org.actioncontroller.ApiControllerMethodAction} uses the {@link org.actioncontroller.RequestParam}
+ * <p>{@link org.actioncontroller.ApiControllerMethodAction} uses the {@link org.actioncontroller.RequestParam}
  * annotation on the parameter to decide how this parameter is mapped from the request. {@link org.actioncontroller.RequestParam}
  * is annotated with {@link org.actioncontroller.meta.HttpParameterMapping}, which refers to
  * {@link org.actioncontroller.RequestParam.MapperFactory}. {@link org.actioncontroller.RequestParam.MapperFactory}
  * again is used to create a {@link org.actioncontroller.meta.HttpParameterMapper} which extracts the method argument
- * from the http request.
+ * from the http request.</p>
  *
- * {@link org.actioncontroller.ApiControllerMethodAction} further uses the {@link org.actioncontroller.ContentBody}
+ * <p>{@link org.actioncontroller.ApiControllerMethodAction} further uses the {@link org.actioncontroller.ContentBody}
  * annotation on the method to determine how the return value is mapped the the response. {@link org.actioncontroller.ContentBody}
  * is annotated with {@link org.actioncontroller.meta.HttpReturnMapping}, which refers to
  * {@link org.actioncontroller.ContentBody.MapperFactory}. {@link org.actioncontroller.ContentBody.MapperFactory}
  * is used to create a {@link org.actioncontroller.meta.HttpReturnMapper} which converts the method return value to
- * the http response.
+ * the http response.</p>
  *
- * A controller can be used in three contexts:
+ * <p>A controller can be used in three contexts:</p>
  * <ul>
  *     <li>With {@link org.actioncontroller.servlet.ApiServlet} to extract actions to be used in a servlet container</li>
  *     <li>With {@link org.actioncontroller.httpserver.ApiHandler} to extract actions to be used with {@link com.sun.net.httpserver.HttpServer}</li>

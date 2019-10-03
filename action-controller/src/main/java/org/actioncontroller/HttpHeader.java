@@ -19,6 +19,8 @@ import java.lang.reflect.Parameter;
 /**
  * When used on a parameter, maps the HTTP Request header to the parameter, converting the type if necessary.
  * When used on method, maps the return value to the specified HTTP Response header
+ *
+ * @see HttpReturnMapping
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.PARAMETER})

@@ -53,7 +53,7 @@ public class AbstractApiClientSessionTest {
         @SendRedirect
         public String login(
                 @RequestParam("username") String username,
-                @SessionParameter(value = "username", createIfMissing = true, changeSessionId = true) Consumer<String> sessionUsername
+                @SessionParameter(value = "username", createIfMissing = true) Consumer<String> sessionUsername
         ) {
             sessionUsername.accept(username);
             return "userinfo";

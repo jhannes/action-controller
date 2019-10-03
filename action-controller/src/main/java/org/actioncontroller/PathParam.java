@@ -13,6 +13,8 @@ import java.lang.reflect.Parameter;
 
 /**
  * Maps part of the HTTP request target to the parameter, converting the type if necessary.
+ *
+ * @see HttpParameterMapping
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)

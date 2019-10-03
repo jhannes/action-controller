@@ -23,6 +23,8 @@ import java.util.function.Consumer;
  * Maps the parameter to the specified servlet session. If the session parameter is missing, aborts the request
  * with 401 Unauthorized, unless the parameter type is Optional or createIfMissing is set.
  * If the parameter type is Consumer, calling parameter.accept() sets the session attribute instead of returning it
+ *
+ * @see HttpParameterMapping
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)

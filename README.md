@@ -65,10 +65,10 @@ The inner workings
 ------------------
 
 The magic that makes Action Controller work is the annotations like 
-[`@PathParam`](./docs/apidocs/org/actioncontroller/PathParam.html) and
-[`@JsonBody`](./docs/apidocs/org/actioncontroller/json/JsonBody.html). 
+[`@PathParam`](https://jhannes.github.io/action-controller/apidocs/org/actioncontroller/PathParam.html) and
+[`@JsonBody`](https://jhannes.github.io/action-controller/apidocs/org/actioncontroller/json/JsonBody.html). 
 The set of annotations is actually extensible. Here's how
-[`@RequestParam`](./docs/apidocs/org/actioncontroller/RequestParam.html) is defined:
+[`@RequestParam`](https://jhannes.github.io/action-controller/apidocs/org/actioncontroller/RequestParam.html) is defined:
 
 ```java
 @Retention(RetentionPolicy.RUNTIME)
@@ -84,9 +84,9 @@ public @interface RequestParam {
 (by default, annotations are only used by the compiler). `@Target` tells javac to only allow
 this annotation on method parameters (as opposed to, for example class declarations).
 
-[`@HttpParameterMapping`](./docs/apidocs/org/actioncontroller/meta/HttpParameterMapping.html) tells
+[`@HttpParameterMapping`](https://jhannes.github.io/action-controller/apidocs/org/actioncontroller/meta/HttpParameterMapping.html) tells
 Action Controller to use this annotation to resolve the value of a action method parameter. The
-[`RequestParam.RequestParameterMappingFactory`](./docs/apidocs/org/actioncontroller/RequestParam.MapperFactory.html)
+[`RequestParam.RequestParameterMappingFactory`](https://jhannes.github.io/action-controller/apidocs/org/actioncontroller/RequestParam.MapperFactory.html)
 describes what Action Controller should do with the annotation. Here's how it's defined:
 
 ```java
@@ -101,7 +101,7 @@ public class RequestParameterMappingFactory extends HttpRequestParameterMappingF
 
 Action Servlet instantiates the mapping factory with a default constructor and invokes create, which lets
 the factory set up the mapping with properties from the annotation. The mapper itself takes an
-[ApiHttpExchange](./docs/apidocs/org/actioncontroller/meta/ApiHttpExchange.html)
+[ApiHttpExchange](https://jhannes.github.io/action-controller/apidocs/org/actioncontroller/meta/ApiHttpExchange.html)
 (which encapsulates the HTTP request and the response) and returns the value to use for the method parameter
 on the action controller.
 
@@ -133,7 +133,7 @@ public class MyServer {
     }
 
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         Server server = new Server(8080);
         ServletContextHandler handler = new ServletContextHandler();
         handler.setContextPath("/demo");
@@ -197,7 +197,7 @@ public class MyServer {
 
 ## ConfigObserver
 
-[ConfigObserver](./docs/apidocs/org/actioncontroller/config/ConfigObserver.html) is a revolutionary way to think of
+[ConfigObserver](https://jhannes.github.io/action-controller/apidocs/org/actioncontroller/config/ConfigObserver.html) is a revolutionary way to think of
 application configuration. ConfigObserver monitors the configuration values and calls back to you application when
 a configuration value you care about is changed. This way, your application can easily hot-reload configuration values.
 
@@ -233,6 +233,5 @@ public class MyApplication {
 TODO
 ====
 
-[ ] HttpHeaderRequestMapping
-[ ] Log payloads
-
+* [ ] Log payloads
+* [ ] Split HttpClientParameterMapping from HttpParameterMapping?

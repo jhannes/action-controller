@@ -15,6 +15,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * Maps the return value to the specified HTTP Response header
+ *
+ * @see HttpReturnMapping
  */
 @Retention(RUNTIME)
 @Target(METHOD)

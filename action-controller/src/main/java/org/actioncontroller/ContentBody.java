@@ -5,6 +5,7 @@ import org.actioncontroller.meta.HttpClientReturnMapper;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
 import org.actioncontroller.meta.HttpReturnMapper;
+import org.actioncontroller.meta.HttpRouterMapping;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -14,6 +15,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * Set the return value in the content body with an optional content-type
+ *
+ * @see HttpReturnMapping
  */
 @Retention(RUNTIME)
 @Target(METHOD)

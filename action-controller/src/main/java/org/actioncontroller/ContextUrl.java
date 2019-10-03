@@ -14,6 +14,8 @@ import java.net.URL;
 
 /**
  * Extract the context URL into the parameter as URL or String
+ *
+ * @see HttpParameterMapping
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)

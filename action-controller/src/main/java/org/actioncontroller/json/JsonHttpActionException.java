@@ -6,6 +6,9 @@ import org.jsonbuddy.JsonObject;
 
 import java.io.IOException;
 
+/**
+ * Used to return a JsonObject to the user agent along with an error status code
+ */
 public class JsonHttpActionException extends HttpActionException {
 
     private JsonObject jsonObject;

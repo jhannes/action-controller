@@ -12,6 +12,10 @@ import java.lang.annotation.Target;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
+
+/**
+ * Maps the return value to the specified HTTP Response header
+ */
 @Retention(RUNTIME)
 @Target(METHOD)
 @HttpReturnMapping(HttpResponseHeader.MappingFactory.class)

@@ -11,6 +11,10 @@ import java.lang.annotation.Target;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
+/**
+ * Maps the method response value as an HTTP 302 redirect, supporting Strings and URLs. URLs not starting
+ * with "http(s)" are interpreted as relative paths to server root if they start with "/" or api URL otherwise
+ */
 @Retention(RUNTIME)
 @Target(METHOD)
 @HttpReturnMapping(SendRedirect.MappingFactory.class)

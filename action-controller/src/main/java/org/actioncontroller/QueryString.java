@@ -9,6 +9,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Parameter;
 
+/**
+ * Maps the raw query part of the HTTP request target to the parameter.
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @HttpParameterMapping(QueryString.ParameterMapperFactory.class)
 public @interface QueryString {

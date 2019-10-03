@@ -11,6 +11,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Parameter;
 
+/**
+ * Maps part of the HTTP request target to the parameter, converting the type if necessary.
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
 @HttpParameterMapping(PathParam.MapperFactory.class)
@@ -18,7 +21,7 @@ public @interface PathParam {
 
     String value();
 
-    public class MapperFactory implements HttpParameterMapperFactory<PathParam> {
+    class MapperFactory implements HttpParameterMapperFactory<PathParam> {
         @Override
         public HttpParameterMapper create(PathParam annotation, Parameter parameter, ApiControllerContext context) {
             String name = annotation.value();

@@ -12,6 +12,9 @@ import java.net.URL;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
+/**
+ * Set the method return value into the Content-location response header as String or URL. Strings are interpreted relative to api path
+ */
 @Retention(RUNTIME)
 @Target(METHOD)
 @HttpReturnMapping(ContentLocationHeader.MappingFactory.class)

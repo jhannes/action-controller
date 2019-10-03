@@ -12,14 +12,17 @@ import java.lang.annotation.Target;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
+/**
+ * Set the return value in the content body with an optional content-type
+ */
 @Retention(RUNTIME)
 @Target(METHOD)
-@HttpReturnMapping(ContentBody.MappingFactory.class)
+@HttpReturnMapping(ContentBody.MapperFactory.class)
 public @interface ContentBody {
 
     String contentType() default "text/plain";
 
-    class MappingFactory implements HttpReturnMapperFactory<ContentBody> {
+    class MapperFactory implements HttpReturnMapperFactory<ContentBody> {
         @Override
         public HttpReturnMapper create(ContentBody annotation, Class<?> returnType) {
             return (result, exchange) ->

@@ -12,12 +12,15 @@ import java.lang.annotation.Target;
 import java.lang.reflect.Parameter;
 import java.net.URL;
 
+/**
+ * Extract the context URL into the parameter as URL or String
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
 @HttpParameterMapping(ContextUrl.MapperFactory.class)
 public @interface ContextUrl {
 
-    public class MapperFactory implements HttpParameterMapperFactory<ContextUrl> {
+    class MapperFactory implements HttpParameterMapperFactory<ContextUrl> {
         @Override
         public HttpParameterMapper create(ContextUrl annotation, Parameter parameter, ApiControllerContext context) {
             if (parameter.getType() == URL.class) {

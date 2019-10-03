@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Collects all exceptions during configuration of a specific controller
+ */
 public class ApiControllerCompositeException extends ActionControllerConfigurationException {
 
     private List<Exception> exceptions = new ArrayList<>();

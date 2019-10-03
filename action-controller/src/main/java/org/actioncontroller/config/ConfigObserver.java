@@ -16,6 +16,11 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Used to monitor a set of configuration files and notify {@link ConfigListener}s
+ * on initialization and change. Given a directory and an application name,
+ * appropriate resources and files are monitored with a {@link ConfigLoader}
+ */
 public class ConfigObserver {
     private static final Logger logger = LoggerFactory.getLogger(ConfigObserver.class);
     private final File configDirectory;
@@ -36,6 +41,10 @@ public class ConfigObserver {
         fileScanner = new FileScanner(configDirectory, configLoader.getConfigurationFileNames(), this::handleFileChanged);
     }
 
+    /**
+     * The generic observer method. Call {@link ConfigListener#onConfigChanged} on
+     * the listener when this method is first called and again each time config changes.
+     */
     public ConfigObserver onConfigChange(ConfigListener listener) {
         this.listeners.add(listener);
         notifyListener(listener, null, currentConfiguration);

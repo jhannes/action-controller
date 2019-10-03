@@ -5,6 +5,9 @@ import org.actioncontroller.HttpActionException;
 import java.net.URL;
 import java.util.Objects;
 
+/**
+ * Thrown by {@link ApiClientProxy} when the HTTP request returned a failure status code.
+ */
 public class HttpClientException extends HttpActionException {
     private final String responseBody;
     private final URL url;

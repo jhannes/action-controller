@@ -4,6 +4,10 @@ import org.actioncontroller.meta.ApiHttpExchange;
 
 import java.io.IOException;
 
+/**
+ * Indicates that an error happened during the invocation of an action and that
+ * the user agent should receive the HTTP {@link #statusCode}.
+ */
 public class HttpActionException extends RuntimeException {
 
     private int statusCode;

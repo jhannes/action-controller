@@ -51,7 +51,7 @@ public class MyApiController {
     @SendRedirect
     public String establishUserSession(
             @RequestParam("code") String authenticationCode,
-            @SessionParameter("userProfile", invalidate=true) Consumer<UserProfile> setUserProfile
+            @SessionParameter(value = "userProfile", invalidate=true) Consumer<UserProfile> setUserProfile
     ) {
         // ...
         setUserProfile.apply(newlyLoggedInUser);
@@ -64,8 +64,11 @@ public class MyApiController {
 The inner workings
 ------------------
 
-The magic that makes Action Controller work is the annotations like `@PathParam` and `@JsonBody`. 
-The set of annotations is actually extensible. Here's how `@RequestParam` is defined:
+The magic that makes Action Controller work is the annotations like 
+[`@PathParam`](./docs/apidocs/org/actioncontroller/PathParam.html) and
+[`@JsonBody`](./docs/apidocs/org/actioncontroller/json/JsonBody.html). 
+The set of annotations is actually extensible. Here's how
+[`@RequestParam`](./docs/apidocs/org/actioncontroller/RequestParam.html) is defined:
 
 ```java
 @Retention(RetentionPolicy.RUNTIME)
@@ -81,9 +84,10 @@ public @interface RequestParam {
 (by default, annotations are only used by the compiler). `@Target` tells javac to only allow
 this annotation on method parameters (as opposed to, for example class declarations).
 
-`@HttpParameterMapping` tells Action Controller to use this annotation to resolve the value
-of a action method parameter. The `RequestParam.RequestParameterMappingFactory` describes what Action
-Controller should do with the annotation. Here's how it's defined:
+[`@HttpParameterMapping`](./docs/apidocs/org/actioncontroller/meta/HttpParameterMapping.html) tells
+Action Controller to use this annotation to resolve the value of a action method parameter. The
+[`RequestParam.RequestParameterMappingFactory`](./docs/apidocs/org/actioncontroller/RequestParam.MapperFactory.html)
+describes what Action Controller should do with the annotation. Here's how it's defined:
 
 ```java
 public class RequestParameterMappingFactory extends HttpRequestParameterMappingFactory<RequestParam> {
@@ -95,18 +99,140 @@ public class RequestParameterMappingFactory extends HttpRequestParameterMappingF
 }
 ```
 
-Action Servlet instansiates the mapping factory with a default constructor and invokes create, which lets
+Action Servlet instantiates the mapping factory with a default constructor and invokes create, which lets
 the factory set up the mapping with properties from the annotation. The mapper itself takes an
-ApiHttpExchange (which encapsulates the HTTP request and the response) and returns the value to use
-for the method parameter on the action controller.
+[ApiHttpExchange](./docs/apidocs/org/actioncontroller/meta/ApiHttpExchange.html)
+(which encapsulates the HTTP request and the response) and returns the value to use for the method parameter
+on the action controller.
 
 That's really all there it to it! :-)
+
+
+### Running with Jetty
+
+```java
+import javax.servlet.ServletContextListener;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContext;
+
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+
+public class MyServer {
+    public class MyListener implements ServletContextListener {
+
+        @Override
+        public void contextInitialized(ServletContextEvent sce) {
+            ServletContext context = sce.getServletContext();
+            context.addServlet("api", new ApiServlet(new MyApiController())).addMapping("/api/*");
+        }
+    
+        @Override
+        public void contextDestroyed(ServletContextEvent sce) {    
+        }
+    }
+
+
+    public static void main(String[] args) throws Exception {
+        Server server = new Server(8080);
+        ServletContextHandler handler = new ServletContextHandler();
+        handler.setContextPath("/demo");
+        handler.addEventListener(new MyListener());
+        server.setHandler(handler);
+        server.start();
+    }
+}
+```
+
+
+### Running with `web.xml`
+
+1. Implemement a `ServletContextListener` which creates `ApiServlet`
+2. Add the `ServletContextListener` to your `web.xml` file
+
+```java
+import javax.servlet.ServletContextListener;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContext;
+
+public class MyListener implements ServletContextListener {
+
+    @Override
+    public void contextInitialized(ServletContextEvent sce) {
+        ServletContext context = sce.getServletContext();
+        context.addServlet("api", new ApiServlet(new MyApiController())).addMapping("/api/*");
+    }
+
+    @Override
+    public void contextDestroyed(ServletContextEvent sce) {    
+    }
+}
+```
+
+```xml
+<web-app>
+  <listener>
+    <listener-class>
+       MyListener
+    </listener-class>
+  </listener>
+</web-app>
+```
+
+
+### Running with JDK HttpServer
+
+```java
+import com.sun.net.httpserver.HttpServer;
+import org.actioncontroller.httpserver.ApiHandler;
+
+public class MyServer {
+    public static void main(String[] args){
+          HttpServer httpServer = HttpServer.create(new InetSocketAddress("localhost", 8080), 0);
+          httpServer.createContext("/demo/api", new ApiHandler(new MyApiController()));
+          httpServer.start();
+    }
+}
+```
+
+## ConfigObserver
+
+[ConfigObserver](./docs/apidocs/org/actioncontroller/config/ConfigObserver.html) is a revolutionary way to think of
+application configuration. ConfigObserver monitors the configuration values and calls back to you application when
+a configuration value you care about is changed. This way, your application can easily hot-reload configuration values.
+
+Example:
+
+```java
+public class MyApplication {
+    
+    private String myConfigValue;
+    private DataSource dataSource;
+    private ServerSocket serverSocket;
+
+    public MyApplication(ConfigObserver config) {
+        config.onConfigValue("myConfigValue", null, v -> this.myConfigValue = v);
+        config.onConfigChange(new DataSourceConfig("dataSource", dataSource -> this.dataSouce = dataSource));
+        config.onInetSocketAddress("serverAddress",
+                address -> {
+                    if (serverSocket != null) serverSocket.close();
+                    serverSocket = new ServerSocket(address);
+                    startServerSocket(serverSocket);
+                },
+                10080);
+    }
+
+    public static void main(String[] args){
+      ConfigObserver config = new ConfigObserver(new File("."), "myApp");
+      new MyApplication(config);
+    }
+}
+```
 
 
 TODO
 ====
 
 [ ] HttpHeaderRequestMapping
-[ ] Custom conversion
 [ ] Log payloads
 

@@ -17,6 +17,12 @@ import java.util.function.Consumer;
 
 import static org.actioncontroller.meta.ApiHttpExchange.convertParameterType;
 
+/**
+ * Maps the parameter to the specified HTTP request cookie, URL decoding and converting the type if necessary.
+ * If the session parameter is missing, aborts the request with 401 Unauthorized, unless the parameter type is Optional.
+ * If the parameter type is Consumer, calling parameter.accept() sets the cookie value instead of returning it
+ * converting the type and URL encoding.
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
 @HttpParameterMapping(UnencryptedCookie.Factory.class)

@@ -12,6 +12,9 @@ import java.lang.reflect.Parameter;
 import java.security.cert.X509Certificate;
 import java.util.Optional;
 
+/**
+ * Extract the HTTPS Client Certificate from the request
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @HttpParameterMapping(ClientCertificate.MapperFactory.class)
 public @interface ClientCertificate {

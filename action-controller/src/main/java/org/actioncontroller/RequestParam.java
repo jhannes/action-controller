@@ -15,13 +15,19 @@ import java.lang.reflect.Parameter;
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
+/**
+ * Maps the HTTP request parameter to the parameter, converting the type if necessary.
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
-@HttpParameterMapping(RequestParam.ParameterMapperFactory.class)
+@HttpParameterMapping(RequestParam.MapperFactory.class)
 public @interface RequestParam {
 
     String value();
 
+    /**
+     * Maps the HTTP client IP to the parameter as String. Resolves X-Forwarded-For proxy headers
+     */
     @Retention(RUNTIME)
     @Target(PARAMETER)
     @HttpParameterMapping(ClientIpParameterMapperFactory.class)
@@ -36,7 +42,7 @@ public @interface RequestParam {
         }
     }
 
-    class ParameterMapperFactory implements HttpParameterMapperFactory<RequestParam> {
+    class MapperFactory implements HttpParameterMapperFactory<RequestParam> {
         @Override
         public HttpParameterMapper create(RequestParam annotation, Parameter parameter, ApiControllerContext context) {
             String name = annotation.value();

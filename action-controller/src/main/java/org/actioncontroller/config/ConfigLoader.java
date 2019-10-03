@@ -13,6 +13,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+/**
+ * Given a {@link #configDirectory}, applicationName and profiles, monitors
+ * the files <code>&lt;applicationName&gt;.properties</code> and
+ * <code>&lt;applicationName&gt;-&lt;profile&gt;.properties</code> for each profile
+ * in the {@link #configDirectory}. May be expanded to also load
+ * classpath resources <code>&lt;applicationName&gt;.properties</code> and
+ *  * <code>&lt;applicationName&gt;-&lt;profile&gt;.properties</code> in the future.
+ */
 public class ConfigLoader {
     private static final Logger logger = LoggerFactory.getLogger(ConfigLoader.class);
     private final File configDirectory;
@@ -22,7 +30,6 @@ public class ConfigLoader {
         this.configDirectory = configDirectory;
         this.configurationFileNames = Arrays.asList(applicationName + ".properties", applicationName + "-preview.properties");
     }
-
 
     public Map<String, String> loadConfiguration() {
         Properties properties = new Properties();

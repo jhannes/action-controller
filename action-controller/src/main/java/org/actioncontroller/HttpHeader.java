@@ -16,6 +16,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Parameter;
 
+/**
+ * When used on a parameter, maps the HTTP Request header to the parameter, converting the type if necessary.
+ * When used on method, maps the return value to the specified HTTP Response header
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.PARAMETER})
 @HttpParameterMapping(HttpHeader.Mapper.class)
@@ -23,7 +27,7 @@ import java.lang.reflect.Parameter;
 public @interface HttpHeader {
     String value();
 
-    public class Mapper implements
+    class Mapper implements
             HttpParameterMapperFactory<HttpHeader>,
             HttpReturnMapperFactory<HttpHeader>
     {

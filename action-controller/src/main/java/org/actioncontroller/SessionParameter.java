@@ -19,18 +19,32 @@ import java.lang.reflect.ParameterizedType;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+/**
+ * Maps the parameter to the specified servlet session. If the session parameter is missing, aborts the request
+ * with 401 Unauthorized, unless the parameter type is Optional or createIfMissing is set.
+ * If the parameter type is Consumer, calling parameter.accept() sets the session attribute instead of returning it
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
 @HttpParameterMapping(SessionParameter.MapperFactory.class)
 public @interface SessionParameter {
 
+    /**
+     * Defaults to the class name of the parameter (removing Consumer or Optional parts of the type)
+     */
     String value() default "";
 
+    /**
+     * If true, the default constructor is used to create a new object if none exists
+     */
     boolean createIfMissing() default false;
 
+    /**
+     * If true and used with Consumer, calling {@link Consumer#accept} will invalidate the current session and
+     * create a new one. If true and set with createIfMissing, it will invalidate the session if it created
+     * a new one
+     */
     boolean invalidate() default false;
-
-    boolean changeSessionId() default false;
 
     class MapperFactory implements HttpParameterMapperFactory<SessionParameter> {
         @Override

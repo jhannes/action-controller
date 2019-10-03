@@ -5,6 +5,10 @@ import org.actioncontroller.servlet.ActionControllerConfigurationException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 
+/**
+ * Thrown when action-controller couldn't find out how to map a method parameter
+ * for an action method.
+ */
 public class ApiActionParameterUnknownMappingException extends ActionControllerConfigurationException {
 
     public ApiActionParameterUnknownMappingException(Method action, int index, Parameter parameter) {

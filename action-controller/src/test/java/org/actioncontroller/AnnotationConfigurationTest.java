@@ -168,7 +168,6 @@ public class AnnotationConfigurationTest {
     @Test
     public void shouldUseConfigurationValueWithJdkHttpServer() throws IOException, GeneralSecurityException {
         String encryptionKey = UUID.randomUUID().toString();
-        System.out.println(encryptionKey);
         SecretKeySpec keySpec = new SecretKeySpec(encryptionKey.getBytes(), "Blowfish");
         ApiControllerContext apiContext = new ApiControllerContext().setAttribute(keySpec);
 

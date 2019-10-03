@@ -8,7 +8,6 @@ import java.io.Reader;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
 import java.util.Optional;
@@ -31,7 +30,7 @@ public interface ApiHttpExchange {
      */
     String getServerURL();
 
-    URL getContextURL() throws MalformedURLException;
+    URL getContextURL();
 
     /**
      * Returns the path to where the controllers paths are evaluated relative to, that
@@ -39,7 +38,7 @@ public interface ApiHttpExchange {
      * is bound as "/api/*" in a webapp mounted at "/app", getApiURL might return
      * <code>https://example.com:7443/app/api</code>.
      */
-    URL getApiURL() throws MalformedURLException;
+    URL getApiURL();
 
     /**
      * Returns the part of the URL after getApiURL. For example if a controller is mounted at

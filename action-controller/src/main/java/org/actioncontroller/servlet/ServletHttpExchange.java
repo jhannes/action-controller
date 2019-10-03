@@ -24,6 +24,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static org.actioncontroller.ExceptionUtil.softenException;
+
 public class ServletHttpExchange implements ApiHttpExchange {
 
     public static final Charset CHARSET = StandardCharsets.ISO_8859_1;
@@ -64,16 +66,20 @@ public class ServletHttpExchange implements ApiHttpExchange {
     }
 
     @Override
-    public URL getContextURL() throws MalformedURLException {
-        return new URL(getServerURL() + req.getContextPath());
+    public URL getContextURL() {
+        return toURL(getServerURL() + req.getContextPath());
     }
 
     @Override
     public URL getApiURL() {
+        return toURL(getServerURL() + req.getContextPath() + req.getServletPath());
+    }
+
+    private URL toURL(String s) {
         try {
-            return new URL(getServerURL() + req.getContextPath() + req.getServletPath());
+            return new URL(s);
         } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
+            throw softenException(e);
         }
     }
 

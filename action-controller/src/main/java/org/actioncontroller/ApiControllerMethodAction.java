@@ -179,7 +179,13 @@ public class ApiControllerMethodAction implements ApiControllerAction {
                 }
 
                 try {
-                    return mapperFactory.create(annotation, parameter, context);
+                    HttpParameterMapper parameterMapper = mapperFactory.create(annotation, parameter, context);
+                    if (parameterMapper == null) {
+                        throw new ActionControllerConfigurationException(
+                                mapperFactory.getClass().getName() + ".create(...) returned null for " + this
+                        );
+                    }
+                    return parameterMapper;
                 } catch (ActionControllerConfigurationException e) {
                     throw e;
                 } catch (Exception e) {
@@ -275,22 +281,27 @@ public class ApiControllerMethodAction implements ApiControllerAction {
             Object[] arguments = new Object[method.getParameterCount()];
             for (int i = 0; i < arguments.length; i++) {
                 arguments[i] = parameterMappers.get(i).apply(exchange);
-                if (!method.getParameterTypes()[i].isPrimitive() && !method.getParameterTypes()[i].isAssignableFrom(arguments[i].getClass())) {
-                    throw new HttpActionException(500, parameterMappers.get(i).getClass() + " returned wrong type " + arguments[i].getClass());
+                if (arguments[i] != null && !method.getParameterTypes()[i].isPrimitive() && !method.getParameterTypes()[i].isAssignableFrom(arguments[i].getClass())) {
+                    throw new HttpActionException(500, this + " parameter mapper " + i + " returned wrong type " + arguments[i].getClass() + " (expected " + method.getParameters()[i].getParameterizedType() + ")");
                 }
             }
             return arguments;
+        } catch (HttpRequestException e) {
+            logger.debug("While processing {} arguments to {}: {}", exchange, this, e.toString());
+            throw e;
         } catch (HttpActionException e) {
             logger.warn("While processing {} arguments to {}", exchange, this, e);
             StackTraceElement[] stackTrace = e.getStackTrace();
-            StackTraceElement[] replacedStackTrace = new StackTraceElement[stackTrace.length+1];
+            StackTraceElement[] replacedStackTrace = new StackTraceElement[stackTrace.length + 1];
             replacedStackTrace[0] = new StackTraceElement(method.getDeclaringClass().getName(), method.getName(),
                     method.getDeclaringClass().getSimpleName() + ".java", 1);
             System.arraycopy(stackTrace, 0, replacedStackTrace, 1, stackTrace.length);
             e.setStackTrace(replacedStackTrace);
 
             throw e;
-        } catch (RuntimeException e) {
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
             logger.warn("While processing {} arguments for {}", exchange, this, e);
             throw new HttpRequestException(e);
         }

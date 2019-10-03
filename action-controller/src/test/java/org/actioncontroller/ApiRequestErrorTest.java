@@ -60,10 +60,6 @@ public class ApiRequestErrorTest {
         FakeServletRequest request = new FakeServletRequest("GET", new URL("http://my.example.com:8080/my/context"), "/actions", "/hello");
         request.setParameter("number", "hello");
 
-        expectedLogEvents.expectMatch(e -> e
-                .logger(ApiControllerAction.class)
-                .pattern("While processing {} arguments to {}")
-                .exception(HttpRequestException.class, "Could not convert number=hello to long"));
         servlet.service(request, resp);
 
         assertThat(resp.getStatus()).isEqualTo(400);

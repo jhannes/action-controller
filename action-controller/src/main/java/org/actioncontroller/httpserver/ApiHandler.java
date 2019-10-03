@@ -36,6 +36,9 @@ public class ApiHandler implements UserContext, HttpHandler {
                     action.invoke(this, httpExchange);
                 } catch (HttpActionException e) {
                     e.sendError(httpExchange);
+                } catch (Exception e) {
+                    logger.error("While handling {} with {}", httpExchange, action, e);
+                    httpExchange.sendError(500, "Internal server error");
                 }
                 httpExchange.close();
                 return;

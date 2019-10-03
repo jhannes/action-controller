@@ -49,8 +49,16 @@ class JdkHttpExchange implements ApiHttpExchange {
     }
 
     @Override
-    public URL getContextURL() throws MalformedURLException {
-        return new URL(getServerURL() + contextPath);
+    public URL getContextURL() {
+        return toURL(getServerURL() + contextPath);
+    }
+
+    private URL toURL(String s) {
+        try {
+            return new URL(s);
+        } catch (MalformedURLException e) {
+            throw softenException(e);
+        }
     }
 
     @Override
@@ -64,8 +72,8 @@ class JdkHttpExchange implements ApiHttpExchange {
     }
 
     @Override
-    public URL getApiURL() throws MalformedURLException {
-        return new URL(getServerURL() + contextPath);
+    public URL getApiURL() {
+        return toURL(getServerURL() + contextPath);
     }
 
     @Override

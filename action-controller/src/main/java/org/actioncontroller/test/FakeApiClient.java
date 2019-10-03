@@ -16,6 +16,9 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +33,7 @@ public class FakeApiClient implements ApiClient {
     private Servlet servlet;
     private FakeHttpSession session;
     private Map<String, Cookie> clientCookies = new HashMap<>();
+    private List<String> clientCertificateDNs = new ArrayList<>();
 
     public FakeApiClient(URL contextRoot, String servletPath, Servlet servlet) {
         this.contextRoot = contextRoot;
@@ -39,6 +43,16 @@ public class FakeApiClient implements ApiClient {
 
     public ApiClientExchange createExchange() {
         return new FakeApiClientExchange(contextRoot, servletPath);
+    }
+
+    @Override
+    public void setTrustedCertificate(X509Certificate serverCertificate) {
+
+    }
+
+    @Override
+    public void addClientKey(PrivateKey privateKey, X509Certificate certificate) {
+        this.clientCertificateDNs.add(certificate.getSubjectDN().getName());
     }
 
     private static boolean isUnexpired(Cookie c) {
@@ -108,7 +122,7 @@ public class FakeApiClient implements ApiClient {
 
         private void possiblyOptionalToString(Object value, Consumer<String> consumer) {
             if (value instanceof Optional) {
-                ((Optional)value).ifPresent(v -> consumer.accept(String.valueOf(v)));
+                ((Optional<?>)value).ifPresent(v -> consumer.accept(String.valueOf(v)));
             } else {
                 consumer.accept(String.valueOf(value));
             }
@@ -150,6 +164,18 @@ public class FakeApiClient implements ApiClient {
         @Override
         public String getResponseBody() {
             return response.getBody();
+        }
+
+        @Override
+        public void setClientCertificate(X509Certificate[] certificate) {
+            if (certificate != null && certificate.length > 0 && certificate[0] != null) {
+                if (!clientCertificateDNs.contains(certificate[0].getSubjectDN().getName())) {
+                    throw new IllegalArgumentException("Could not find key for " + certificate[0].getSubjectDN().getName() + " among " + clientCertificateDNs);
+                }
+                request.setAttribute("javax.servlet.request.X509Certificate", certificate);
+            } else {
+                request.removeAttribute("javax.servlet.request.X509Certificate");
+            }
         }
     }
 }

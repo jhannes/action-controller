@@ -6,24 +6,27 @@ import org.actioncontroller.HttpActionException;
 import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.WriterConsumer;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Reader;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Parameter;
 import java.net.HttpCookie;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import static org.actioncontroller.ExceptionUtil.softenException;
 
 class JdkHttpExchange implements ApiHttpExchange {
     private final HttpExchange exchange;
@@ -243,6 +246,15 @@ class JdkHttpExchange implements ApiHttpExchange {
     private void sendResponseHeaders(int rCode, int responseLength) throws IOException {
         exchange.sendResponseHeaders(rCode, responseLength);
         responseSent = true;
+    }
+
+    @Override
+    public X509Certificate[] getClientCertificate() {
+        try {
+            return (X509Certificate[]) ((HttpsExchange)exchange).getSSLSession().getPeerCertificates();
+        } catch (SSLPeerUnverifiedException e) {
+            return null;
+        }
     }
 
     @Override

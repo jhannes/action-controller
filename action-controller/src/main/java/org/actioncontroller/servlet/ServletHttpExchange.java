@@ -19,6 +19,7 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -236,6 +237,11 @@ public class ServletHttpExchange implements ApiHttpExchange {
 
     private String getFullURL() {
         return getServerURL() + req.getContextPath() + req.getServletPath() + getPathInfo() + (req.getQueryString() != null ? "?" + req.getQueryString() : "");
+    }
+
+    @Override
+    public X509Certificate[] getClientCertificate() {
+        return (X509Certificate[]) req.getAttribute("javax.servlet.request.X509Certificate");
     }
 
     @Override

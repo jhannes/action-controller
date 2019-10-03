@@ -2,6 +2,7 @@ package org.actioncontroller.client;
 
 import java.io.IOException;
 import java.net.URL;
+import java.security.cert.X509Certificate;
 
 /**
  * Abstracts a HTTP request and response from the client perspective. Can be implemented with various
@@ -59,4 +60,6 @@ public interface ApiClientExchange {
     String getResponseBody() throws IOException;
 
     void checkForError() throws HttpClientException, IOException;
+
+    void setClientCertificate(X509Certificate[] certificate);
 }

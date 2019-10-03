@@ -9,6 +9,7 @@ import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.URL;
+import java.security.cert.X509Certificate;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -154,4 +155,5 @@ public interface ApiHttpExchange {
 
     void calculatePathParams(String[] pathPattern);
 
+    X509Certificate[] getClientCertificate();
 }

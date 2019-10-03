@@ -1,11 +1,15 @@
 package org.actioncontroller;
 
 public class HttpRequestException extends HttpActionException {
-    public HttpRequestException(RuntimeException e) {
+    public HttpRequestException(Exception e) {
         super(400, e);
     }
 
     public HttpRequestException(String message) {
-        super(400, message);
+        this(400, message);
+    }
+
+    public HttpRequestException(int code, String message) {
+        super(code, message);
     }
 }

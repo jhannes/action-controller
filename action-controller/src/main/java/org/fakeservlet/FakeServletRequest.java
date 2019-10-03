@@ -15,12 +15,11 @@ import javax.servlet.http.HttpUpgradeHandler;
 import javax.servlet.http.Part;
 import java.io.BufferedReader;
 import java.io.Reader;
-import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -45,9 +44,10 @@ public class FakeServletRequest implements HttpServletRequest {
     private String pathInfo;
 
     private Map<String, List<String>> headers = new HashMap<>();
-    private HashMap<String, String> parameters = new HashMap<>();
+    private Map<String, String> parameters = new HashMap<>();
     private Supplier<Reader> readerSupplier;
     private FakeHttpSession httpSession;
+    private Map<String, Object> attributes = new HashMap<>();
 
     /**
      * DANGER! Unfinished class! Implement methods as you go!
@@ -151,11 +151,7 @@ public class FakeServletRequest implements HttpServletRequest {
     }
 
     private String urlEncode(String value) {
-        try {
-            return URLEncoder.encode(value, "US-ASCII");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        return URLEncoder.encode(value, StandardCharsets.US_ASCII);
     }
 
     @Override
@@ -268,8 +264,8 @@ public class FakeServletRequest implements HttpServletRequest {
     }
 
     @Override
-    public Object getAttribute(String s) {
-        throw unimplemented();
+    public Object getAttribute(String name) {
+        return attributes.get(name);
     }
 
     @Override
@@ -377,13 +373,13 @@ public class FakeServletRequest implements HttpServletRequest {
     }
 
     @Override
-    public void setAttribute(String s, Object o) {
-
+    public void setAttribute(String name, Object o) {
+        this.attributes.put(name, o);
     }
 
     @Override
-    public void removeAttribute(String s) {
-
+    public void removeAttribute(String name) {
+        this.attributes.remove(name);
     }
 
     @Override
@@ -487,6 +483,6 @@ public class FakeServletRequest implements HttpServletRequest {
     }
 
     public void setHeader(String name, String value) {
-        headers.put(name, Arrays.asList(value));
+        headers.put(name, Collections.singletonList(value));
     }
 }

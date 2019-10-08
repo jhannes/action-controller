@@ -11,14 +11,15 @@ import org.junit.Test;
 import org.slf4j.event.Level;
 
 import javax.servlet.ServletContextEvent;
+import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.Socket;
+import java.net.URL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
-
-    private String baseUrl;
 
     @Before
     public void createServerAndClient() throws Exception {
@@ -28,31 +29,41 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
         handler.addEventListener(new javax.servlet.ServletContextListener() {
             @Override
             public void contextInitialized(ServletContextEvent event) {
-                event.getServletContext().addServlet("testApi", new ApiServlet() {
-                    @Override
-                    public void init() {
-                        registerController(new TestController());
-                    }
-                }).addMapping("/api/*");
+                event.getServletContext().addServlet("testApi", new ApiServlet(new TestController())).addMapping("/api/*");
             }
         });
         handler.setContextPath("/test");
         server.setHandler(handler);
         server.start();
 
-        baseUrl = server.getURI() + "/api";
+        baseUrl = server.getURI().toString();
         client = ApiClientProxy.create(TestController.class,
-                new HttpURLConnectionApiClient(baseUrl));
+                new HttpURLConnectionApiClient(baseUrl + "/api"));
     }
 
     @Test
     public void gives404OnUnmappedController() throws MalformedURLException {
         expectedLogEvents.expect(ApiServlet.class, Level.WARN, "No route for GET /test/api[/not-mapped]");
         UnmappedController unmappedController = ApiClientProxy.create(UnmappedController.class,
-                        new HttpURLConnectionApiClient(baseUrl));
+                new HttpURLConnectionApiClient(baseUrl + "/api"));
         assertThatThrownBy(unmappedController::notHere)
                 .isInstanceOf(HttpActionException.class)
                 .satisfies(e -> assertThat(((HttpActionException)e).getStatusCode()).isEqualTo(404));
+    }
+
+    @Test
+    public void shouldCalculateUrlWithoutHost() throws IOException {
+        URL url = new URL(baseUrl + "/api/loginSession/endsession");
+
+        Socket socket = new Socket("localhost", url.getPort());
+        socket.getOutputStream().write(("GET /test/api/loginSession/endsession HTTP/1.0\r\n" +
+                "Connection: close\r\n" +
+                "\r\n").getBytes());
+
+        String responseLine = SocketHttpClient.readLine(socket.getInputStream());
+        assertThat(responseLine).startsWith("HTTP/1.1 302 ");
+        assertThat(SocketHttpClient.readHttpHeaders(socket.getInputStream()))
+                .containsEntry("location", "http://127.0.0.1:" + url.getPort() + "/test/frontPage");
     }
 
 }

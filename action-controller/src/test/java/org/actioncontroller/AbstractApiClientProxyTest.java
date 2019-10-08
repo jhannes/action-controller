@@ -70,10 +70,10 @@ public abstract class AbstractApiClientProxyTest {
         }
 
         @Get("/loginSession/endsession")
-        @ContentBody
-        public String endsession(@UnencryptedCookie("sessionCookie") Consumer<String> setSessionCookie) {
+        @SendRedirect
+        public String endsession(@UnencryptedCookie("sessionCookie") Consumer<String> setSessionCookie, @ContextUrl String url) {
             setSessionCookie.accept(null);
-            return "ok";
+            return url + "/frontPage";
         }
 
         @Get("/explicitError")
@@ -96,6 +96,8 @@ public abstract class AbstractApiClientProxyTest {
             return "Not here";
         }
     }
+
+    protected String baseUrl;
 
     protected TestController client;
 
@@ -172,7 +174,8 @@ public abstract class AbstractApiClientProxyTest {
     public void shouldEndSession() {
         client.putLoginSession("the user", "let-me-in", null);
         assertThat(client.whoAmI(null)).isEqualTo("the user");
-        client.endsession(null);
+        String redirectUrl = client.endsession(null, null);
+        assertThat(redirectUrl).isEqualTo(baseUrl + "/frontPage");
         assertThat(client.whoAmI(null)).isEqualTo("<none>");
     }
 

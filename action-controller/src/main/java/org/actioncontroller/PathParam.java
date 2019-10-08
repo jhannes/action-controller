@@ -12,7 +12,8 @@ import java.lang.annotation.Target;
 import java.lang.reflect.Parameter;
 
 /**
- * Maps part of the HTTP request target to the parameter, converting the type if necessary.
+ * Maps part of the HTTP request target to the parameter, converting the type if necessary. For example
+ * &#064;Get("/foo/:id") void myMethod(@PathParam("id") int id) maps the second segment of the path to the id parameter.
  *
  * @see HttpParameterMapping
  */

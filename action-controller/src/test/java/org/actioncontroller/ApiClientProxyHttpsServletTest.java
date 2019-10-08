@@ -68,8 +68,8 @@ public class ApiClientProxyHttpsServletTest extends AbstractApiClientProxyTest {
 
         server.start();
 
-        String baseUrl = server.getURI() + "/api";
-        HttpURLConnectionApiClient apiClient = new HttpURLConnectionApiClient(baseUrl);
+        baseUrl = server.getURI().toString();
+        HttpURLConnectionApiClient apiClient = new HttpURLConnectionApiClient(baseUrl + "/api");
         apiClient.setTrustedCertificate(serverCertificate);
         this.client = ApiClientProxy.create(TestController.class, apiClient);
     }

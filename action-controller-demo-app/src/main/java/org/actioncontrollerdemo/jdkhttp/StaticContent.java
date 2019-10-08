@@ -79,11 +79,7 @@ public class StaticContent implements HttpHandler {
             }
 
             exchange.sendResponseHeaders(200, 0);
-
-            int c;
-            while ((c = inputStream.read()) != -1) {
-                exchange.getResponseBody().write((char) c);
-            }
+            inputStream.transferTo(exchange.getResponseBody());
         } catch (FileNotFoundException e) {
             exchange.sendResponseHeaders(404, 0);
         } catch (Exception e) {

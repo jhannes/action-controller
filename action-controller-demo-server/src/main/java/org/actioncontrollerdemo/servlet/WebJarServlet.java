@@ -24,15 +24,12 @@ public class WebJarServlet extends HttpServlet {
     }
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         URL resource = getClass().getResource(resourcePrefix + req.getPathInfo());
         if (resource != null) {
             resp.setContentType(getServletContext().getMimeType(req.getPathInfo()));
             try (InputStream inputStream = resource.openStream()) {
-                int c;
-                while ((c = inputStream.read()) != -1) {
-                    resp.getOutputStream().write(((byte)c));
-                }
+                inputStream.transferTo(resp.getOutputStream());
             }
         } else {
             resp.sendError(404, req.getPathInfo());

@@ -66,12 +66,42 @@ class JdkHttpExchange implements ApiHttpExchange {
 
     @Override
     public String getServerURL() {
-        String scheme = Optional.ofNullable(exchange.getRequestHeaders().getFirst("X-Forwarded-Proto"))
+        return getScheme() + "://" + getHost();
+    }
+
+    private String getScheme() {
+        return Optional.ofNullable(exchange.getRequestHeaders().getFirst("X-Forwarded-Proto"))
                 .orElse(exchange instanceof HttpsExchange ? "https" : "http");
-        String host = Optional.ofNullable(exchange.getRequestHeaders().getFirst("X-Forwarded-Host"))
-                .orElseGet(() -> Optional.ofNullable(exchange.getRequestHeaders().getFirst("Host"))
-                        .orElseGet(() -> exchange.getLocalAddress().toString()));
-        return scheme + "://" + host;
+    }
+
+    private String getHost() {
+        return Optional.ofNullable(exchange.getRequestHeaders().getFirst("X-Forwarded-Host")).orElseGet(this::calculateHost);
+    }
+
+    private String calculateHost() {
+        return getServerName() + (getServerPort() == getDefaultPort() ? "" : ":" + getServerPort());
+    }
+
+    private String getServerName() {
+        String hostHeader = exchange.getRequestHeaders().getFirst("Host");
+        if (hostHeader == null) {
+            return exchange.getLocalAddress().getHostName();
+        }
+        int colonPos = hostHeader.indexOf(':');
+        return colonPos == -1 ? hostHeader : hostHeader.substring(0, colonPos);
+    }
+
+    private int getServerPort() {
+        String hostHeader = exchange.getRequestHeaders().getFirst("Host");
+        if (hostHeader == null) {
+            return exchange.getLocalAddress().getPort();
+        }
+        int colonPos = hostHeader.indexOf(':');
+        return colonPos == -1 ? getDefaultPort() : Integer.parseInt(hostHeader.substring(colonPos+1));
+    }
+
+    private int getDefaultPort() {
+        return getScheme().equals("https") ? 443 : (getScheme().equals("http") ? 80 : -1);
     }
 
     @Override

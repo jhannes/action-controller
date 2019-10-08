@@ -1,6 +1,7 @@
 package org.actioncontroller;
 
 import org.actioncontroller.meta.ApiHttpExchange;
+import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapperFactory;
@@ -31,6 +32,11 @@ public @interface ContextUrl {
                 return exchange -> exchange.getContextURL().toString();
             }
             throw new IllegalArgumentException("Can't map " + parameter);
+        }
+
+        @Override
+        public HttpClientParameterMapper clientParameterMapper(ContextUrl annotation, Parameter parameter) {
+            return (exchange, arg) -> {};
         }
     }
 }

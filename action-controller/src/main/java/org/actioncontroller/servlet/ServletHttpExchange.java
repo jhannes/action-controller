@@ -48,9 +48,7 @@ public class ServletHttpExchange implements ApiHttpExchange {
 
     @Override
     public String getServerURL() {
-        String host = Optional.ofNullable(req.getHeader("X-Forwarded-Host"))
-                .orElseGet(() -> Optional.ofNullable(req.getHeader("Host"))
-                        .orElseGet(this::calculateHost));
+        String host = Optional.ofNullable(req.getHeader("X-Forwarded-Host")).orElseGet(this::calculateHost);
         return getScheme() + "://" + host;
     }
 

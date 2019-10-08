@@ -182,7 +182,8 @@ public class ApiServletTest {
     @Test
     public void shouldSendRedirect() throws IOException {
         when(requestMock.getScheme()).thenReturn("https");
-        when(requestMock.getHeader("Host")).thenReturn("messages.example.com");
+        when(requestMock.getServerName()).thenReturn("messages.example.com");
+        when(requestMock.getServerPort()).thenReturn(443);
         when(requestMock.getContextPath()).thenReturn("");
         when(requestMock.getServletPath()).thenReturn("");
         when(requestMock.getMethod()).thenReturn("GET");

@@ -200,8 +200,10 @@ public class HttpURLConnectionApiClient implements ApiClient {
             connection.setInstanceFollowRedirects(false);
             connection.setRequestMethod(method);
             if (!requestCookies.isEmpty()) {
-                connection.setRequestProperty("Cookie",
-                        requestCookies.stream().map(HttpCookie::toString).collect(Collectors.joining(",")));
+                connection.setRequestProperty("Cookie", requestCookies.stream()
+                        .filter(c -> isHttps() || !c.getSecure())
+                        .map(c -> c.getName() + "=\"" + c.getValue() + "\"")
+                        .collect(Collectors.joining(",")));
             }
             requestHeaders.forEach(connection::setRequestProperty);
             if (trustStore != null || exchangeKeyStore != null) {
@@ -229,6 +231,10 @@ public class HttpURLConnectionApiClient implements ApiClient {
                 responseCookies = HttpCookie.parse(setCookieField);
                 responseCookies.forEach(c -> clientCookies.put(c.getName(), c));
             }
+        }
+
+        private boolean isHttps() {
+            return baseUrl.getProtocol().equals("https");
         }
 
         private boolean isGetRequest() {

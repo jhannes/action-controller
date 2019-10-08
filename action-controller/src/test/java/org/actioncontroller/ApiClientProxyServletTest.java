@@ -4,6 +4,7 @@ import org.actioncontroller.client.ApiClientProxy;
 import org.actioncontroller.client.HttpURLConnectionApiClient;
 import org.actioncontroller.servlet.ApiServlet;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.junit.Before;
@@ -23,7 +24,7 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
 
     @Before
     public void createServerAndClient() throws Exception {
-        Server server = new Server(0);
+        Server server = new Server();
         ServletContextHandler handler = new ServletContextHandler();
         handler.setSessionHandler(new SessionHandler());
         handler.addEventListener(new javax.servlet.ServletContextListener() {
@@ -34,6 +35,10 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
         });
         handler.setContextPath("/test");
         server.setHandler(handler);
+        ServerConnector connector = new ServerConnector(server);
+        connector.setPort(0);
+        connector.setHost("localhost");
+        server.addConnector(connector);
         server.start();
 
         baseUrl = server.getURI().toString();

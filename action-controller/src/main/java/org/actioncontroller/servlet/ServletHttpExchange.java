@@ -153,6 +153,9 @@ public class ServletHttpExchange implements ApiHttpExchange {
 
     @Override
     public void setCookie(String name, String value, boolean secure) {
+        if (req.getServerName().equals("localhost") && !req.isSecure()) {
+            secure = false;
+        }
         Cookie cookie;
         if (value == null) {
             cookie = new Cookie(name, "");

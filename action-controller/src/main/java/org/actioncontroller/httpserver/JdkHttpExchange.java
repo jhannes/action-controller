@@ -216,6 +216,10 @@ class JdkHttpExchange implements ApiHttpExchange {
 
     @Override
     public void setCookie(String name, String value, boolean secure) {
+        if (getServerName().equals("localhost") && !getScheme().equals("https")) {
+            secure = false;
+        }
+
         HttpCookie httpCookie = new HttpCookie(name, value);
         httpCookie.setSecure(secure);
         if (value == null) {

@@ -1,5 +1,7 @@
 package org.actioncontroller.client;
 
+import org.actioncontroller.meta.WriterConsumer;
+
 import java.io.IOException;
 import java.net.URL;
 import java.security.cert.X509Certificate;
@@ -62,4 +64,6 @@ public interface ApiClientExchange {
     void checkForError() throws HttpClientException, IOException;
 
     void setClientCertificate(X509Certificate[] certificate);
+
+    void write(String contentType, WriterConsumer consumer) throws IOException;
 }

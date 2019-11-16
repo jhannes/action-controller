@@ -3,6 +3,7 @@ package org.actioncontroller.test;
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.client.HttpClientException;
+import org.actioncontroller.meta.WriterConsumer;
 import org.fakeservlet.FakeHttpSession;
 import org.fakeservlet.FakeServletRequest;
 import org.fakeservlet.FakeServletResponse;
@@ -11,6 +12,8 @@ import javax.servlet.Servlet;
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -176,6 +179,14 @@ public class FakeApiClient implements ApiClient {
             } else {
                 request.removeAttribute("javax.servlet.request.X509Certificate");
             }
+        }
+
+        @Override
+        public void write(String contentType, WriterConsumer consumer) throws IOException {
+            setHeader("Content-type", contentType);
+            StringWriter body = new StringWriter();
+            consumer.accept(new PrintWriter(body));
+            request.setRequestBody(body.toString());
         }
     }
 }

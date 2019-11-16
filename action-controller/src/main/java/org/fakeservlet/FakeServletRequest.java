@@ -15,6 +15,7 @@ import javax.servlet.http.HttpUpgradeHandler;
 import javax.servlet.http.Part;
 import java.io.BufferedReader;
 import java.io.Reader;
+import java.io.StringReader;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -484,5 +485,9 @@ public class FakeServletRequest implements HttpServletRequest {
 
     public void setHeader(String name, String value) {
         headers.put(name, Collections.singletonList(value));
+    }
+
+    public void setRequestBody(String requestBody) {
+        setReader(() -> new StringReader(requestBody));
     }
 }

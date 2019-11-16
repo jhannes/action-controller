@@ -1,5 +1,7 @@
 package org.actioncontroller.client;
 
+import org.actioncontroller.meta.WriterConsumer;
+
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -8,6 +10,8 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.HttpCookie;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -44,6 +48,7 @@ public class HttpURLConnectionApiClient implements ApiClient {
     private String responseBody;
     private KeyStore trustStore;
     private KeyStore keyStore;
+    private String requestBody;
 
     public HttpURLConnectionApiClient(String baseUrl) throws MalformedURLException {
         this.baseUrl = new URL(baseUrl);
@@ -102,6 +107,14 @@ public class HttpURLConnectionApiClient implements ApiClient {
         keyStore.setKeyEntry(certificate.getSerialNumber().toString(), privateKey, null, new X509Certificate[]{certificate});
     }
 
+    public void setRequestBody(String requestBody) {
+        this.requestBody = requestBody;
+    }
+
+    public String getRequestBody() {
+        return requestBody;
+    }
+
     private class ClientExchange implements ApiClientExchange {
         private String method;
         private String pathInfo;
@@ -114,6 +127,7 @@ public class HttpURLConnectionApiClient implements ApiClient {
         private List<HttpCookie> responseCookies;
         private String errorBody;
         private KeyStore exchangeKeyStore = null;
+        private String contentType;
 
         @Override
         public void setTarget(String method, String pathInfo) {
@@ -221,6 +235,11 @@ public class HttpURLConnectionApiClient implements ApiClient {
                 connection.setRequestProperty("Content-type", "application/x-www-form-urlencoded");
                 connection.getOutputStream().write(query.getBytes());
                 connection.getOutputStream().flush();
+            } else if (requestBody != null && !isGetRequest()) {
+                connection.setDoOutput(true);
+                connection.setRequestProperty("Content-type", contentType);
+                connection.getOutputStream().write(requestBody.getBytes());
+                connection.getOutputStream().flush();
             }
 
             connection.getResponseCode();
@@ -291,6 +310,22 @@ public class HttpURLConnectionApiClient implements ApiClient {
                 errorBody = asString(connection.getErrorStream());
             }
             return errorBody;
+        }
+
+        @Override
+        public void write(String contentType, WriterConsumer consumer) throws IOException {
+            setContentType(contentType);
+            StringWriter body = new StringWriter();
+            consumer.accept(new PrintWriter(body));
+            setRequestBody(body.toString());
+        }
+
+        public void setContentType(String contentType) {
+            this.contentType = contentType;
+        }
+
+        public String getContentType() {
+            return contentType;
         }
     }
 

@@ -30,9 +30,9 @@ public abstract class AbstractApiClientProxyTest {
             return greeting + " " + exchange.getPathInfo();
         }
 
-        @Get("/uppercase")
+        @Post("/uppercase")
         @ContentBody
-        public String upcase(@RequestParam("myParam") String parameter) {
+        public String upcase(@ContentBody String parameter) {
             return parameter.toUpperCase();
         }
 

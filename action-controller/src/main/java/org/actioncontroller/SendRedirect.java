@@ -1,12 +1,13 @@
 package org.actioncontroller;
 
 import org.actioncontroller.meta.HttpClientReturnMapper;
+import org.actioncontroller.meta.HttpReturnMapper;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
-import org.actioncontroller.meta.HttpReturnMapper;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+import java.lang.reflect.Type;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -38,7 +39,7 @@ public @interface SendRedirect {
         }
 
         @Override
-        public HttpClientReturnMapper createClientMapper(SendRedirect annotation, Class<?> returnType) {
+        public HttpClientReturnMapper createClientMapper(SendRedirect annotation, Type returnType) {
             return exchange -> {
                 if (exchange.getResponseCode() < 300) {
                     throw new IllegalArgumentException("Expected redirect, but was " + exchange.getResponseCode());

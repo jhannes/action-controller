@@ -1,12 +1,13 @@
 package org.actioncontroller;
 
 import org.actioncontroller.meta.HttpClientReturnMapper;
+import org.actioncontroller.meta.HttpReturnMapper;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
-import org.actioncontroller.meta.HttpReturnMapper;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+import java.lang.reflect.Type;
 import java.net.URL;
 
 import static java.lang.annotation.ElementType.METHOD;
@@ -35,7 +36,7 @@ public @interface ContentLocationHeader {
         }
 
         @Override
-        public HttpClientReturnMapper createClientMapper(ContentLocationHeader annotation, Class<?> returnType) {
+        public HttpClientReturnMapper createClientMapper(ContentLocationHeader annotation, Type returnType) {
             return exchange -> exchange.getResponseHeader(ContentLocationHeader.FIELD_NAME);
         }
     }

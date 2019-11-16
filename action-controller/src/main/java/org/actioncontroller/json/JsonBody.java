@@ -18,6 +18,7 @@ import org.jsonbuddy.pojo.PojoMapper;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.Type;
 import java.util.List;
 
 import static java.lang.annotation.ElementType.METHOD;
@@ -43,10 +44,10 @@ public @interface JsonBody {
         }
 
         @Override
-        public HttpClientReturnMapper createClientMapper(JsonBody annotation, Class<?> returnType) {
-            if (JsonObject.class.isAssignableFrom(returnType)) {
+        public HttpClientReturnMapper createClientMapper(JsonBody annotation, Type returnType) {
+            if (returnType instanceof Class<?> && JsonObject.class.isAssignableFrom((Class<?>)returnType)) {
                 return exchange -> JsonObject.parse(exchange.getResponseBody());
-            } else if (JsonArray.class.isAssignableFrom(returnType)) {
+            } else if (returnType instanceof Class<?> && JsonArray.class.isAssignableFrom((Class<?>)returnType)) {
                 return exchange -> JsonArray.parse(exchange.getResponseBody());
             } else {
                 throw new IllegalArgumentException("Invalid type " + returnType);

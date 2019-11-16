@@ -14,6 +14,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.Type;
 import java.lang.reflect.Parameter;
 
 /**
@@ -51,7 +52,7 @@ public @interface HttpHeader {
         }
 
         @Override
-        public HttpClientReturnMapper createClientMapper(HttpHeader annotation, Class<?> returnType) {
+        public HttpClientReturnMapper createClientMapper(HttpHeader annotation, Type returnType) {
             return (exchange -> exchange.getResponseHeader(annotation.value()));
         }
     }

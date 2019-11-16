@@ -8,6 +8,7 @@ import org.actioncontroller.meta.HttpReturnMapping;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+import java.lang.reflect.Type;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -32,7 +33,7 @@ public @interface HttpResponseHeader {
         }
 
         @Override
-        public HttpClientReturnMapper createClientMapper(HttpResponseHeader annotation, Class<?> returnType) {
+        public HttpClientReturnMapper createClientMapper(HttpResponseHeader annotation, Type returnType) {
             return (exchange) ->
                     ApiHttpExchange.convertParameterType(exchange.getResponseHeader(annotation.value()), returnType);
         }

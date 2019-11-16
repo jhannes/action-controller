@@ -48,16 +48,13 @@ public class ServletHttpExchange implements ApiHttpExchange {
 
     @Override
     public String getServerURL() {
-        String host = Optional.ofNullable(req.getHeader("X-Forwarded-Host")).orElseGet(this::calculateHost);
+        String host = Optional.ofNullable(req.getHeader("X-Forwarded-Host"))
+                .orElseGet(() -> req.getServerName() + (req.getServerPort() != getDefaultPort() ?  ":" + req.getServerPort() : ""));
         return getScheme() + "://" + host;
     }
 
     private String getScheme() {
         return Optional.ofNullable(req.getHeader("X-Forwarded-Proto")).orElse(req.getScheme());
-    }
-
-    private String calculateHost() {
-        return req.getServerName() + (req.getServerPort() == getDefaultPort() ? "" : ":" + req.getServerPort());
     }
 
     private int getDefaultPort() {

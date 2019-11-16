@@ -71,4 +71,38 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
                 .containsEntry("location", "http://127.0.0.1:" + url.getPort() + "/test/frontPage");
     }
 
+    @Test
+    public void shouldCalculateUrlWithDifferentHost() throws IOException {
+        URL url = new URL(baseUrl + "/api/loginSession/endsession");
+
+        Socket socket = new Socket("localhost", url.getPort());
+        socket.getOutputStream().write(("GET /test/api/loginSession/endsession HTTP/1.0\r\n" +
+                "Connection: close\r\n" +
+                "Host: www.example.com:8080\r\n" +
+                "\r\n").getBytes());
+
+        String responseLine = SocketHttpClient.readLine(socket.getInputStream());
+        assertThat(responseLine).startsWith("HTTP/1.1 302 ");
+        assertThat(SocketHttpClient.readHttpHeaders(socket.getInputStream()))
+                .containsEntry("location", "http://www.example.com:8080/test/frontPage");
+    }
+
+    @Test
+    public void shouldCalculateUrlWithProxyHost() throws IOException {
+        URL url = new URL(baseUrl + "/api/loginSession/endsession");
+
+        Socket socket = new Socket("localhost", url.getPort());
+        socket.getOutputStream().write(("GET /test/api/loginSession/endsession HTTP/1.0\r\n" +
+                "Connection: close\r\n" +
+                "X-Forwarded-Proto: https\r\n" +
+                "X-Forwarded-Host: www.example.com:8443\r\n" +
+                "Host: app.example.com:8080\r\n" +
+                "\r\n").getBytes());
+
+        String responseLine = SocketHttpClient.readLine(socket.getInputStream());
+        assertThat(responseLine).startsWith("HTTP/1.1 302 ");
+        assertThat(SocketHttpClient.readHttpHeaders(socket.getInputStream()))
+                .containsEntry("location", "https://www.example.com:8443/test/frontPage");
+    }
+
 }

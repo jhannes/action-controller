@@ -231,7 +231,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
     }
 
     private boolean matches(String pathInfo) {
-        if (pathInfo == null) {
+        if (pathInfo == null || pathInfo.isEmpty()) {
             return patternParts.length == 1 && patternParts[0].isEmpty();
         }
         String[] actualParts = pathInfo.split("/");

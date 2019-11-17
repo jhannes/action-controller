@@ -4,6 +4,7 @@ import org.actioncontroller.HttpActionException;
 import org.actioncontroller.HttpRequestException;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
@@ -70,6 +71,8 @@ public interface ApiHttpExchange {
 
     void write(String contentType, WriterConsumer consumer) throws IOException;
 
+    void output(String contentType, OutputStreamConsumer consumer) throws IOException;
+
     String getHeader(String name);
 
     String getClientIp();
@@ -86,6 +89,8 @@ public interface ApiHttpExchange {
     void setPathParameters(Map<String, String> pathParameters);
 
     Reader getReader() throws IOException;
+
+    InputStream getInputStream() throws IOException;
 
     void setCookie(String name, String value, boolean secure);
 

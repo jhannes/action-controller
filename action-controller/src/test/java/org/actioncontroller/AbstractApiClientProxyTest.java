@@ -92,6 +92,16 @@ public abstract class AbstractApiClientProxyTest {
         public String downcase(@HttpHeader("X-Input") String value) {
             return value.toLowerCase();
         }
+
+        @Post("/reverseBytes")
+        @ContentBody
+        public byte[] reverseBytes(@ContentBody byte[] bytes) {
+            byte[] result = new byte[bytes.length];
+            for (int i = 0; i < bytes.length; i++) {
+                result[result.length-i-1] = bytes[i];
+            }
+            return result;
+        }
     }
 
     public static class UnmappedController {
@@ -122,7 +132,7 @@ public abstract class AbstractApiClientProxyTest {
     @Test
     public void shouldReceiveParameters() {
         AtomicInteger value = new AtomicInteger();
-        assertThat(client.upcase("Test string", newValue -> value.set(newValue)))
+        assertThat(client.upcase("Test string", value::set))
                 .isEqualTo("Test string".toUpperCase());
         assertThat(value.get()).isEqualTo("Test string".length());
     }
@@ -192,7 +202,13 @@ public abstract class AbstractApiClientProxyTest {
         assertThat(client.downcase("VALUE")).isEqualTo("value");
     }
 
+    @Test
+    public void shouldSendAndReceiveBytes() {
+        byte[] input = {1,2,3,4};
+        assertThat(client.reverseBytes(input))
+                .containsExactly(4, 3, 2, 1);
+    }
+
     // TODO: User in role
 
-    // TODO: JsonBody (without JsonBuddy dependency)
 }

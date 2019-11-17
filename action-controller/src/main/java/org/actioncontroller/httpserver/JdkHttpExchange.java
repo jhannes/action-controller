@@ -4,12 +4,14 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpsExchange;
 import org.actioncontroller.HttpActionException;
 import org.actioncontroller.meta.ApiHttpExchange;
+import org.actioncontroller.meta.OutputStreamConsumer;
 import org.actioncontroller.meta.WriterConsumer;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Reader;
@@ -154,6 +156,15 @@ class JdkHttpExchange implements ApiHttpExchange {
     }
 
     @Override
+    public void output(String contentType, OutputStreamConsumer consumer) throws IOException {
+        exchange.getResponseHeaders().set("Content-type", contentType);
+        sendResponseHeaders(200, 0);
+        OutputStream outputStream = exchange.getResponseBody();
+        consumer.accept(outputStream);
+        outputStream.flush();
+    }
+
+    @Override
     public String getHeader(String name) {
         return exchange.getRequestHeaders().getFirst(name);
     }
@@ -186,6 +197,11 @@ class JdkHttpExchange implements ApiHttpExchange {
     @Override
     public Reader getReader() {
         return new InputStreamReader(exchange.getRequestBody());
+    }
+
+    @Override
+    public InputStream getInputStream() {
+        return exchange.getRequestBody();
     }
 
     @Override

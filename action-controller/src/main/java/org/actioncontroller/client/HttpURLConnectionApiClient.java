@@ -1,5 +1,6 @@
 package org.actioncontroller.client;
 
+import org.actioncontroller.meta.OutputStreamConsumer;
 import org.actioncontroller.meta.WriterConsumer;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -8,6 +9,7 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -28,7 +30,6 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,10 +46,9 @@ public class HttpURLConnectionApiClient implements ApiClient {
     private static final Charset CHARSET = StandardCharsets.ISO_8859_1;
     private URL baseUrl;
     private Map<String, HttpCookie> clientCookies = new HashMap<>();
-    private String responseBody;
     private KeyStore trustStore;
     private KeyStore keyStore;
-    private String requestBody;
+    private byte[] requestBody;
 
     public HttpURLConnectionApiClient(String baseUrl) throws MalformedURLException {
         this.baseUrl = new URL(baseUrl);
@@ -107,12 +107,8 @@ public class HttpURLConnectionApiClient implements ApiClient {
         keyStore.setKeyEntry(certificate.getSerialNumber().toString(), privateKey, null, new X509Certificate[]{certificate});
     }
 
-    public void setRequestBody(String requestBody) {
+    public void setRequestBody(byte[] requestBody) {
         this.requestBody = requestBody;
-    }
-
-    public String getRequestBody() {
-        return requestBody;
     }
 
     private class ClientExchange implements ApiClientExchange {
@@ -128,6 +124,7 @@ public class HttpURLConnectionApiClient implements ApiClient {
         private String errorBody;
         private KeyStore exchangeKeyStore = null;
         private String contentType;
+        private byte[] responseBody;
 
         @Override
         public void setTarget(String method, String pathInfo) {
@@ -238,7 +235,7 @@ public class HttpURLConnectionApiClient implements ApiClient {
             } else if (requestBody != null && !isGetRequest()) {
                 connection.setDoOutput(true);
                 connection.setRequestProperty("Content-type", contentType);
-                connection.getOutputStream().write(requestBody.getBytes());
+                connection.getOutputStream().write(requestBody);
                 connection.getOutputStream().flush();
             }
 
@@ -264,7 +261,7 @@ public class HttpURLConnectionApiClient implements ApiClient {
             if (!requestParameters.isEmpty()) {
                 return requestParameters
                         .entrySet().stream()
-                        .map(entry -> URLEncoder.encode(entry.getKey()) + "=" + URLEncoder.encode(entry.getValue()))
+                        .map(entry -> urlEncode(entry.getKey()) + "=" + urlEncode(entry.getValue()))
                         .collect(Collectors.joining("&"));
             }
             return null;
@@ -299,17 +296,24 @@ public class HttpURLConnectionApiClient implements ApiClient {
 
         @Override
         public String getResponseBody() throws IOException {
-            if (responseBody == null) {
-                responseBody = asString(connection.getInputStream());
+            return new String(getResponseBodyBytes());
+        }
+
+        @Override
+        public synchronized byte[] getResponseBodyBytes() throws IOException {
+            if (responseBody != null || connection.getInputStream() == null) {
+                return responseBody;
             }
-            return responseBody;
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            connection.getInputStream().transferTo(outputStream);
+            return this.responseBody = outputStream.toByteArray();
         }
 
         private String getErrorBody() throws IOException {
-            if (errorBody == null && connection.getErrorStream() != null) {
-                errorBody = asString(connection.getErrorStream());
+            if (errorBody != null || connection.getErrorStream() == null) {
+                return errorBody;
             }
-            return errorBody;
+            return errorBody = asString(connection.getErrorStream());
         }
 
         @Override
@@ -317,7 +321,15 @@ public class HttpURLConnectionApiClient implements ApiClient {
             setContentType(contentType);
             StringWriter body = new StringWriter();
             consumer.accept(new PrintWriter(body));
-            setRequestBody(body.toString());
+            setRequestBody(body.toString().getBytes());
+        }
+
+        @Override
+        public void output(String contentType, OutputStreamConsumer consumer) throws IOException {
+            setContentType(contentType);
+            ByteArrayOutputStream body = new ByteArrayOutputStream();
+            consumer.accept(body);
+            setRequestBody(body.toByteArray());
         }
 
         public void setContentType(String contentType) {
@@ -327,6 +339,10 @@ public class HttpURLConnectionApiClient implements ApiClient {
         public String getContentType() {
             return contentType;
         }
+    }
+
+    private String urlEncode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 
     public static TrustManager[] getTrustManagers(KeyStore trustStore) throws NoSuchAlgorithmException, KeyStoreException {
@@ -349,11 +365,8 @@ public class HttpURLConnectionApiClient implements ApiClient {
     }
 
     public static String asString(InputStream inputStream) throws IOException {
-        StringBuilder stringBuilder = new StringBuilder();
-        int c;
-        while ((c = inputStream.read()) != -1) {
-            stringBuilder.append((char)c);
-        }
-        return stringBuilder.toString();
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        inputStream.transferTo(outputStream);
+        return new String(outputStream.toByteArray());
     }
 }

@@ -3,6 +3,7 @@ package org.actioncontroller.test;
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.client.HttpClientException;
+import org.actioncontroller.meta.OutputStreamConsumer;
 import org.actioncontroller.meta.WriterConsumer;
 import org.fakeservlet.FakeHttpSession;
 import org.fakeservlet.FakeServletRequest;
@@ -11,6 +12,7 @@ import org.fakeservlet.FakeServletResponse;
 import javax.servlet.Servlet;
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -166,6 +168,11 @@ public class FakeApiClient implements ApiClient {
 
         @Override
         public String getResponseBody() {
+            return new String(response.getBody());
+        }
+
+        @Override
+        public byte[] getResponseBodyBytes() {
             return response.getBody();
         }
 
@@ -186,7 +193,15 @@ public class FakeApiClient implements ApiClient {
             setHeader("Content-type", contentType);
             StringWriter body = new StringWriter();
             consumer.accept(new PrintWriter(body));
-            request.setRequestBody(body.toString());
+            request.setRequestBody(body.toString().getBytes());
+        }
+
+        @Override
+        public void output(String contentType, OutputStreamConsumer consumer) throws IOException {
+            setHeader("Content-type", contentType);
+            ByteArrayOutputStream body = new ByteArrayOutputStream();
+            consumer.accept(body);
+            request.setRequestBody(body.toByteArray());
         }
     }
 }

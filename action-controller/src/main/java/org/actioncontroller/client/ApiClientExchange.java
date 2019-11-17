@@ -1,5 +1,6 @@
 package org.actioncontroller.client;
 
+import org.actioncontroller.meta.OutputStreamConsumer;
 import org.actioncontroller.meta.WriterConsumer;
 
 import java.io.IOException;
@@ -61,9 +62,13 @@ public interface ApiClientExchange {
 
     String getResponseBody() throws IOException;
 
+    byte[] getResponseBodyBytes() throws IOException;
+
     void checkForError() throws HttpClientException, IOException;
 
     void setClientCertificate(X509Certificate[] certificate);
 
     void write(String contentType, WriterConsumer consumer) throws IOException;
+
+    void output(String contentType, OutputStreamConsumer consumer) throws IOException;
 }

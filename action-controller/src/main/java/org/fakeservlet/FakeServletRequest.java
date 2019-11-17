@@ -2,6 +2,7 @@ package org.fakeservlet;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.DispatcherType;
+import javax.servlet.ReadListener;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletInputStream;
@@ -14,8 +15,8 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpUpgradeHandler;
 import javax.servlet.http.Part;
 import java.io.BufferedReader;
-import java.io.Reader;
-import java.io.StringReader;
+import java.io.ByteArrayInputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -29,7 +30,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -46,9 +46,9 @@ public class FakeServletRequest implements HttpServletRequest {
 
     private Map<String, List<String>> headers = new HashMap<>();
     private Map<String, String> parameters = new HashMap<>();
-    private Supplier<Reader> readerSupplier;
     private FakeHttpSession httpSession;
     private Map<String, Object> attributes = new HashMap<>();
+    private byte[] requestBody;
 
     /**
      * DANGER! Unfinished class! Implement methods as you go!
@@ -305,8 +305,38 @@ public class FakeServletRequest implements HttpServletRequest {
 
     @Override
     public ServletInputStream getInputStream() {
-        // TODO
-        throw unimplemented();
+        if (requestBody != null) {
+            ByteArrayInputStream inputStream = new ByteArrayInputStream(requestBody);
+            return new ServletInputStream() {
+                @Override
+                public boolean isFinished() {
+                    return inputStream.available() == 0;
+                }
+
+                @Override
+                public boolean isReady() {
+                    return true;
+                }
+
+                @Override
+                public void setReadListener(ReadListener readListener) {
+                    // TODO
+                    throw unimplemented();
+                }
+
+                @Override
+                public int read() {
+                    return inputStream.read();
+                }
+
+                @Override
+                public int read(byte[] b, int off, int len) {
+                    return inputStream.read(b, off, len);
+                }
+            };
+        } else {
+            throw new AssertionError("Call setRequestBody first");
+        }
     }
 
     @Override
@@ -355,12 +385,7 @@ public class FakeServletRequest implements HttpServletRequest {
 
     @Override
     public BufferedReader getReader() {
-        if (readerSupplier != null) {
-            return new BufferedReader(readerSupplier.get());
-        } else {
-            // TODO
-            throw new AssertionError("Call setReader first");
-        }
+        return new BufferedReader(new InputStreamReader(getInputStream()));
     }
 
     @Override
@@ -471,10 +496,6 @@ public class FakeServletRequest implements HttpServletRequest {
         parameters.put(key, value);
     }
 
-    public void setReader(Supplier<Reader> readerSupplier) {
-        this.readerSupplier = readerSupplier;
-    }
-
     public void setSession(FakeHttpSession httpSession) {
         this.httpSession = httpSession;
     }
@@ -487,7 +508,11 @@ public class FakeServletRequest implements HttpServletRequest {
         headers.put(name, Collections.singletonList(value));
     }
 
+    public void setRequestBody(byte[] requestBody) {
+        this.requestBody = requestBody;
+    }
+
     public void setRequestBody(String requestBody) {
-        setReader(() -> new StringReader(requestBody));
+        this.requestBody = requestBody.getBytes();
     }
 }

@@ -267,8 +267,8 @@ public class FakeServletResponse implements HttpServletResponse {
         return statusMessage;
     }
 
-    public String getBody() {
-        return new String(outputStream.toByteArray());
+    public byte[] getBody() {
+        return outputStream.toByteArray();
     }
 
 }

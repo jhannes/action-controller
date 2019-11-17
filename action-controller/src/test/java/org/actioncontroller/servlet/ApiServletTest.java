@@ -15,7 +15,6 @@ import org.actioncontroller.meta.ApiHttpExchange;
 import org.fakeservlet.FakeServletRequest;
 import org.fakeservlet.FakeServletResponse;
 import org.jsonbuddy.JsonObject;
-import org.jsonbuddy.parse.JsonParser;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -149,7 +148,7 @@ public class ApiServletTest {
         servlet.service(request, response);
 
         assertThat(response.getStatus()).isEqualTo(200);
-        assertThat(JsonObject.parse(response.getBody()).requiredString("name")).isEqualTo(name);
+        assertThat(JsonObject.parse(new String(response.getBody())).requiredString("name")).isEqualTo(name);
         assertThat(response.getContentType()).isEqualTo("application/json");
     }
 
@@ -211,7 +210,7 @@ public class ApiServletTest {
     public void shouldGive400OnMalformedJson() throws IOException {
         FakeServletRequest request = new FakeServletRequest("POST", contextRoot, "/api", "/postMethod");
 
-        request.setReader(() -> new BufferedReader(new StringReader("This is not JSON!")));
+        request.setRequestBody("This is not JSON!");
 
         expectedLogEvents.expect(ApiControllerAction.class, Level.WARN,
                 "While processing ServletHttpExchange[POST " + contextRoot + "/api/postMethod] arguments for ApiControllerMethodAction{POST /postMethod => ExampleController.postAction(JsonObject)}");

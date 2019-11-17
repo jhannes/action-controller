@@ -3,13 +3,16 @@ package org.actioncontroller.servlet;
 import org.actioncontroller.HttpActionException;
 import org.actioncontroller.HttpRequestException;
 import org.actioncontroller.meta.ApiHttpExchange;
+import org.actioncontroller.meta.OutputStreamConsumer;
 import org.actioncontroller.meta.WriterConsumer;
 
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.lang.reflect.Parameter;
@@ -95,6 +98,14 @@ public class ServletHttpExchange implements ApiHttpExchange {
     }
 
     @Override
+    public void output(String contentType, OutputStreamConsumer consumer) throws IOException {
+        resp.setContentType(contentType);
+        ServletOutputStream outputStream = resp.getOutputStream();
+        consumer.accept(outputStream);
+        outputStream.flush();
+    }
+
+    @Override
     public void setResponseHeader(String key, String value) {
         resp.setHeader(key, value);
     }
@@ -141,6 +152,11 @@ public class ServletHttpExchange implements ApiHttpExchange {
     @Override
     public Reader getReader() throws IOException {
         return req.getReader();
+    }
+
+    @Override
+    public InputStream getInputStream() throws IOException {
+        return req.getInputStream();
     }
 
     @Override

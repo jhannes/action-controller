@@ -1,12 +1,17 @@
 package org.actioncontroller;
 
+import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.meta.ApiHttpExchange;
+import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpClientReturnMapper;
+import org.actioncontroller.meta.HttpParameterMapper;
+import org.actioncontroller.meta.HttpParameterMapperFactory;
+import org.actioncontroller.meta.HttpParameterMapping;
+import org.actioncontroller.meta.HttpReturnMapper;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
-import org.actioncontroller.meta.HttpReturnMapper;
-import org.actioncontroller.meta.HttpRouterMapping;
 
+import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -33,12 +38,19 @@ public @interface ContentBody {
     class MapperFactory implements HttpReturnMapperFactory<ContentBody> {
         @Override
         public HttpReturnMapper create(ContentBody annotation, Class<?> returnType) {
+            if (returnType.isArray() && returnType.getComponentType() == byte.class) {
+                return (result, exchange) ->
+                        exchange.output(annotation.contentType(), output -> output.write((byte[])result));
+            }
             return (result, exchange) ->
                     exchange.write(annotation.contentType(), writer -> writer.write(String.valueOf(result)));
         }
 
         @Override
         public HttpClientReturnMapper createClientMapper(ContentBody annotation, Type returnType) {
+            if (returnType instanceof Class<?> && ((Class<?>)returnType).isArray() && ((Class<?>)returnType).getComponentType() == byte.class) {
+                return ApiClientExchange::getResponseBodyBytes;
+            }
             return exchange -> ApiHttpExchange.convertParameterType(exchange.getResponseBody(), returnType);
         }
     }
@@ -47,6 +59,13 @@ public @interface ContentBody {
 
         @Override
         public HttpParameterMapper create(ContentBody annotation, Parameter parameter, ApiControllerContext context) {
+            if (parameter.getType().isArray() && parameter.getType().getComponentType() == byte.class) {
+                return exchange -> {
+                    ByteArrayOutputStream out = new ByteArrayOutputStream();
+                    exchange.getInputStream().transferTo(out);
+                    return out.toByteArray();
+                };
+            }
             return exchange -> {
                 StringWriter out = new StringWriter();
                 exchange.getReader().transferTo(out);
@@ -56,6 +75,9 @@ public @interface ContentBody {
 
         @Override
         public HttpClientParameterMapper clientParameterMapper(ContentBody annotation, Parameter parameter) {
+            if (parameter.getType().isArray() && parameter.getType().getComponentType() == byte.class) {
+                return (exchange, arg) -> exchange.output(annotation.contentType(), output -> output.write((byte[])arg));
+            }
             return (exchange, arg) -> exchange.write(annotation.contentType(), writer -> writer.write(String.valueOf(arg)));
         }
     }

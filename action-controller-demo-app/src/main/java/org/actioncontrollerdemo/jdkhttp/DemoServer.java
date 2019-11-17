@@ -21,7 +21,7 @@ public class DemoServer {
     }
 
     public DemoServer(int port) throws IOException {
-        this(new InetSocketAddress(InetAddress.getLocalHost(), port));
+        this(new InetSocketAddress("localhost", port));
     }
 
     public void start() {
@@ -35,5 +35,11 @@ public class DemoServer {
     public String getURL() {
         //return "http://" + httpServer.getAddress().getHostString() + ":" + httpServer.getAddress().getPort();
         return "http://" + "localhost" + ":" + httpServer.getAddress().getPort();
+    }
+
+    public static void main(String[] args) throws IOException {
+        DemoServer server = new DemoServer( 8080);
+        server.start();
+        System.out.println(server.getURL());
     }
 }

@@ -18,6 +18,29 @@ import java.lang.reflect.Parameter;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+/**
+ * Used to dynamically create a client implementation of a REST-ful interface defined through
+ * an Action Controller annotated interface or class (requires ByteBuddy).
+ *
+ * <h3>Usage</h3>
+ *
+ * Given a Controller interface like the following:
+ *
+ * <pre>
+*  public interface Controller {
+ *    &#064;Get("/data")
+ *    &#064;ContentBody String getContent(@RequestParam("filter") String filter);
+ * }
+ * </pre>
+ *
+ * The following will make a request to http://example.com/data?filter=foo and return the content as a string
+ *
+ * <pre>
+ * String baserUrl = "http://example.com/";
+ * Controller client = ApiClientProxy.create(Controller.class, new HttpURLConnectionApiClient(baseUrl));
+ * String response = client.getContent("foo");
+ * </pre>
+ */
 public class ApiClientProxy {
     public static <T> T create(Class<T> controllerClass, ApiClient client) {
         DynamicType.Loaded<?> type = new ByteBuddy()

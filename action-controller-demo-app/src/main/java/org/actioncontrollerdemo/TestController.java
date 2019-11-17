@@ -11,6 +11,10 @@ import java.util.Optional;
 public class TestController {
     private Runnable updater;
 
+    public TestController() {
+        this.updater = () -> {};
+    }
+
     public TestController(Runnable updater) {
         this.updater = updater;
     }

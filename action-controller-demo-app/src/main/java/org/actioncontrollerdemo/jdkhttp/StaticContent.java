@@ -62,6 +62,9 @@ public class StaticContent implements HttpHandler {
     }
 
     private void sendContent(HttpExchange exchange, URL url) throws IOException {
+        if (url.getPath().endsWith("/")) {
+            url = new URL(url, "index.html");
+        }
         try (InputStream inputStream = url.openStream()) {
             String contentType =  URLConnection.getFileNameMap().getContentTypeFor(url.getPath());
             if (contentType != null) {

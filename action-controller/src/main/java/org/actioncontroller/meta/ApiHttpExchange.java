@@ -108,6 +108,20 @@ public interface ApiHttpExchange {
 
     Optional getSessionAttribute(String name, boolean createIfMissing);
 
+    default Optional getSessionAttribute(String name) {
+        return getSessionAttribute(name, false);
+    }
+
+    @SuppressWarnings("unchecked")
+    default <T> Optional<T> getSessionAttribute(Class<T> name, boolean createIfMissing) {
+        return (Optional<T>) getSessionAttribute(name.getName(), createIfMissing);
+    }
+
+    default <T> Optional<T> getSessionAttribute(Class<T> name) {
+        return getSessionAttribute(name, false);
+    }
+
+    @SuppressWarnings("unchecked")
     static Object convertParameterType(String value, Type parameterType) {
         if (parameterType == String.class) {
             return value;

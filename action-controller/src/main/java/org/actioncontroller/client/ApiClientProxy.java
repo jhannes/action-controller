@@ -91,11 +91,16 @@ public class ApiClientProxy {
             for (Annotation annotation : method.getAnnotations()) {
                 HttpReturnMapping returnMapping = annotation.annotationType().getAnnotation(HttpReturnMapping.class);
                 if (returnMapping != null) {
-                    return returnMapping.value()
+                    Object returnValue = returnMapping.value()
                             .getDeclaredConstructor()
                             .newInstance()
-                            .createClientMapper(annotation, method.getReturnType())
+                            .createClientMapper(annotation, method.getGenericReturnType())
                             .getReturnValue(exchange);
+                    if (!isCorrectType(returnValue, method.getReturnType())) {
+                        throw new IllegalArgumentException(returnMapping + " returned the wrong type. Expected " + method.getReturnType() + " but was " + returnValue.getClass());
+                    }
+
+                    return returnValue;
                 }
             }
 
@@ -106,4 +111,7 @@ public class ApiClientProxy {
         };
     }
 
+    private static boolean isCorrectType(Object argument, Class<?> requiredType) {
+        return argument == null || requiredType.isPrimitive() || requiredType.isAssignableFrom(argument.getClass());
+    }
 }

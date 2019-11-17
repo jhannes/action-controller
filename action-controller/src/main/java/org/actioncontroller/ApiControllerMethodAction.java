@@ -281,7 +281,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
             Object[] arguments = new Object[method.getParameterCount()];
             for (int i = 0; i < arguments.length; i++) {
                 arguments[i] = parameterMappers.get(i).apply(exchange);
-                if (arguments[i] != null && !method.getParameterTypes()[i].isPrimitive() && !method.getParameterTypes()[i].isAssignableFrom(arguments[i].getClass())) {
+                if (!isCorrectType(arguments[i], method.getParameterTypes()[i])) {
                     throw new HttpActionException(500, this + " parameter mapper " + i + " returned wrong type " + arguments[i].getClass() + " (expected " + method.getParameters()[i].getParameterizedType() + ")");
                 }
             }
@@ -305,6 +305,10 @@ public class ApiControllerMethodAction implements ApiControllerAction {
             logger.warn("While processing {} arguments for {}", exchange, this, e);
             throw new HttpRequestException(e);
         }
+    }
+
+    private boolean isCorrectType(Object argument, Class<?> requiredType) {
+        return argument == null || requiredType.isPrimitive() || requiredType.isAssignableFrom(argument.getClass());
     }
 
     private void convertReturnValue(Object result, ApiHttpExchange exchange) throws IOException {

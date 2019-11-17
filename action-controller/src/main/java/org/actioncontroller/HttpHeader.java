@@ -14,12 +14,16 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.reflect.Type;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Objects;
+import java.util.function.Consumer;
 
 /**
  * When used on a parameter, maps the HTTP Request header to the parameter, converting the type if necessary.
- * When used on method, maps the return value to the specified HTTP Response header
+ * When used on method, maps the return value to the specified HTTP Response header.
+ * If the parameter type is Consumer, calling parameter.accept() sets the http header value instead of returning it.
  *
  * @see HttpReturnMapping
  */
@@ -37,18 +41,29 @@ public @interface HttpHeader {
         @Override
         public HttpParameterMapper create(HttpHeader annotation, Parameter parameter, ApiControllerContext context) {
             String name = annotation.value();
-            Class<?> type = parameter.getType();
-            return exchange -> ApiHttpExchange.convertParameterType(exchange.getHeader(name), type);
+            if (parameter.getType() == Consumer.class) {
+                return exchange -> (Consumer<Object>) o -> exchange.setResponseHeader(annotation.value(), Objects.toString(o, null));
+            } else {
+                return exchange -> ApiHttpExchange.convertParameterType(exchange.getHeader(name), parameter.getType());
+            }
         }
 
         @Override
         public HttpReturnMapper create(HttpHeader annotation, Class<?> returnType) {
-            return (result, exchange) -> exchange.setResponseHeader(annotation.value(), String.valueOf(result));
+            return (result, exchange) -> exchange.setResponseHeader(annotation.value(), Objects.toString(result, null));
         }
 
         @Override
         public HttpClientParameterMapper clientParameterMapper(HttpHeader annotation, Parameter parameter) {
-            return (exchange, arg) -> exchange.setHeader(annotation.value(), arg);
+            String name = annotation.value();
+            if (parameter.getType() == Consumer.class) {
+                Type targetType = ((ParameterizedType) parameter.getParameterizedType()).getActualTypeArguments()[0];
+                return (exchange, arg) -> ((Consumer) arg).accept(
+                        ApiHttpExchange.convertParameterType(exchange.getResponseHeader(name), targetType)
+                );
+            } else {
+                return (exchange, arg) -> exchange.setHeader(annotation.value(), arg);
+            }
         }
 
         @Override

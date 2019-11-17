@@ -9,6 +9,7 @@ import org.slf4j.event.Level;
 
 import java.lang.annotation.RetentionPolicy;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,7 +33,11 @@ public abstract class AbstractApiClientProxyTest {
 
         @Post("/uppercase")
         @ContentBody
-        public String upcase(@ContentBody String parameter) {
+        public String upcase(
+                @ContentBody String parameter,
+                @HttpHeader("Content-characters") Consumer<Integer> setContentCharacters
+        ) {
+            setContentCharacters.accept(parameter.length());
             return parameter.toUpperCase();
         }
 
@@ -116,7 +121,10 @@ public abstract class AbstractApiClientProxyTest {
 
     @Test
     public void shouldReceiveParameters() {
-        assertThat(client.upcase("Test string")).isEqualTo("Test string".toUpperCase());
+        AtomicInteger value = new AtomicInteger();
+        assertThat(client.upcase("Test string", newValue -> value.set(newValue)))
+                .isEqualTo("Test string".toUpperCase());
+        assertThat(value.get()).isEqualTo("Test string".length());
     }
 
     @Test

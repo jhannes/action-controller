@@ -2,14 +2,18 @@ package org.actioncontroller;
 
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientProxy;
+import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.client.HttpURLConnectionApiClient;
 import org.actioncontroller.servlet.ApiServlet;
+import org.eclipse.jetty.server.HttpChannel;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.Before;
+import org.junit.Test;
+import org.slf4j.event.Level;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.CertificateAlgorithmId;
 import sun.security.x509.CertificateExtensions;
@@ -42,8 +46,23 @@ import java.time.Instant;
 
 import static org.actioncontroller.client.HttpURLConnectionApiClient.createKeyStore;
 import static org.actioncontroller.client.HttpURLConnectionApiClient.createTrustStore;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ApiClientProxyHttpsServletTest extends AbstractApiClientProxyTest {
+
+    @Override
+    @Test
+    public void shouldRethrowRuntimeExceptions() {
+        expectedLogEvents.expect(
+                HttpChannel.class,
+                Level.WARN,
+                "/test/api/someNiceMath",
+                new ArithmeticException("/ by zero")
+        );
+        assertThatThrownBy(() -> client.divide(10, 0))
+                .isInstanceOf(HttpClientException.class)
+                .hasMessageContaining("Server Error");
+    }
 
     @Before
     public void createServerAndClient() throws Exception {

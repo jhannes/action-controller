@@ -2,9 +2,11 @@ package org.actioncontroller.httpserver;
 
 import com.sun.net.httpserver.HttpServer;
 import org.actioncontroller.AbstractApiClientProxyTest;
+import org.actioncontroller.ApiControllerAction;
 import org.actioncontroller.HttpActionException;
 import org.actioncontroller.SocketHttpClient;
 import org.actioncontroller.client.ApiClientProxy;
+import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.client.HttpURLConnectionApiClient;
 import org.junit.Before;
 import org.junit.Test;
@@ -57,4 +59,19 @@ public class ApiClientProxyHttpServerTest extends AbstractApiClientProxyTest {
         assertThat(SocketHttpClient.readHttpHeaders(socket.getInputStream()))
                 .containsEntry("location", "http://" + Inet4Address.getByName("127.0.0.1").getHostName() + ":" + url.getPort() + "/frontPage");
     }
+
+    @Override
+    @Test
+    public void shouldRethrowRuntimeExceptions() {
+        expectedLogEvents.expect(
+                ApiHandler.class,
+                Level.ERROR,
+                "While handling JdkHttpExchange{GET [/someNiceMath]} with ApiControllerMethodAction{GET /someNiceMath => TestController.divide(int,int)}",
+                new ArithmeticException("/ by zero")
+        );
+        assertThatThrownBy(() -> client.divide(10, 0))
+                .isInstanceOf(HttpClientException.class)
+                .hasMessageContaining("Server Error");
+    }
+
 }

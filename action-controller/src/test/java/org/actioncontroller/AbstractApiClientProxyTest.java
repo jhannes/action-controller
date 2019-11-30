@@ -159,16 +159,7 @@ public abstract class AbstractApiClientProxyTest {
     }
 
     @Test
-    public void shouldReportRuntimeExceptions() {
-        expectedLogEvents.expect(
-                ApiControllerAction.class,
-                Level.ERROR,
-                "While invoking TestController.divide(int,int)",
-                new ArithmeticException("/ by zero")
-        );
-        assertThatThrownBy(() -> client.divide(10, 0))
-                .isEqualTo(new HttpClientException(500, "Internal Server Error"));
-    }
+    public abstract void shouldRethrowRuntimeExceptions();
 
     @Test
     public void shouldHandleContentHeaders() {

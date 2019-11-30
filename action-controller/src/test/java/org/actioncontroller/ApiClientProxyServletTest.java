@@ -1,8 +1,10 @@
 package org.actioncontroller;
 
 import org.actioncontroller.client.ApiClientProxy;
+import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.client.HttpURLConnectionApiClient;
 import org.actioncontroller.servlet.ApiServlet;
+import org.eclipse.jetty.server.HttpChannel;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.session.SessionHandler;
@@ -105,4 +107,17 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
                 .containsEntry("location", "https://www.example.com:8443/test/frontPage");
     }
 
+    @Override
+    @Test
+    public void shouldRethrowRuntimeExceptions() {
+        expectedLogEvents.expect(
+                HttpChannel.class,
+                Level.WARN,
+                "/test/api/someNiceMath",
+                new ArithmeticException("/ by zero")
+        );
+        assertThatThrownBy(() -> client.divide(10, 0))
+                .isInstanceOf(HttpClientException.class)
+                .hasMessageContaining("Server Error");
+    }
 }

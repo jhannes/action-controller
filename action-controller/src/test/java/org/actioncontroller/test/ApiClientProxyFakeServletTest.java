@@ -1,11 +1,17 @@
 package org.actioncontroller.test;
 
 import org.actioncontroller.AbstractApiClientProxyTest;
+import org.actioncontroller.ApiControllerAction;
 import org.actioncontroller.client.ApiClientProxy;
+import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.servlet.ApiServlet;
 import org.junit.Before;
+import org.junit.Test;
+import org.slf4j.event.Level;
 
 import java.net.URL;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ApiClientProxyFakeServletTest extends AbstractApiClientProxyTest {
 
@@ -17,5 +23,21 @@ public class ApiClientProxyFakeServletTest extends AbstractApiClientProxyTest {
         final ApiServlet servlet = new ApiServlet(controller);
         servlet.init(null);
         client = ApiClientProxy.create(TestController.class, new FakeApiClient(contextRoot, "/api", servlet));
+    }
+
+    @Override
+    @Test
+    public void shouldRethrowRuntimeExceptions() {
+        /*
+        expectedLogEvents.expect(
+                ApiControllerAction.class,
+                Level.ERROR,
+                "While invoking TestController.divide(int,int)",
+                new ArithmeticException("/ by zero")
+        );
+         */
+        assertThatThrownBy(() -> client.divide(10, 0))
+                .isInstanceOf(ArithmeticException.class)
+                .hasMessageContaining("/ by zero");
     }
 }

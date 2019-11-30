@@ -267,8 +267,9 @@ public class ApiControllerMethodAction implements ApiControllerAction {
             if (e.getTargetException() instanceof HttpActionException) {
                 throw (HttpActionException)e.getTargetException();
             } else {
-                logger.error("While invoking {}", getMethodName(action), e.getTargetException());
-                throw new HttpServerErrorException(e.getTargetException());
+                //logger.error("While invoking {}", getMethodName(action), e.getTargetException());
+                //throw new HttpServerErrorException(e.getTargetException());
+                throw ExceptionUtil.softenException(e.getTargetException());
             }
         } catch (IllegalAccessException e) {
             logger.error("While invoking {}", getMethodName(action), e);

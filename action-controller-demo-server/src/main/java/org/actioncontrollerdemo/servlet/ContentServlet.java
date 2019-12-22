@@ -32,9 +32,7 @@ public class ContentServlet extends HttpServlet {
         List<String> welcomeFiles = Collections.singletonList("index.html");
 
         URL resource = new URL(baseResource, req.getPathInfo().substring(1));
-        if (resource == null) {
-            resp.sendError(404);
-        } else if (!isDirectory(resource)) {
+        if (!isDirectory(resource)) {
             resp.setContentType(getServletContext().getMimeType(req.getPathInfo()));
             resource.openStream().transferTo(resp.getOutputStream());
         } else {

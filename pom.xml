@@ -167,5 +167,6 @@
         <module>action-controller</module>
         <module>action-controller-demo-app</module>
         <module>action-controller-demo-server</module>
+        <module>action-controller-kotlin-demo</module>
     </modules>
 </project>

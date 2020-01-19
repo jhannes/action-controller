@@ -1,11 +1,14 @@
 package org.actioncontroller.client;
 
+import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.OutputStreamConsumer;
 import org.actioncontroller.meta.WriterConsumer;
 
 import java.io.IOException;
+import java.lang.reflect.Parameter;
 import java.net.URL;
 import java.security.cert.X509Certificate;
+import java.util.Optional;
 
 /**
  * Abstracts a HTTP request and response from the client perspective. Can be implemented with various
@@ -71,4 +74,17 @@ public interface ApiClientExchange {
     void write(String contentType, WriterConsumer consumer) throws IOException;
 
     void output(String contentType, OutputStreamConsumer consumer) throws IOException;
+
+    static HttpClientParameterMapper withOptional(Parameter parameter, HttpClientParameterMapper mapper) {
+        if (parameter.getType() == Optional.class) {
+            return (exchange, arg) -> {
+                Optional<?> opt = (Optional) arg;
+                if (opt.isPresent()) {
+                    mapper.apply(exchange, opt.get());
+                }
+            };
+        } else {
+            return mapper;
+        }
+    }
 }

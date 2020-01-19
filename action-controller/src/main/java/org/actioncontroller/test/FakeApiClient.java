@@ -21,6 +21,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -64,7 +65,7 @@ public class FakeApiClient implements ApiClient {
         return c.getMaxAge() == -1 || c.getMaxAge() > 0;
     }
 
-    private class FakeApiClientExchange implements ApiClientExchange {
+    public class FakeApiClientExchange implements ApiClientExchange {
         private FakeServletRequest request;
 
         private FakeServletResponse response = new FakeServletResponse();
@@ -202,6 +203,14 @@ public class FakeApiClient implements ApiClient {
             ByteArrayOutputStream body = new ByteArrayOutputStream();
             consumer.accept(body);
             request.setRequestBody(body.toByteArray());
+        }
+
+        public void setRemoteUser(Object remoteUser) {
+            if (remoteUser instanceof Principal) {
+                request.setUserPrincipal((Principal)remoteUser);
+            } else {
+                request.setUserPrincipal(remoteUser::toString);
+            }
         }
     }
 }

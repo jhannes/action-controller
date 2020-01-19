@@ -15,7 +15,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Parameter;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -57,7 +56,7 @@ public @interface HttpHeader {
         public HttpClientParameterMapper clientParameterMapper(HttpHeader annotation, Parameter parameter) {
             String name = annotation.value();
             if (parameter.getType() == Consumer.class) {
-                Type targetType = ((ParameterizedType) parameter.getParameterizedType()).getActualTypeArguments()[0];
+                Type targetType = ApiHttpExchange.getTargetType(parameter);
                 return (exchange, arg) -> ((Consumer) arg).accept(
                         ApiHttpExchange.convertParameterType(exchange.getResponseHeader(name), targetType)
                 );

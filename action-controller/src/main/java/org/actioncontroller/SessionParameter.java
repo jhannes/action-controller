@@ -3,19 +3,17 @@ package org.actioncontroller;
 
 import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.HttpClientParameterMapper;
-import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapperFactory;
+import org.actioncontroller.meta.HttpParameterMapping;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.reflect.AnnotatedParameterizedType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Parameter;
-import java.lang.reflect.ParameterizedType;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -52,21 +50,14 @@ public @interface SessionParameter {
         @Override
         public HttpParameterMapper create(SessionParameter annotation, Parameter parameter, ApiControllerContext context) {
             String name = annotation.value();
+            if (name.isEmpty()) {
+                name = ApiHttpExchange.getTargetType(parameter).getTypeName();
+            }
+
             if (parameter.getType() == Consumer.class) {
-                if (name.isEmpty()) {
-                    name = ((AnnotatedParameterizedType) parameter.getAnnotatedType())
-                            .getAnnotatedActualTypeArguments()[0].getType().getTypeName();
-                }
                 return new CreateSession(name, annotation.invalidate());
             }
 
-            if (name.isEmpty()) {
-                if (parameter.getType() != Optional.class) {
-                    name = parameter.getType().getName();
-                } else {
-                    name = ApiHttpExchange.getOptionalType(parameter).getTypeName();
-                }
-            }
             if (annotation.createIfMissing()) {
                 Constructor<?> constructor;
                 try {

@@ -48,6 +48,14 @@ class JdkHttpExchange implements ApiHttpExchange {
         }
     }
 
+    /**
+     * Break the encapsulation of ApiHttpExchange and access the underlying implementation directory.
+     * Should be avoided - prefer to improve ApiHttpExchange
+     */
+    public HttpExchange getExchange() {
+        return exchange;
+    }
+
     @Override
     public String getHttpMethod() {
         return exchange.getRequestMethod();
@@ -217,17 +225,18 @@ class JdkHttpExchange implements ApiHttpExchange {
 
     @Override
     public Object getParameter(String name, Parameter parameter) {
-        return ApiHttpExchange.convertTo(getFirstParameter(name), name, parameter);
+        return ApiHttpExchange.convertTo(getParameter(name), name, parameter);
+    }
+
+    @Override
+    public String getParameter(String name) {
+        List<String> parameterValues = this.parameters.get(name);
+        return parameterValues != null && !parameterValues.isEmpty() ? parameterValues.get(0) : null;
     }
 
     @Override
     public boolean hasParameter(String name) {
         return this.parameters.containsKey(name);
-    }
-
-    public String getFirstParameter(String name) {
-        List<String> parameters = this.parameters.get(name);
-        return parameters != null && !parameters.isEmpty() ? parameters.get(0) : null;
     }
 
     @Override

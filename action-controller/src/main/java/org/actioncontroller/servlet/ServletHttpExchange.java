@@ -35,18 +35,32 @@ public class ServletHttpExchange implements ApiHttpExchange {
     public static final Charset CHARSET = StandardCharsets.ISO_8859_1;
     private final HttpServletRequest req;
     private final HttpServletResponse resp;
-    private final String method;
     private Map<String, String> pathParams = new HashMap<>();
 
     public ServletHttpExchange(HttpServletRequest req, HttpServletResponse resp) {
         this.req = req;
         this.resp = resp;
-        this.method = req.getMethod();
+    }
+
+    /**
+     * Break the encapsulation of ApiHttpExchange and access the underlying implementation directory.
+     * Should be avoided - prefer to improve ApiHttpExchange
+     */
+    public HttpServletRequest getRequest() {
+        return req;
+    }
+
+    /**
+     * Break the encapsulation of ApiHttpExchange and access the underlying implementation directory.
+     * Should be avoided - prefer to improve ApiHttpExchange
+     */
+    public HttpServletResponse getResponse() {
+        return resp;
     }
 
     @Override
     public String getHttpMethod() {
-        return method;
+        return req.getMethod();
     }
 
     @Override
@@ -131,12 +145,17 @@ public class ServletHttpExchange implements ApiHttpExchange {
 
     @Override
     public Object getParameter(String name, Parameter parameter) {
-        String value = req.getParameter(name);
+        String value = ServletHttpExchange.this.getParameter(name);
         try {
             return ApiHttpExchange.convertTo(value, name, parameter);
         } catch (IllegalArgumentException e) {
             throw new HttpRequestException("Could not convert " + name + "=" + value + " to " + parameter.getType().getTypeName());
         }
+    }
+
+    @Override
+    public String getParameter(String name) {
+        return req.getParameter(name);
     }
 
     @Override
@@ -260,6 +279,6 @@ public class ServletHttpExchange implements ApiHttpExchange {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + method + " " + getFullURL() + "]";
+        return getClass().getSimpleName() + "[" + getHttpMethod() + " " + getFullURL() + "]";
     }
 }

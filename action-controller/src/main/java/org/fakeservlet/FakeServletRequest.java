@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Vector;
 import java.util.stream.Collectors;
 
 /**
@@ -49,6 +50,7 @@ public class FakeServletRequest implements HttpServletRequest {
     private FakeHttpSession httpSession;
     private Map<String, Object> attributes = new HashMap<>();
     private byte[] requestBody;
+    private Principal userPrincipal;
 
     /**
      * DANGER! Unfinished class! Implement methods as you go!
@@ -157,7 +159,7 @@ public class FakeServletRequest implements HttpServletRequest {
 
     @Override
     public String getRemoteUser() {
-        throw unimplemented();
+        return userPrincipal != null ? userPrincipal.getName() : null;
     }
 
     @Override
@@ -167,7 +169,7 @@ public class FakeServletRequest implements HttpServletRequest {
 
     @Override
     public Principal getUserPrincipal() {
-        throw unimplemented();
+        return userPrincipal;
     }
 
     @Override
@@ -271,7 +273,7 @@ public class FakeServletRequest implements HttpServletRequest {
 
     @Override
     public Enumeration<String> getAttributeNames() {
-        throw unimplemented();
+        return new Vector<>(attributes.keySet()).elements();
     }
 
     @Override
@@ -346,20 +348,19 @@ public class FakeServletRequest implements HttpServletRequest {
 
     @Override
     public Enumeration<String> getParameterNames() {
-        // TODO
-        throw unimplemented();
+        return new Vector<>(parameters.keySet()).elements();
     }
 
     @Override
     public String[] getParameterValues(String s) {
-        // TODO
-        throw unimplemented();
+        return getParameter(s) != null ? new String[] { getParameter(s) } : null;
     }
 
     @Override
     public Map<String, String[]> getParameterMap() {
-        // TODO
-        throw unimplemented();
+        HashMap<String, String[]> map = new HashMap<>();
+        parameters.forEach((k,v) -> map.put(k, new String[] { v }));
+        return map;
     }
 
     @Override
@@ -514,5 +515,9 @@ public class FakeServletRequest implements HttpServletRequest {
 
     public void setRequestBody(String requestBody) {
         this.requestBody = requestBody.getBytes();
+    }
+
+    public void setUserPrincipal(Principal userPrincipal) {
+        this.userPrincipal = userPrincipal;
     }
 }

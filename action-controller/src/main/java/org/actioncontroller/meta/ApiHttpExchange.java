@@ -6,6 +6,7 @@ import org.actioncontroller.HttpRequestException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.lang.reflect.AnnotatedParameterizedType;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -14,6 +15,7 @@ import java.security.cert.X509Certificate;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 /**
  * Abstracts the interaction with the http request and response. This interface
@@ -67,6 +69,8 @@ public interface ApiHttpExchange {
      */
     Object getParameter(String name, Parameter parameter);
 
+    String getParameter(String name);
+
     boolean hasParameter(String name);
 
     void write(String contentType, WriterConsumer consumer) throws IOException;
@@ -92,6 +96,9 @@ public interface ApiHttpExchange {
 
     InputStream getInputStream() throws IOException;
 
+    /**
+     * Sets a cookie with default values. If value == null, deletes the cookie
+     */
     void setCookie(String name, String value, boolean secure);
 
     String getCookie(String name);
@@ -106,9 +113,9 @@ public interface ApiHttpExchange {
 
     void setSessionAttribute(String name, Object value, boolean invalidate);
 
-    Optional getSessionAttribute(String name, boolean createIfMissing);
+    Optional<?> getSessionAttribute(String name, boolean createIfMissing);
 
-    default Optional getSessionAttribute(String name) {
+    default Optional<?> getSessionAttribute(String name) {
         return getSessionAttribute(name, false);
     }
 
@@ -140,6 +147,15 @@ public interface ApiHttpExchange {
         }
     }
 
+    static HttpParameterMapper withOptional(Parameter parameter, HttpParameterMapper innerMapping) {
+        if (parameter.getType() == Optional.class) {
+            return exchange -> Optional.ofNullable(innerMapping.apply(exchange));
+        } else {
+            return exchange -> Optional.ofNullable(innerMapping.apply(exchange))
+                    .orElseThrow(() -> new HttpRequestException("Missing required parameter value"));
+        }
+    }
+
     /**
      * Converts the parameter value to the type specified by the parameter. Supports String, int, (long), (short), (byte),
      * double, (float), UUID, (Instant), (LocalDate) and enums, as well as Optionals of the same.
@@ -161,6 +177,16 @@ public interface ApiHttpExchange {
             return Optional.of(convertParameterType(value, getOptionalType(parameter)));
         } else {
             return convertParameterType(value, parameter.getType());
+        }
+    }
+
+    static Type getTargetType(Parameter parameter) {
+        if (parameter.getType() == Consumer.class) {
+            return getConsumerType(parameter);
+        } else if (parameter.getType() == Optional.class) {
+            return getOptionalType(parameter);
+        } else {
+            return parameter.getType();
         }
     }
 

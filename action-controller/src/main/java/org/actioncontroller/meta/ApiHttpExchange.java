@@ -113,9 +113,9 @@ public interface ApiHttpExchange {
 
     void setSessionAttribute(String name, Object value, boolean invalidate);
 
-    Optional<?> getSessionAttribute(String name, boolean createIfMissing);
+    Optional getSessionAttribute(String name, boolean createIfMissing);
 
-    default Optional<?> getSessionAttribute(String name) {
+    default Optional getSessionAttribute(String name) {
         return getSessionAttribute(name, false);
     }
 

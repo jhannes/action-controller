@@ -8,8 +8,10 @@ import org.logevents.extend.junit.ExpectedLogEventsRule;
 import org.slf4j.event.Level;
 
 import java.lang.annotation.RetentionPolicy;
+import java.util.Base64;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -101,6 +103,13 @@ public abstract class AbstractApiClientProxyTest {
                 result[result.length-i-1] = bytes[i];
             }
             return result;
+        }
+
+        @Get("/image.png")
+        @ContentBody
+        public byte[] getImage(@HttpHeader("content-type") Consumer<String> setContentType) {
+            setContentType.accept("image/png");
+            return Base64.getDecoder().decode("iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==");
         }
     }
 
@@ -198,6 +207,13 @@ public abstract class AbstractApiClientProxyTest {
         byte[] input = {1,2,3,4};
         assertThat(client.reverseBytes(input))
                 .containsExactly(4, 3, 2, 1);
+    }
+
+    @Test
+    public void shouldSetContentType() {
+        AtomicReference<String> contentType = new AtomicReference<>();
+        assertThat(client.getImage(contentType::set));
+        assertThat(contentType.get()).isEqualTo("image/png");
     }
 
     // TODO: User in role

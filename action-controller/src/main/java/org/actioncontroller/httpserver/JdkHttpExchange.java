@@ -165,7 +165,9 @@ class JdkHttpExchange implements ApiHttpExchange {
 
     @Override
     public void output(String contentType, OutputStreamConsumer consumer) throws IOException {
-        exchange.getResponseHeaders().set("Content-type", contentType);
+        if (!exchange.getResponseHeaders().containsKey("Content-type")) {
+            exchange.getResponseHeaders().set("Content-type", contentType);
+        }
         sendResponseHeaders(200, 0);
         OutputStream outputStream = exchange.getResponseBody();
         consumer.accept(outputStream);

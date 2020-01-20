@@ -113,7 +113,9 @@ public class ServletHttpExchange implements ApiHttpExchange {
 
     @Override
     public void output(String contentType, OutputStreamConsumer consumer) throws IOException {
-        resp.setContentType(contentType);
+        if (resp.getContentType() == null) {
+            resp.setContentType(contentType);
+        }
         ServletOutputStream outputStream = resp.getOutputStream();
         consumer.accept(outputStream);
         outputStream.flush();

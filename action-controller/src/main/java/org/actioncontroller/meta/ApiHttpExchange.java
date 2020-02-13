@@ -1,21 +1,23 @@
 package org.actioncontroller.meta;
 
+import org.actioncontroller.ExceptionUtil;
 import org.actioncontroller.HttpActionException;
 import org.actioncontroller.HttpRequestException;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
-import java.lang.reflect.AnnotatedParameterizedType;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.cert.X509Certificate;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 /**
  * Abstracts the interaction with the http request and response. This interface
@@ -52,6 +54,13 @@ public interface ApiHttpExchange {
     String getPathInfo();
 
     /**
+     * Returns the whole URL, including query parameter. For example if the client requests
+     * GET <code>https://example.com:7443/app/api/hello/world?greeting=Hello+There</code>
+     * <code>getRequestURL()</code> returns <code>https://example.com:7443/app/api/hello/world?greeting=Hello+There</code>.
+     */
+    String getRequestURL();
+
+    /**
      * Returns the query string of the requested url. For example if the client requests
      * GET <code>https://example.com:7443/app/api/hello/world?greeting=Hello+There</code>
      * <code>getQueryString()</code> returns <code>greeting=Hello+There</code>.
@@ -78,6 +87,16 @@ public interface ApiHttpExchange {
     void output(String contentType, OutputStreamConsumer consumer) throws IOException;
 
     String getHeader(String name);
+
+    /**
+     * Returns true if the "Accept" request header matches the argument content type
+     */
+    default boolean accept(String contentType) {
+        return Optional.ofNullable(getHeader("Accept"))
+                .map(acceptHeader -> Stream.of(acceptHeader.split(",")).anyMatch(type -> type.startsWith(contentType)))
+                .orElse(false);
+
+    }
 
     String getClientIp();
 
@@ -142,6 +161,12 @@ public interface ApiHttpExchange {
             return Long.parseLong(value);
         } else if (Enum.class.isAssignableFrom((Class<?>)parameterType)) {
             return Enum.valueOf((Class) parameterType, value);
+        } else if (URL.class.isAssignableFrom((Class<?>)parameterType)) {
+            try {
+                return new URL(value);
+            } catch (MalformedURLException e) {
+                throw ExceptionUtil.softenException(e);
+            }
         } else {
             throw new HttpActionException(500, "Unhandled parameter type " + parameterType);
         }

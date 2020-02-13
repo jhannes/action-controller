@@ -88,6 +88,11 @@ public class ServletHttpExchange implements ApiHttpExchange {
         return toURL(getServerURL() + req.getContextPath() + req.getServletPath());
     }
 
+    @Override
+    public String getRequestURL() {
+        return getFullURL();
+    }
+
     private URL toURL(String s) {
         try {
             return new URL(s);

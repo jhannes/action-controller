@@ -221,6 +221,11 @@ class JdkHttpExchange implements ApiHttpExchange {
     }
 
     @Override
+    public String getRequestURL() {
+        return exchange.getRequestURI().toString();
+    }
+
+    @Override
     public String getQueryString() {
         return exchange.getRequestURI().getQuery();
     }

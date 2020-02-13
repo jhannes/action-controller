@@ -23,7 +23,7 @@
         <dependency>
             <groupId>org.logevents</groupId>
             <artifactId>logevents</artifactId>
-            <version>0.1.27</version>
+            <version>0.1.29</version>
         </dependency>
         <dependency>
             <groupId>com.zaxxer</groupId>
@@ -33,7 +33,7 @@
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <version>1.4.199</version>
+            <version>1.4.200</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>

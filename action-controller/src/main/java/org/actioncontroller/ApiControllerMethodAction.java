@@ -139,13 +139,10 @@ public class ApiControllerMethodAction implements ApiControllerAction {
     private static Map<Class<?>, HttpReturnMapper> typebasedResponseMapping = new HashMap<>();
     static {
         typebasedResponseMapping.put(URL.class, (o, exchange) -> exchange.sendRedirect(o.toString()));
+        typebasedResponseMapping.put(Void.TYPE, (o, exchange) -> {});
     }
 
     private HttpReturnMapper createResponseMapper() {
-        if (action.getReturnType() == Void.TYPE) {
-            return (a, exchange) -> {};
-        }
-
         for (Annotation annotation : action.getAnnotations()) {
             HttpReturnMapping mappingAnnotation = annotation.annotationType().getAnnotation(HttpReturnMapping.class);
             if (mappingAnnotation != null) {
@@ -265,7 +262,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
             return action.invoke(controller, arguments);
         } catch (InvocationTargetException e) {
             if (e.getTargetException() instanceof HttpActionException) {
-                logger.info("While invoking {}", getMethodName(action), e.toString());
+                logger.info("While invoking {}: {}", getMethodName(action), e.toString());
                 throw (HttpActionException)e.getTargetException();
             } else {
                 //logger.error("While invoking {}", getMethodName(action), e.getTargetException());

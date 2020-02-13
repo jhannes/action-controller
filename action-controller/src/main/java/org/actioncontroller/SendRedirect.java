@@ -23,9 +23,17 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @HttpReturnMapping(SendRedirect.MappingFactory.class)
 public @interface SendRedirect {
 
+    String value() default "";
+
     class MappingFactory implements HttpReturnMapperFactory<SendRedirect> {
         @Override
-        public HttpReturnMapper create(SendRedirect annotation, Class<?> returnType) {
+        public HttpReturnMapper create(SendRedirect annotation, Type returnType) {
+            if (!annotation.value().isEmpty()) {
+                if (returnType != Void.TYPE) {
+                    throw new IllegalArgumentException("When using " + SendRedirect.class.getName() + " with value(), return value must be void");
+                }
+                return (result, exchange) -> exchange.sendRedirect(annotation.value());
+            }
             return (result, exchange) -> {
                 String path = result.toString();
                 if (path.matches("^https?://.*")) {

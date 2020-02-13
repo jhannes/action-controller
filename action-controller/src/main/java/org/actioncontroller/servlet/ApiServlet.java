@@ -110,12 +110,12 @@ public class ApiServlet extends HttpServlet implements UserContext {
         }
 
         if (candidates.isEmpty()) {
-            logger.warn("No route for {}", httpExchange.getHttpMethod() + " " + httpExchange.getApiURL().getPath() + "[" + httpExchange.getPathInfo() + "]");
-            logger.info("Routes {}", actions);
+            logger.info("No route for {}", httpExchange.getHttpMethod() + " " + httpExchange.getApiURL().getPath() + "[" + httpExchange.getPathInfo() + "]");
+            logger.debug("Routes {}", actions);
             httpExchange.sendError(404, "No route for " + httpExchange.getHttpMethod() + ": " + httpExchange.getApiURL() + httpExchange.getPathInfo());
         } else if (candidates.size() > 1) {
             logger.warn("Ambiguous route for {}", httpExchange.getHttpMethod() + " " + httpExchange.getApiURL().getPath() + "[" + httpExchange.getPathInfo() + "]");
-            logger.warn("Routes {}", candidates);
+            logger.debug("Routes {}", candidates);
             httpExchange.sendError(404, "No route for " + httpExchange.getHttpMethod() + ": " + httpExchange.getApiURL() + httpExchange.getPathInfo());
         } else {
             try {

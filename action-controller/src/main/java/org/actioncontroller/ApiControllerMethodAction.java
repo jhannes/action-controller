@@ -265,6 +265,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
             return action.invoke(controller, arguments);
         } catch (InvocationTargetException e) {
             if (e.getTargetException() instanceof HttpActionException) {
+                logger.info("While invoking {}", getMethodName(action), e.toString());
                 throw (HttpActionException)e.getTargetException();
             } else {
                 //logger.error("While invoking {}", getMethodName(action), e.getTargetException());
@@ -287,7 +288,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
                 }
             }
             return arguments;
-        } catch (HttpRequestException e) {
+        } catch (HttpRequestException|HttpRedirectException e) {
             logger.debug("While processing {} arguments to {}: {}", exchange, this, e.toString());
             throw e;
         } catch (HttpActionException e) {

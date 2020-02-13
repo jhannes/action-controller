@@ -164,7 +164,7 @@ public class ApiServletTest {
     @Test
     public void shouldGive404OnUnknownAction() throws IOException {
         FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/api", "/missing");
-        expectedLogEvents.expect(ApiServlet.class, Level.WARN, "No route for GET " + contextRoot.getPath() + "/api[/missing]");
+        expectedLogEvents.expect(ApiServlet.class, Level.INFO, "No route for GET " + contextRoot.getPath() + "/api[/missing]");
         servlet.service(request, response);
         assertThat(response.getStatus()).isEqualTo(404);
     }

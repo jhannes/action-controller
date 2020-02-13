@@ -208,12 +208,24 @@ public class ApiControllerMethodAction implements ApiControllerAction {
 
     private final Method action;
 
+    @Override
     public Object getController() {
         return controller;
     }
 
+    @Override
     public Method getAction() {
         return action;
+    }
+
+    @Override
+    public String getPattern() {
+        return pattern;
+    }
+
+    @Override
+    public String getHttpMethod() {
+        return httpMethod;
     }
 
     @Override
@@ -227,7 +239,8 @@ public class ApiControllerMethodAction implements ApiControllerAction {
                 requiredParameter.map(exchange::hasParameter).orElse(true);
     }
 
-    private boolean matches(String pathInfo) {
+    @Override
+    public boolean matches(String pathInfo) {
         if (pathInfo == null || pathInfo.isEmpty()) {
             return patternParts.length == 1 && patternParts[0].isEmpty();
         }

@@ -1,16 +1,20 @@
 package org.actioncontroller.servlet;
 
 import org.actioncontroller.ApiControllerAction;
+import org.actioncontroller.ApiControllerCompositeException;
 import org.actioncontroller.ApiControllerContext;
 import org.actioncontroller.ApiControllerMethodAction;
-import org.actioncontroller.ApiControllerCompositeException;
 import org.actioncontroller.HttpActionException;
 import org.actioncontroller.UserContext;
+import org.actioncontroller.jmx.ApiControllerActionMXBeanAdaptor;
 import org.actioncontroller.meta.ApiHttpExchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import javax.management.JMException;
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -132,6 +136,10 @@ public class ApiServlet extends HttpServlet implements UserContext {
 
     @Override
     public final void init(ServletConfig config) throws ServletException {
+        if (!actions.isEmpty()) {
+            return;
+        }
+
         if (config != null) {
             List<String> mappings = config.getServletContext()
                     .getServletRegistrations().values().stream()
@@ -169,5 +177,15 @@ public class ApiServlet extends HttpServlet implements UserContext {
                 controllerException.addControllerException(e);
             }
         }
+    }
+
+    public void registerMBeans(MBeanServer mBeanServer) throws JMException {
+        for (ApiControllerAction action : actions) {
+            mBeanServer.registerMBean(
+                    new ApiControllerActionMXBeanAdaptor(action),
+                    new ObjectName("org.actioncontroller:controller=" + action.getController().getClass().getName() + ",action=" + action.getAction().getName())
+            );
+        }
+
     }
 }

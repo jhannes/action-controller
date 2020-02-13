@@ -103,7 +103,7 @@ public class AnnotationConfigurationTest {
 
     public static class Controller {
 
-        @Post("/setCookie")
+        @POST("/setCookie")
         @ContentBody
         public String setCookie(
                 @RequestParam("cookieValue") String cookieValue,
@@ -113,7 +113,7 @@ public class AnnotationConfigurationTest {
             return "ok";
         }
 
-        @Get("/getCookie")
+        @GET("/getCookie")
         @ContentBody
         public String getCookie(@MyEncryptedCookie("cookieName") String cookieValue) {
             return cookieValue;

@@ -16,14 +16,14 @@ import java.lang.reflect.Method;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-@HttpRouterMapping(Post.ActionFactory.class)
-public @interface Post {
+@HttpRouterMapping(POST.ActionFactory.class)
+public @interface POST {
 
     String value();
 
-    class ActionFactory implements ApiControllerActionFactory<Post> {
+    class ActionFactory implements ApiControllerActionFactory<POST> {
         @Override
-        public ApiControllerMethodAction create(Post annotation, Object controller, Method action, ApiControllerContext context) {
+        public ApiControllerMethodAction create(POST annotation, Object controller, Method action, ApiControllerContext context) {
             return new ApiControllerMethodAction("POST", annotation.value(), controller, action, context);
         }
     }

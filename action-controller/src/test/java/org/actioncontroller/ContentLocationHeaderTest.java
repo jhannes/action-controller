@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ContentLocationHeaderTest {
 
     public static class Controller {
-        @Post("/one")
+        @POST("/one")
         @ContentLocationHeader
         public String creatingMethod(
                 @RequestParam("id") Optional<String> id
@@ -25,7 +25,7 @@ public class ContentLocationHeaderTest {
             return "/two/" + id.orElse("1234");
         }
 
-        @Post("/two/:id")
+        @POST("/two/:id")
         @ContentLocationHeader
         public URL referingMethod(@PathParam("id") String id) throws MalformedURLException {
             return new URL("https://server.example.com:20443/hello/world");

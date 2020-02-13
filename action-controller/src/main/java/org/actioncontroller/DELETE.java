@@ -10,22 +10,21 @@ import java.lang.annotation.Target;
 import java.lang.reflect.Method;
 
 /**
- * Specifies that this method should handle HTTP PUT requests
+ * Specifies that this method should handle HTTP DELETE requests
  *
  * @see HttpRouterMapping
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-@HttpRouterMapping(Put.ActionFactory.class)
-public @interface Put {
+@HttpRouterMapping(DELETE.RouterMapperFactory.class)
+public @interface DELETE {
 
     String value();
 
-    class ActionFactory implements ApiControllerActionFactory<Put> {
+    class RouterMapperFactory implements ApiControllerActionFactory<DELETE> {
         @Override
-        public ApiControllerMethodAction create(Put annotation, Object controller, Method action, ApiControllerContext context) {
-            return new ApiControllerMethodAction("PUT", annotation.value(), controller, action, context);
+        public ApiControllerMethodAction create(DELETE annotation, Object controller, Method action, ApiControllerContext context) {
+            return new ApiControllerMethodAction("DELETE", annotation.value(), controller, action, context);
         }
     }
-
 }

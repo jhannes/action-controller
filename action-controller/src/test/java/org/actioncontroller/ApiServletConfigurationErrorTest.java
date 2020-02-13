@@ -105,12 +105,12 @@ public class ApiServletConfigurationErrorTest {
 
     private class ControllerWithErrors {
 
-        @Get("/")
+        @GET("/")
         public void actionWithUnboundParameter(@SuppressWarnings("unused") String parameter) {
 
         }
 
-        @Post("/")
+        @POST("/")
         public Object actionWithUnknownReturnType() {
             return null;
         }
@@ -118,7 +118,7 @@ public class ApiServletConfigurationErrorTest {
     }
 
     private class ControllerWithMismatchedPathParams {
-        @Get("/test/:myTest")
+        @GET("/test/:myTest")
         public void actionWithParameterMismatch(@PathParam("incorrect") String param) {
 
         }
@@ -127,14 +127,14 @@ public class ApiServletConfigurationErrorTest {
 
     private class OtherControllerWithErrors {
 
-        @Get("/foo")
+        @GET("/foo")
         public String actionWithInvalidMappingAnnotation(
                 @CustomAnnotation String parameter
         ) {
             return parameter;
         }
 
-        @Get("/bar")
+        @GET("/bar")
         @CustomAnnotation
         public String actionWithInvalidReturnAnnotation() {
             return "";

@@ -1,7 +1,7 @@
 package org.actioncontrollerdemo;
 
 import org.actioncontroller.ContentBody;
-import org.actioncontroller.Get;
+import org.actioncontroller.GET;
 import org.actioncontroller.RequestParam;
 import org.actioncontroller.json.JsonBody;
 import org.jsonbuddy.JsonObject;
@@ -19,7 +19,7 @@ public class TestController {
         this.updater = updater;
     }
 
-    @Get("/test")
+    @GET("/test")
     @ContentBody
     public String sayHello(
             @RequestParam("name") Optional<String> name
@@ -27,13 +27,13 @@ public class TestController {
         return "Hello " + name.orElse("world");
     }
 
-    @Get("/update")
+    @GET("/update")
     public void update() {
         updater.run();
     }
 
     @JsonBody
-    @Get("/json")
+    @GET("/json")
     public JsonObject getJson() {
         return new JsonObject().put("product", "Blåbærsyltetøy");
     }

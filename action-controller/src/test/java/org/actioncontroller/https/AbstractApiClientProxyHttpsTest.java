@@ -3,7 +3,7 @@ package org.actioncontroller.https;
 import org.actioncontroller.ClientCertificate;
 import org.actioncontroller.ContentBody;
 import org.actioncontroller.ExceptionUtil;
-import org.actioncontroller.Get;
+import org.actioncontroller.GET;
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientProxy;
 import org.actioncontroller.client.HttpClientException;
@@ -46,13 +46,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public abstract class AbstractApiClientProxyHttpsTest {
 
     public static class CertificateController {
-        @Get("/subject")
+        @GET("/subject")
         @ContentBody
         public String getSubject(@ClientCertificate X509Certificate certificate) {
             return certificate.getSubjectDN().getName();
         }
 
-        @Get("/optionalSubject")
+        @GET("/optionalSubject")
         @ContentBody
         public String getOptionalSubject(@ClientCertificate Optional<X509Certificate> certificate) {
             return certificate.map(c -> c.getSubjectDN().getName()).orElse("<none>");

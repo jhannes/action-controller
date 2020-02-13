@@ -68,7 +68,7 @@ public class AbstractApiClientSessionTest {
 
     public static class LoginController {
 
-        @Post("/favorites")
+        @POST("/favorites")
         public void addFavorite(
                 @RequestParam("favorite") String favorite,
                 @SessionParameter(createIfMissing = true) LoginSession loginSession
@@ -76,14 +76,14 @@ public class AbstractApiClientSessionTest {
             loginSession.favorites.add(favorite);
         }
 
-        @Get("/favorites")
+        @GET("/favorites")
         @ContentBody
         public String getFavorites(@SessionParameter Optional<LoginSession> session) {
             return session.map(s -> String.join(", ", s.favorites))
                     .orElse("<no session>");
         }
 
-        @Post("/login")
+        @POST("/login")
         @SendRedirect
         public String login(
                 @RequestParam("username") String username,
@@ -93,38 +93,38 @@ public class AbstractApiClientSessionTest {
             return "userinfo";
         }
 
-        @Get("/userinfo")
+        @GET("/userinfo")
         @ContentBody
         public String userinfo(@SessionParameter("username") String username) {
             return username;
         }
 
-        @Post("/logout")
+        @POST("/logout")
         @SendRedirect
         public String logout(@SessionParameter(invalidate = true) Consumer<String> username) {
             username.accept(null);
             return "favorites";
         }
 
-        @Get("/remoteUser")
+        @GET("/remoteUser")
         @ContentBody
         public String remoteUser(@RequestParam.RemoteUser String remoteUser) {
             return remoteUser;
         }
 
-        @Get("/remoteUser/optional")
+        @GET("/remoteUser/optional")
         @ContentBody
         public String optionalUser(@RequestParam.RemoteUser Optional<String> remoteUser) {
             return remoteUser.orElse("<not logged in>");
         }
 
-        @Get("/principal")
+        @GET("/principal")
         @ContentBody
         public String remotePrincipal(@RequestParam.Principal TestPrincipal principal) {
             return principal.getName() + " admin=" + principal.isAdmin();
         }
 
-        @Get("/principal/optional")
+        @GET("/principal/optional")
         @ContentBody
         public String optionalPrincipal(@RequestParam.Principal Optional<TestPrincipal> principal) {
             return principal.map(p -> p.getName() + " admin=" + p.isAdmin()).orElse("<none>");

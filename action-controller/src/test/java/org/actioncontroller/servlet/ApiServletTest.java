@@ -1,11 +1,11 @@
 package org.actioncontroller.servlet;
 
 import org.actioncontroller.ApiControllerAction;
-import org.actioncontroller.Get;
+import org.actioncontroller.GET;
 import org.actioncontroller.HttpActionException;
 import org.actioncontroller.HttpRequestException;
 import org.actioncontroller.PathParam;
-import org.actioncontroller.Post;
+import org.actioncontroller.POST;
 import org.actioncontroller.RequestParam;
 import org.actioncontroller.RequireUserRole;
 import org.actioncontroller.SendRedirect;
@@ -57,18 +57,18 @@ public class ApiServletTest {
     private FakeServletResponse response = new FakeServletResponse();
 
     public class ExampleController {
-        @Get("")
+        @GET("")
         @JsonBody
         public JsonObject one(@RequestParam("name") Optional<String> name) {
             return new JsonObject().put("name", name.orElse("Anonymous"));
         }
 
-        @Get("/error")
+        @GET("/error")
         public void throwError() {
             throw new HttpActionException(401, "You are not authorized");
         }
 
-        @Get("/user/:userId/message/:messageId")
+        @GET("/user/:userId/message/:messageId")
         public URL privateMethod(
                 @PathParam("userId") UUID userId,
                 @PathParam("messageId") String messageId
@@ -76,29 +76,29 @@ public class ApiServletTest {
             return new URL("https://messages.example.com/?user=" + userId + "&message=" + messageId);
         }
 
-        @Get("/restricted")
+        @GET("/restricted")
         @RequireUserRole("admin")
         @JsonBody
         public JsonObject restrictedOperation() {
             return new JsonObject().put("message", "you're in!");
         }
 
-        @Post("/postMethod")
+        @POST("/postMethod")
         public void postAction(@JsonBody JsonObject o) {
             postedBody = o;
         }
 
-        @Post("/mappingByType")
+        @POST("/mappingByType")
         public void mappingByType(ApiHttpExchange exchange) {
 
         }
 
-        @Post("/setLoggedInUser")
+        @POST("/setLoggedInUser")
         public void sessionUpdater(@SessionParameter("username") Consumer<String> usernameSetter) {
             usernameSetter.accept("Alice Bobson");
         }
 
-        @Get("/redirect")
+        @GET("/redirect")
         @SendRedirect
         public String redirector() {
             return "login";
@@ -110,7 +110,7 @@ public class ApiServletTest {
         private long longValue;
         private ElementType enumValue;
 
-        @Get("/hello")
+        @GET("/hello")
         public void methodWithOptionalBoolean(
                 @RequestParam("admin") Optional<Boolean> adminParam,
                 @RequestParam.ClientIp String clientIp
@@ -118,22 +118,22 @@ public class ApiServletTest {
             admin = adminParam;
         }
 
-        @Get("/goodbye")
+        @GET("/goodbye")
         public void methodWithRequiredInt(@RequestParam("amount") int amountParam) {
             amount = amountParam;
         }
 
-        @Post("/withUuid")
+        @POST("/withUuid")
         public void methodWithUuid(@RequestParam("uuid") UUID uuid) {
             this.uuid = uuid;
         }
 
-        @Post("/withLong")
+        @POST("/withLong")
         public void methodWithLong(@RequestParam("longValue") long longValue) {
             this.longValue = longValue;
         }
 
-        @Post("/withEnum")
+        @POST("/withEnum")
         public void methodWithEnum(@RequestParam("enumValue") ElementType enumValue) {
             this.enumValue = enumValue;
         }

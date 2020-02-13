@@ -1,7 +1,6 @@
 package org.actioncontroller.json;
 
-import org.actioncontroller.AbstractApiClientProxyTest;
-import org.actioncontroller.Get;
+import org.actioncontroller.GET;
 import org.actioncontroller.client.ApiClientProxy;
 import org.actioncontroller.servlet.ApiServlet;
 import org.actioncontroller.test.FakeApiClient;
@@ -40,7 +39,7 @@ public class JsonBodyTest {
     }
 
     public static class TestController {
-        @Get("/")
+        @GET("/")
         @JsonBody
         public Stream<Person> getPeople(@JsonBody List<Person> persons) {
             return persons.stream();

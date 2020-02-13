@@ -4,10 +4,10 @@ import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.implementation.InvocationHandlerAdapter;
 import net.bytebuddy.matcher.ElementMatchers;
-import org.actioncontroller.Delete;
-import org.actioncontroller.Get;
-import org.actioncontroller.Post;
-import org.actioncontroller.Put;
+import org.actioncontroller.DELETE;
+import org.actioncontroller.GET;
+import org.actioncontroller.POST;
+import org.actioncontroller.PUT;
 import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpReturnMapping;
 
@@ -64,13 +64,13 @@ public class ApiClientProxy {
 
 
             ApiClientExchange exchange = client.createExchange();
-            Optional.ofNullable(method.getAnnotation(Get.class))
+            Optional.ofNullable(method.getAnnotation(GET.class))
                     .ifPresent(a -> exchange.setTarget("GET", a.value()));
-            Optional.ofNullable(method.getAnnotation(Post.class))
+            Optional.ofNullable(method.getAnnotation(POST.class))
                     .ifPresent(a -> exchange.setTarget("POST", a.value()));
-            Optional.ofNullable(method.getAnnotation(Put.class))
+            Optional.ofNullable(method.getAnnotation(PUT.class))
                     .ifPresent(a -> exchange.setTarget("PUT", a.value()));
-            Optional.ofNullable(method.getAnnotation(Delete.class))
+            Optional.ofNullable(method.getAnnotation(DELETE.class))
                     .ifPresent(a -> exchange.setTarget("DELETE", a.value()));
 
             Parameter[] parameters = method.getParameters();

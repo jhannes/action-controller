@@ -16,14 +16,14 @@ import java.lang.reflect.Method;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-@HttpRouterMapping(Get.ActionFactory.class)
-public @interface Get {
+@HttpRouterMapping(GET.ActionFactory.class)
+public @interface GET {
 
     String value();
 
-    class ActionFactory implements ApiControllerActionFactory<Get> {
+    class ActionFactory implements ApiControllerActionFactory<GET> {
         @Override
-        public ApiControllerMethodAction create(Get annotation, Object controller, Method action, ApiControllerContext context) {
+        public ApiControllerMethodAction create(GET annotation, Object controller, Method action, ApiControllerContext context) {
             return new ApiControllerMethodAction("GET", annotation.value(), controller, action, context);
         }
     }

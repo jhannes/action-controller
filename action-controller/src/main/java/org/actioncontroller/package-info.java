@@ -1,7 +1,7 @@
 /**
  * Action Controller is a framework that takes "controller" classes and generates
  * {@link org.actioncontroller.ApiControllerAction} for each method annotated with
- * a "routing mapper annotation" such as {@link org.actioncontroller.Get}. Example
+ * a "routing mapper annotation" such as {@link org.actioncontroller.GET}. Example
  *
  * <pre>
  * public class TestController {
@@ -14,9 +14,9 @@
  * }
  * </pre>
  *
- * <p>In this example, {@link org.actioncontroller.Get} is a routing mapper annotation because it is
+ * <p>In this example, {@link org.actioncontroller.GET} is a routing mapper annotation because it is
  * annotated {@link org.actioncontroller.meta.HttpRouterMapping}. This annotation refers to
- * {@link org.actioncontroller.Get.ActionFactory} and {@link org.actioncontroller.Get.ActionFactory#create}
+ * {@link org.actioncontroller.GET.ActionFactory} and {@link org.actioncontroller.GET.ActionFactory#create}
  * is used to create an {@link org.actioncontroller.ApiControllerMethodAction}.</p>
  *
  * <p>{@link org.actioncontroller.ApiControllerMethodAction} uses the {@link org.actioncontroller.RequestParam}

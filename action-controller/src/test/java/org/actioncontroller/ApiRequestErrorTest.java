@@ -20,13 +20,13 @@ public class ApiRequestErrorTest {
     private FakeServletResponse resp = new FakeServletResponse();
 
     public static class Controller {
-        @Get("/hello")
+        @GET("/hello")
         @ContentBody
         public String sayHello(@RequestParam("number") long number) {
             return String.valueOf(number);
         }
 
-        @Get("/redirect")
+        @GET("/redirect")
         @SendRedirect
         public Object redirect() {
             return null;

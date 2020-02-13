@@ -21,19 +21,19 @@ public abstract class AbstractApiClientProxyTest {
 
     public static class TestController {
 
-        @Get("/")
+        @GET("/")
         @ContentBody
         public String first() {
             return "Hello world";
         }
 
-        @Get("/?greeting")
+        @GET("/?greeting")
         @ContentBody
         public String first(@RequestParam("greeting") String greeting, ApiHttpExchange exchange) {
             return greeting + " " + exchange.getPathInfo();
         }
 
-        @Post("/uppercase")
+        @POST("/uppercase")
         @ContentBody
         public String upcase(
                 @ContentBody String parameter,
@@ -43,25 +43,25 @@ public abstract class AbstractApiClientProxyTest {
             return parameter.toUpperCase();
         }
 
-        @Get("/someNiceMath")
+        @GET("/someNiceMath")
         @ContentBody
         public int divide(@RequestParam("whole") int whole, @RequestParam("divisor") int divisor) {
             return whole / divisor;
         }
 
-        @Get("/enumText")
+        @GET("/enumText")
         @ContentBody
         public String enumText(@RequestParam("policy") Optional<RetentionPolicy> policy) {
             return policy.map(Enum::name).orElse("<none>");
         }
 
-        @Post("/resource/:id")
+        @POST("/resource/:id")
         @ContentLocationHeader
         public String storeNewEntry(@PathParam("id") String id) {
             return "/entries/" + id;
         }
 
-        @Put("/loginSession/me")
+        @PUT("/loginSession/me")
         public void putLoginSession(
                 @RequestParam("username") String username,
                 @RequestParam("password") String password,
@@ -70,32 +70,32 @@ public abstract class AbstractApiClientProxyTest {
             sessionCookie.accept(username + ":" + password);
         }
 
-        @Get("/loginSession/me")
+        @GET("/loginSession/me")
         @HttpResponseHeader("X-Username")
         public String whoAmI(@UnencryptedCookie("sessionCookie") Optional<String> sessionCookie) {
             return sessionCookie.map(s -> s.split(":")[0]).orElse("<none>");
         }
 
-        @Get("/loginSession/endsession")
+        @GET("/loginSession/endsession")
         @SendRedirect
         public String endsession(@UnencryptedCookie("sessionCookie") Consumer<String> setSessionCookie, @ContextUrl String url) {
             setSessionCookie.accept(null);
             return url + "/frontPage";
         }
 
-        @Get("/explicitError")
+        @GET("/explicitError")
         @ContentBody
         public String explicitError() {
             throw new HttpActionException(403, "You're not allowed to do this");
         }
 
-        @Get("/lowercase")
+        @GET("/lowercase")
         @HttpHeader("X-Result")
         public String downcase(@HttpHeader("X-Input") String value) {
             return value.toLowerCase();
         }
 
-        @Post("/reverseBytes")
+        @POST("/reverseBytes")
         @ContentBody
         public byte[] reverseBytes(@ContentBody byte[] bytes) {
             byte[] result = new byte[bytes.length];
@@ -105,7 +105,7 @@ public abstract class AbstractApiClientProxyTest {
             return result;
         }
 
-        @Get("/image.png")
+        @GET("/image.png")
         @ContentBody
         public byte[] getImage(@HttpHeader("content-type") Consumer<String> setContentType) {
             setContentType.accept("image/png");
@@ -114,7 +114,7 @@ public abstract class AbstractApiClientProxyTest {
     }
 
     public static class UnmappedController {
-        @Get("/not-mapped")
+        @GET("/not-mapped")
         @ContentBody
         public String notHere() {
             return "Not here";

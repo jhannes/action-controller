@@ -17,14 +17,13 @@ import org.jsonbuddy.parse.JsonParser;
 import org.jsonbuddy.pojo.JsonGenerator;
 import org.jsonbuddy.pojo.PojoMapper;
 
+import java.io.StringReader;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.lang.reflect.Type;
-import java.util.List;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.PARAMETER;
@@ -36,35 +35,48 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @HttpReturnMapping(JsonBody.ReturnMapperFactory.class)
 public @interface JsonBody {
 
+    enum Naming {
+        CAMEL_CASE {
+            @Override
+            public String transform(String name) {
+                return name;
+            }
+        }, UNDERSCORE {
+            @Override
+            public String transform(String name) {
+                return name.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase();
+            }
+        };
+
+
+        public abstract String transform(String name);
+    }
+
+    Naming nameFormat() default Naming.CAMEL_CASE;
+
+
     class ReturnMapperFactory implements HttpReturnMapperFactory<JsonBody> {
-        private static HttpReturnMapper writeJsonNode =
-                (o, exchange) -> exchange.write("application/json", ((JsonNode) o)::toJson);
-
-        private static HttpReturnMapper writePojo =
-                (o, exchange) -> exchange.write("application/json", writer -> JsonGenerator.generate(o).toJson(writer));
-
-        private static HttpReturnMapper writeStream =
-                (o, exchange) -> exchange.write("application/json", writer -> JsonGenerator.generate(
-                        ((Stream<?>) o).collect(Collectors.toList())
-                ).toJson(writer));
 
         @Override
         public HttpReturnMapper create(JsonBody annotation, Type returnType) {
-            if (TypesUtil.isTypeOf(returnType, JsonNode.class)) {
-                return writeJsonNode;
-            } else if (TypesUtil.isTypeOf(returnType, Stream.class)) {
-                return writeStream;
-            } else {
-                return writePojo;
-            }
+            JsonGenerator jsonGenerator = new JsonGenerator() {
+                @Override
+                protected String getName(Field field) {
+                    return annotation.nameFormat().transform(super.getName(field));
+                }
+
+                @Override
+                protected String getName(Method getMethod) {
+                    return annotation.nameFormat().transform(super.getName(getMethod));
+                }
+            };
+            return (o, exchange) -> exchange.write("application/json", writer -> jsonGenerator.generateNode(o, java.util.Optional.of(returnType)).toJson(writer));
         }
 
         @Override
         public HttpClientReturnMapper createClientMapper(JsonBody annotation, Type returnType) {
-            if (TypesUtil.isTypeOf(returnType, JsonObject.class)) {
-                return exchange -> JsonObject.parse(exchange.getResponseBody());
-            } else if (TypesUtil.isTypeOf(returnType, JsonArray.class)) {
-                return exchange -> JsonArray.parse(exchange.getResponseBody());
+            if (TypesUtil.isTypeOf(returnType, JsonNode.class)) {
+                return exchange -> JsonParser.parseNode(new StringReader(exchange.getResponseBody()));
             }
 
             return TypesUtil.streamType(returnType, this::streamReturnMapper)
@@ -79,6 +91,10 @@ public @interface JsonBody {
         private HttpClientReturnMapper listReturnMapper(Class<?> type) {
             return exchange -> (PojoMapper.map(JsonArray.parse(exchange.getResponseBody()), type));
         }
+
+        private HttpClientReturnMapper objectReturnMapper(Class<?> type) {
+            return exchange -> PojoMapper.map(JsonObject.parse(exchange.getResponseBody()), type);
+        }
     }
 
     class MapperFactory implements HttpParameterMapperFactory<JsonBody> {
@@ -89,11 +105,16 @@ public @interface JsonBody {
             }
 
             return TypesUtil.listType(parameter.getParameterizedType(), this::listParameterMapper)
-                    .orElseGet(() -> exchange -> PojoMapper.map(JsonObject.parse(exchange.getReader()), parameter.getType()));
+                    .or(() -> TypesUtil.streamType(parameter.getParameterizedType(), this::streamParameterMapper))
+                    .orElseGet(() -> exchange -> PojoMapper.map(JsonObject.read(exchange.getReader()), parameter.getType()));
         }
 
         private HttpParameterMapper listParameterMapper(Class<?> type) {
-            return exchange -> (PojoMapper.map(JsonArray.parse(exchange.getReader()), type));
+            return exchange -> (PojoMapper.map(JsonArray.read(exchange.getReader()), type));
+        }
+
+        private HttpParameterMapper streamParameterMapper(Class<?> type) {
+            return exchange -> (PojoMapper.map(JsonArray.read(exchange.getReader()), type)).stream();
         }
 
         @Override

@@ -132,7 +132,8 @@ public abstract class AbstractApiClientProxyTest {
 
     @Test
     public void shouldRouteWithRequiredParameter() {
-        assertThat(client.first("Hi!", null)).isEqualTo("Hi! /");
+        String first = client.first("Hi!", null);
+        assertThat(first).isEqualTo("Hi! /");
     }
 
     @Rule

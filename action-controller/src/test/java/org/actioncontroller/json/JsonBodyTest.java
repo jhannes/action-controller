@@ -11,6 +11,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,6 +45,12 @@ public class JsonBodyTest {
         public Stream<Person> getPeople(@JsonBody List<Person> persons) {
             return persons.stream();
         }
+
+        @GET("/json")
+        @JsonBody(nameFormat = JsonBody.Naming.UNDERSCORE)
+        public List<Person> toUpper(@JsonBody Stream<Person> persons) {
+            return persons.map(p -> new Person(p.getFirstName().toUpperCase(), p.getLastName().toUpperCase())).collect(Collectors.toList());
+        }
     }
 
     @Test
@@ -58,6 +65,21 @@ public class JsonBodyTest {
         assertThat(client.getPeople(Arrays.asList(new Person("First", "Woman"), new Person("Second", "Man"))))
                 .extracting(Person::getLastName)
                 .contains("Woman", "Man");
+    }
+
+    @Test
+    public void shouldSupportUnderscoreMapping() throws MalformedURLException, ServletException {
+        String baseUrl = "http://example.com/test";
+        final TestController controller = new TestController();
+        final URL contextRoot = new URL(baseUrl);
+        final ApiServlet servlet = new ApiServlet(controller);
+        servlet.init(null);
+        TestController client = ApiClientProxy.create(TestController.class, new FakeApiClient(contextRoot, "/api", servlet));
+
+        assertThat(client.toUpper(Stream.of(new Person("First", "Woman"))))
+                .extracting(Person::getLastName)
+                .contains("WOMAN");
+
     }
 
 }

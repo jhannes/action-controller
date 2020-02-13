@@ -16,6 +16,7 @@ import org.slf4j.event.Level;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.Type;
 import java.math.BigInteger;
 
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -88,7 +89,7 @@ public class ApiServletConfigurationErrorTest {
         }
 
         @Override
-        public HttpReturnMapper create(Annotation annotation, Class<?> returnType) {
+        public HttpReturnMapper create(Annotation annotation, Type returnType) {
             return null;
         }
     }

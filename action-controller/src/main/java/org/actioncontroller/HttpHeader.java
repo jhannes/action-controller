@@ -48,7 +48,7 @@ public @interface HttpHeader {
         }
 
         @Override
-        public HttpReturnMapper create(HttpHeader annotation, Class<?> returnType) {
+        public HttpReturnMapper create(HttpHeader annotation, Type returnType) {
             return (result, exchange) -> exchange.setResponseHeader(annotation.value(), Objects.toString(result, null));
         }
 

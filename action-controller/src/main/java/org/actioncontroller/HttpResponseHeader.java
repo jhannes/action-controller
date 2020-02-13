@@ -27,7 +27,7 @@ public @interface HttpResponseHeader {
 
     class MappingFactory implements HttpReturnMapperFactory<HttpResponseHeader> {
         @Override
-        public HttpReturnMapper create(HttpResponseHeader annotation, Class<?> returnType) {
+        public HttpReturnMapper create(HttpResponseHeader annotation, Type returnType) {
             String name = annotation.value();
             return (result, exchange) -> exchange.setResponseHeader(name, result.toString());
         }

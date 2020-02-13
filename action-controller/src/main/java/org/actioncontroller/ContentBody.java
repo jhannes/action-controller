@@ -37,8 +37,9 @@ public @interface ContentBody {
 
     class MapperFactory implements HttpReturnMapperFactory<ContentBody> {
         @Override
-        public HttpReturnMapper create(ContentBody annotation, Class<?> returnType) {
-            if (returnType.isArray() && returnType.getComponentType() == byte.class) {
+        public HttpReturnMapper create(ContentBody annotation, Type returnType) {
+            Class<?> returnClass = (Class<?>)returnType;
+            if (returnClass.isArray() && returnClass.getComponentType() == byte.class) {
                 return (result, exchange) ->
                         exchange.output(annotation.contentType(), output -> output.write((byte[])result));
             }

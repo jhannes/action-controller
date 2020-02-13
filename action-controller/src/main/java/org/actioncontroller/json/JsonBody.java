@@ -49,10 +49,10 @@ public @interface JsonBody {
                 ).toJson(writer));
 
         @Override
-        public HttpReturnMapper create(JsonBody annotation, Class<?> returnType) {
-            if (JsonNode.class.isAssignableFrom(returnType)) {
+        public HttpReturnMapper create(JsonBody annotation, Type returnType) {
+            if (TypesUtil.isTypeOf(returnType, JsonNode.class)) {
                 return writeJsonNode;
-            } else if (Stream.class.isAssignableFrom(returnType)) {
+            } else if (TypesUtil.isTypeOf(returnType, Stream.class)) {
                 return writeStream;
             } else {
                 return writePojo;

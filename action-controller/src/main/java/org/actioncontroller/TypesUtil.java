@@ -9,11 +9,15 @@ import java.util.stream.Stream;
 
 public class TypesUtil {
     public static boolean isTypeOf(Type actualType, Class<?> targetType) {
-        return actualType instanceof Class<?> && targetType.isAssignableFrom(((Class<?>)actualType));
+        return targetType.isAssignableFrom(getRawType(actualType));
+    }
+
+    public static Class<?> getRawType(Type type) {
+        return type instanceof Class ? (Class<?>)type : getRawType(((ParameterizedType)type).getRawType());
     }
 
     public static <T> Optional<T> streamType(Type type, Function<Class<?>, T> mapper) {
-        if (type instanceof ParameterizedType && Stream.class.isAssignableFrom((Class<?>)((ParameterizedType)type).getRawType())) {
+        if (type instanceof ParameterizedType && Stream.class.isAssignableFrom(getRawType(type))) {
             return Optional.of(mapper.apply(typeParameter(type)));
         } else {
             return Optional.empty();
@@ -21,7 +25,7 @@ public class TypesUtil {
     }
 
     public static <T> Optional<T> listType(Type type, Function<Class<?>, T> mapper) {
-        if (type instanceof ParameterizedType && List.class.isAssignableFrom((Class<?>)((ParameterizedType)type).getRawType())) {
+        if (type instanceof ParameterizedType && List.class.isAssignableFrom(getRawType(type))) {
             return Optional.of(mapper.apply(typeParameter(type)));
         } else {
             return Optional.empty();

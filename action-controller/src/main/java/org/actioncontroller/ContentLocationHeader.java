@@ -27,7 +27,7 @@ public @interface ContentLocationHeader {
 
     class MappingFactory implements HttpReturnMapperFactory<ContentLocationHeader> {
         @Override
-        public HttpReturnMapper create(ContentLocationHeader annotation, Class<?> returnType) {
+        public HttpReturnMapper create(ContentLocationHeader annotation, Type returnType) {
             if (returnType == URL.class) {
                 return (result, exchange) -> exchange.setResponseHeader(FIELD_NAME, result.toString());
             }

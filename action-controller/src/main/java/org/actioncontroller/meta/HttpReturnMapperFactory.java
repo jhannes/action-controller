@@ -9,7 +9,7 @@ import java.lang.reflect.Type;
  * {@link org.actioncontroller.ContentBody} and {@link org.actioncontroller.SendRedirect}
  */
 public interface HttpReturnMapperFactory<ANNOTATION extends Annotation> {
-    HttpReturnMapper create(ANNOTATION annotation, Class<?> returnType);
+    HttpReturnMapper create(ANNOTATION annotation, Type returnType);
 
     default HttpClientReturnMapper createClientMapper(ANNOTATION annotation, Type returnType) {
         throw new UnsupportedOperationException(getClass() + " does not support " + HttpClientReturnMapper.class);

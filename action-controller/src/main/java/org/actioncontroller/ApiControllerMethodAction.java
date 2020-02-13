@@ -148,7 +148,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
             if (mappingAnnotation != null) {
                 Class<? extends HttpReturnMapperFactory> value = mappingAnnotation.value();
                 try {
-                    return newInstance(value).create(annotation, action.getReturnType());
+                    return newInstance(value).create(annotation, action.getGenericReturnType());
                 } catch (NoSuchMethodException e) {
                     throw new ApiActionResponseUnknownMappingException(
                             "No mapping annotation for " + action.getName() + "() return type"

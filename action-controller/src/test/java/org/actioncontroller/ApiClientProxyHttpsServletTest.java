@@ -1,7 +1,7 @@
 package org.actioncontroller;
 
 import org.actioncontroller.client.ApiClient;
-import org.actioncontroller.client.ApiClientProxy;
+import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.client.HttpURLConnectionApiClient;
 import org.actioncontroller.servlet.ApiServlet;
@@ -90,7 +90,7 @@ public class ApiClientProxyHttpsServletTest extends AbstractApiClientProxyTest {
         baseUrl = server.getURI().toString();
         HttpURLConnectionApiClient apiClient = new HttpURLConnectionApiClient(baseUrl + "/api");
         apiClient.setTrustedCertificate(serverCertificate);
-        this.client = ApiClientProxy.create(TestController.class, apiClient);
+        this.client = ApiClientClassProxy.create(TestController.class, apiClient);
     }
 
     @Before

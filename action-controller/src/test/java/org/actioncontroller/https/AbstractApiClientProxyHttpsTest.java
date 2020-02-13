@@ -5,7 +5,7 @@ import org.actioncontroller.ContentBody;
 import org.actioncontroller.ExceptionUtil;
 import org.actioncontroller.GET;
 import org.actioncontroller.client.ApiClient;
-import org.actioncontroller.client.ApiClientProxy;
+import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.HttpClientException;
 import org.junit.Before;
 import org.junit.Test;
@@ -63,7 +63,7 @@ public abstract class AbstractApiClientProxyHttpsTest {
     public void shouldPickCorrectCertificate() throws GeneralSecurityException, IOException {
         apiClient.addClientKey(serverKeyPair.getPrivate(), serverCertificate);
         apiClient.addClientKey(clientKeyPair.getPrivate(), clientCertificate);
-        ApiClientProxyHttpsServletTest.CertificateController clientProxy = ApiClientProxy.create(ApiClientProxyHttpsServletTest.CertificateController.class, apiClient);
+        ApiClientProxyHttpsServletTest.CertificateController clientProxy = ApiClientClassProxy.create(ApiClientProxyHttpsServletTest.CertificateController.class, apiClient);
 
         String subject = clientProxy.getSubject(clientCertificate);
         assertThat(subject).isEqualTo(clientCertificate.getSubjectDN().getName());
@@ -72,7 +72,7 @@ public abstract class AbstractApiClientProxyHttpsTest {
     @Test
     public void shouldFailForMissingRequiredCertificate() throws GeneralSecurityException, IOException {
         apiClient.addClientKey(clientKeyPair.getPrivate(), clientCertificate);
-        ApiClientProxyHttpsServletTest.CertificateController clientProxy = ApiClientProxy.create(ApiClientProxyHttpsServletTest.CertificateController.class, apiClient);
+        ApiClientProxyHttpsServletTest.CertificateController clientProxy = ApiClientClassProxy.create(ApiClientProxyHttpsServletTest.CertificateController.class, apiClient);
         assertThatThrownBy(() -> clientProxy.getSubject(null))
             .isEqualTo(new HttpClientException(401, "Missing client certificate"));
     }
@@ -80,7 +80,7 @@ public abstract class AbstractApiClientProxyHttpsTest {
     @Test
     public void shouldAbortIfMissingCertificate() throws GeneralSecurityException, IOException {
         apiClient.addClientKey(serverKeyPair.getPrivate(), serverCertificate);
-        ApiClientProxyHttpsServletTest.CertificateController clientProxy = ApiClientProxy.create(ApiClientProxyHttpsServletTest.CertificateController.class, apiClient);
+        ApiClientProxyHttpsServletTest.CertificateController clientProxy = ApiClientClassProxy.create(ApiClientProxyHttpsServletTest.CertificateController.class, apiClient);
 
         assertThatThrownBy(() -> clientProxy.getSubject(clientCertificate))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -91,7 +91,7 @@ public abstract class AbstractApiClientProxyHttpsTest {
     @Test
     public void shouldUseOptionalCertificate() throws GeneralSecurityException, IOException {
         apiClient.addClientKey(clientKeyPair.getPrivate(), clientCertificate);
-        ApiClientProxyHttpsServletTest.CertificateController clientProxy = ApiClientProxy.create(ApiClientProxyHttpsServletTest.CertificateController.class, apiClient);
+        ApiClientProxyHttpsServletTest.CertificateController clientProxy = ApiClientClassProxy.create(ApiClientProxyHttpsServletTest.CertificateController.class, apiClient);
         String subject = clientProxy.getOptionalSubject(Optional.ofNullable(clientCertificate));
         assertThat(subject).isEqualTo(clientCertificate.getSubjectDN().getName());
     }
@@ -99,7 +99,7 @@ public abstract class AbstractApiClientProxyHttpsTest {
     @Test
     public void shouldUseAllowMissingOptionalCertificate() throws GeneralSecurityException, IOException {
         apiClient.addClientKey(clientKeyPair.getPrivate(), clientCertificate);
-        ApiClientProxyHttpsServletTest.CertificateController clientProxy = ApiClientProxy.create(ApiClientProxyHttpsServletTest.CertificateController.class, apiClient);
+        ApiClientProxyHttpsServletTest.CertificateController clientProxy = ApiClientClassProxy.create(ApiClientProxyHttpsServletTest.CertificateController.class, apiClient);
         String subject = clientProxy.getOptionalSubject(Optional.empty());
         assertThat(subject).isEqualTo("<none>");
     }

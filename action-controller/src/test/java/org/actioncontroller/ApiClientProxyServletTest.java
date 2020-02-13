@@ -1,6 +1,6 @@
 package org.actioncontroller;
 
-import org.actioncontroller.client.ApiClientProxy;
+import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.client.HttpURLConnectionApiClient;
 import org.actioncontroller.servlet.ApiServlet;
@@ -44,14 +44,14 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
         server.start();
 
         baseUrl = server.getURI().toString();
-        client = ApiClientProxy.create(TestController.class,
+        client = ApiClientClassProxy.create(TestController.class,
                 new HttpURLConnectionApiClient(baseUrl + "/api"));
     }
 
     @Test
     public void gives404OnUnmappedController() throws MalformedURLException {
         expectedLogEvents.expect(ApiServlet.class, Level.INFO, "No route for GET /test/api[/not-mapped]");
-        UnmappedController unmappedController = ApiClientProxy.create(UnmappedController.class,
+        UnmappedController unmappedController = ApiClientClassProxy.create(UnmappedController.class,
                 new HttpURLConnectionApiClient(baseUrl + "/api"));
         assertThatThrownBy(unmappedController::notHere)
                 .isInstanceOf(HttpActionException.class)

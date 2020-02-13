@@ -81,7 +81,7 @@ public @interface JsonBody {
 
             return TypesUtil.streamType(returnType, this::streamReturnMapper)
                     .or(() -> TypesUtil.listType(returnType, this::listReturnMapper))
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid type " + returnType));
+                    .orElseGet(() -> objectReturnMapper((Class<?>) returnType));
         }
 
         private HttpClientReturnMapper streamReturnMapper(Class<?> type) {

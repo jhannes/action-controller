@@ -1,7 +1,7 @@
 package org.actioncontroller.test;
 
 import org.actioncontroller.AbstractApiClientSessionTest;
-import org.actioncontroller.client.ApiClientProxy;
+import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.servlet.ApiServlet;
 import org.junit.Before;
 
@@ -15,7 +15,7 @@ public class ApiClientFakeSessionTest extends AbstractApiClientSessionTest {
         ApiServlet servlet = new ApiServlet(new LoginController());
         servlet.init(null);
         final URL contextRoot = new URL("http://example.com/test");
-        client = ApiClientProxy.create(LoginController.class,
+        client = ApiClientClassProxy.create(LoginController.class,
                 new FakeApiClient(contextRoot, "/api", servlet));
     }
 }

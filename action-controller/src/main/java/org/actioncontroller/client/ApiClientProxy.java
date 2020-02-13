@@ -13,14 +13,14 @@ import org.actioncontroller.meta.HttpReturnMapping;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.Proxy;
 import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
  * Used to dynamically create a client implementation of a REST-ful interface defined through
- * an Action Controller annotated interface or class (requires ByteBuddy).
+ * an Action Controller annotated interface.
  *
  * <h3>Usage</h3>
  *
@@ -43,20 +43,10 @@ import java.util.function.Consumer;
  */
 public class ApiClientProxy {
     public static <T> T create(Class<T> controllerClass, ApiClient client) {
-        DynamicType.Loaded<?> type = new ByteBuddy()
-                .subclass(controllerClass)
-                .method(ElementMatchers.any())
-                .intercept(InvocationHandlerAdapter.of(createInvocationHandler(client)))
-                .make()
-                .load(controllerClass.getClassLoader());
-        try {
-            return (T) type.getLoaded().getConstructor().newInstance();
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        }
+        return (T) Proxy.newProxyInstance(controllerClass.getClassLoader(), new Class[] { controllerClass }, createInvocationHandler(client));
     }
 
-    private static InvocationHandler createInvocationHandler(ApiClient client) {
+    static InvocationHandler createInvocationHandler(ApiClient client) {
         return (proxy, method, args) -> {
             if (method.getDeclaringClass() == Object.class) {
                 return method.invoke(client, args);

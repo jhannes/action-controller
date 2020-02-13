@@ -2,10 +2,9 @@ package org.actioncontroller.httpserver;
 
 import com.sun.net.httpserver.HttpServer;
 import org.actioncontroller.AbstractApiClientProxyTest;
-import org.actioncontroller.ApiControllerAction;
 import org.actioncontroller.HttpActionException;
 import org.actioncontroller.SocketHttpClient;
-import org.actioncontroller.client.ApiClientProxy;
+import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.client.HttpURLConnectionApiClient;
 import org.junit.Before;
@@ -31,14 +30,14 @@ public class ApiClientProxyHttpServerTest extends AbstractApiClientProxyTest {
         server.start();
 
         baseUrl = "http://localhost:" + server.getAddress().getPort();
-        client = ApiClientProxy.create(TestController.class,
+        client = ApiClientClassProxy.create(TestController.class,
                 new HttpURLConnectionApiClient(baseUrl));
     }
 
     @Test
     public void gives404OnUnmappedController() throws MalformedURLException {
         expectedLogEvents.expect(ApiHandler.class, Level.WARN, "No route for JdkHttpExchange{GET [/not-mapped]}");
-        UnmappedController unmappedController = ApiClientProxy.create(UnmappedController.class,
+        UnmappedController unmappedController = ApiClientClassProxy.create(UnmappedController.class,
                         new HttpURLConnectionApiClient(baseUrl));
         assertThatThrownBy(unmappedController::notHere)
                 .isInstanceOf(HttpActionException.class)

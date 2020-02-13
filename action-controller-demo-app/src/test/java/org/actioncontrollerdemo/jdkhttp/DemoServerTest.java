@@ -1,6 +1,6 @@
 package org.actioncontrollerdemo.jdkhttp;
 
-import org.actioncontroller.client.ApiClientProxy;
+import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.HttpURLConnectionApiClient;
 import org.actioncontrollerdemo.TestController;
 import org.junit.Before;
@@ -51,7 +51,7 @@ public class DemoServerTest {
         HttpURLConnection connection = (HttpURLConnection) new URL(server.getURL()).openConnection();
         assertThat(connection.getResponseCode()).isEqualTo(200);
 
-        TestController testController = ApiClientProxy.create(TestController.class, new HttpURLConnectionApiClient(server.getURL() + "/demo/api"));
+        TestController testController = ApiClientClassProxy.create(TestController.class, new HttpURLConnectionApiClient(server.getURL() + "/demo/api"));
         assertThat(testController.sayHello(Optional.of("Test")))
                 .isEqualTo("Hello Test");
     }

@@ -2,7 +2,7 @@ package org.actioncontroller;
 
 import com.sun.net.httpserver.HttpServer;
 import org.actioncontroller.client.ApiClientExchange;
-import org.actioncontroller.client.ApiClientProxy;
+import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.HttpURLConnectionApiClient;
 import org.actioncontroller.httpserver.ApiHandler;
 import org.actioncontroller.meta.ApiHttpExchange;
@@ -132,7 +132,7 @@ public class AnnotationConfigurationTest {
         servlet.getContext().setAttribute(keySpec);
         servlet.init(null);
 
-        Controller client = ApiClientProxy.create(Controller.class, new FakeApiClient(contextRoot, "/api", servlet));
+        Controller client = ApiClientClassProxy.create(Controller.class, new FakeApiClient(contextRoot, "/api", servlet));
 
         client.setCookie("Hello", v -> returnedCookieValue = v);
         assertThat(decrypt(returnedCookieValue, keySpec)).isEqualTo("Hello");
@@ -177,7 +177,7 @@ public class AnnotationConfigurationTest {
 
         String baseUrl = "http://localhost:" + server.getAddress().getPort() + "/test/api";
 
-        Controller client = ApiClientProxy.create(Controller.class, new HttpURLConnectionApiClient(baseUrl));
+        Controller client = ApiClientClassProxy.create(Controller.class, new HttpURLConnectionApiClient(baseUrl));
         client.setCookie("Hello world", v -> returnedCookieValue = v);
         assertThat(decrypt(returnedCookieValue, keySpec)).isEqualTo("Hello world");
     }

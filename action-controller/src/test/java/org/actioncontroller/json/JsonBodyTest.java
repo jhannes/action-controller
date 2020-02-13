@@ -1,6 +1,7 @@
 package org.actioncontroller.json;
 
 import org.actioncontroller.GET;
+import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.ApiClientProxy;
 import org.actioncontroller.servlet.ApiServlet;
 import org.actioncontroller.test.FakeApiClient;
@@ -60,7 +61,7 @@ public class JsonBodyTest {
         final URL contextRoot = new URL(baseUrl);
         final ApiServlet servlet = new ApiServlet(controller);
         servlet.init(null);
-        TestController client = ApiClientProxy.create(TestController.class, new FakeApiClient(contextRoot, "/api", servlet));
+        TestController client = ApiClientClassProxy.create(TestController.class, new FakeApiClient(contextRoot, "/api", servlet));
 
         assertThat(client.getPeople(Arrays.asList(new Person("First", "Woman"), new Person("Second", "Man"))))
                 .extracting(Person::getLastName)
@@ -74,7 +75,7 @@ public class JsonBodyTest {
         final URL contextRoot = new URL(baseUrl);
         final ApiServlet servlet = new ApiServlet(controller);
         servlet.init(null);
-        TestController client = ApiClientProxy.create(TestController.class, new FakeApiClient(contextRoot, "/api", servlet));
+        TestController client = ApiClientClassProxy.create(TestController.class, new FakeApiClient(contextRoot, "/api", servlet));
 
         assertThat(client.toUpper(Stream.of(new Person("First", "Woman"))))
                 .extracting(Person::getLastName)

@@ -2,7 +2,7 @@ package org.actioncontroller;
 
 import org.actioncontroller.client.HttpURLConnectionApiClient;
 import org.actioncontroller.servlet.ApiServlet;
-import org.actioncontroller.client.ApiClientProxy;
+import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.HttpClientException;
 import org.eclipse.jetty.security.DefaultUserIdentity;
 import org.eclipse.jetty.security.UserAuthentication;
@@ -157,7 +157,7 @@ public class AbstractApiClientSessionTest {
         server.start();
 
         baseUrl = server.getURI() + "/api";
-        client = ApiClientProxy.create(LoginController.class, new HttpURLConnectionApiClient(baseUrl));
+        client = ApiClientClassProxy.create(LoginController.class, new HttpURLConnectionApiClient(baseUrl));
     }
 
     @Test

@@ -1,6 +1,7 @@
 package org.actioncontroller.meta;
 
 import org.actioncontroller.ApiControllerContext;
+import org.actioncontroller.client.ApiClientClassProxy;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Parameter;
@@ -19,7 +20,7 @@ public interface HttpParameterMapperFactory<ANNOTATION extends Annotation> {
     HttpParameterMapper create(ANNOTATION annotation, Parameter parameter, ApiControllerContext context) throws Exception;
 
     /**
-     * Used by {@link org.actioncontroller.client.ApiClientProxy} to convert
+     * Used by {@link ApiClientClassProxy} to convert
      * method arguments into HTTP request information.
      */
     default HttpClientParameterMapper clientParameterMapper(ANNOTATION annotation, Parameter parameter) {

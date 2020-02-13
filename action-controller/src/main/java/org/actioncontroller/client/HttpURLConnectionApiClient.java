@@ -55,7 +55,7 @@ public class HttpURLConnectionApiClient implements ApiClient {
     }
 
     @Override
-    public ApiClientExchange createExchange() {
+    public ClientExchange createExchange() {
         return new ClientExchange();
     }
 
@@ -111,7 +111,7 @@ public class HttpURLConnectionApiClient implements ApiClient {
         this.requestBody = requestBody;
     }
 
-    private class ClientExchange implements ApiClientExchange {
+    protected class ClientExchange implements ApiClientExchange {
         private String method;
         private String pathInfo;
         private Map<String, String> requestHeaders = new HashMap<>();

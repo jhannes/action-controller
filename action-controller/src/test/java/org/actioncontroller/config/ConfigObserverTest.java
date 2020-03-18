@@ -143,15 +143,13 @@ public class ConfigObserverTest {
     }
 
     @Test
-    public void shouldWatchForFileChanges() throws IOException {
+    public void shouldWatchForFileChanges() {
         writeConfigLines("my.dataSource.jdbcUrl=jdbc:datamastery:example",
             "my.dataSource.jdbcUsername=sa",
             "my.dataSource.jdbcPassword=");
         observer.onConfigChange(new DummyDataSourceConfigListener(
                 "my.dataSource",
-                dataSource -> {
-                    this.dataSource = dataSource;
-                }
+                dataSource -> this.dataSource = dataSource
         ));
         assertThat(dataSource).isEqualToComparingFieldByField(new DummyDataSource(
                 "jdbc:datamastery:example", "sa", ""
@@ -184,7 +182,8 @@ public class ConfigObserverTest {
 
     @Test
     public void shouldRecoverFromErrorInListener() {
-        expectedLogEvents.expectPattern(ConfigObserver.class, Level.ERROR, "Failed to notify listener {}");
+        expectedLogEvents.expectPattern(ConfigObserver.class, Level.ERROR,
+                "Failed to notify listener {} while reloading {}");
         writeConfigLine("example.number=123");
 
         String[] fooValue = { null };

@@ -206,7 +206,9 @@ public class FakeApiClient implements ApiClient {
         }
 
         public void setRemoteUser(Object remoteUser) {
-            if (remoteUser instanceof Principal) {
+            if (remoteUser == null) {
+                request.setUserPrincipal(null);
+            } else if (remoteUser instanceof Principal) {
                 request.setUserPrincipal((Principal)remoteUser);
             } else {
                 request.setUserPrincipal(remoteUser::toString);

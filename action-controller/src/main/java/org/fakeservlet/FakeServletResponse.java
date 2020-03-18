@@ -123,13 +123,14 @@ public class FakeServletResponse implements HttpServletResponse {
     }
 
     @Override
-    public void setStatus(int i) {
-        throw unimplemented();
+    public void setStatus(int sc) {
+        setStatus(sc, null);
     }
 
     @Override
-    public void setStatus(int i, String s) {
-        throw unimplemented();
+    public void setStatus(int sc, String reason) {
+        this.statusCode = sc;
+        this.statusMessage = reason;
     }
 
     @Override

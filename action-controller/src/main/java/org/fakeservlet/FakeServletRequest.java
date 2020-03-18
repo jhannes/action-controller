@@ -237,8 +237,9 @@ public class FakeServletRequest implements HttpServletRequest {
     }
 
     @Override
-    public boolean authenticate(HttpServletResponse httpServletResponse) {
-        throw unimplemented();
+    public boolean authenticate(HttpServletResponse response) {
+        response.setStatus(401);
+        return false;
     }
 
     @Override

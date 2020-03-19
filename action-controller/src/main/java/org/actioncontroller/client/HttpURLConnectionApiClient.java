@@ -1,5 +1,6 @@
 package org.actioncontroller.client;
 
+import org.actioncontroller.ExceptionUtil;
 import org.actioncontroller.meta.OutputStreamConsumer;
 import org.actioncontroller.meta.WriterConsumer;
 
@@ -50,8 +51,12 @@ public class HttpURLConnectionApiClient implements ApiClient {
     private KeyStore keyStore;
     private byte[] requestBody;
 
-    public HttpURLConnectionApiClient(String baseUrl) throws MalformedURLException {
-        this.baseUrl = new URL(baseUrl);
+    public HttpURLConnectionApiClient(String baseUrl) {
+        try {
+            this.baseUrl = new URL(baseUrl);
+        } catch (MalformedURLException e) {
+            throw ExceptionUtil.softenException(e);
+        }
     }
 
     @Override

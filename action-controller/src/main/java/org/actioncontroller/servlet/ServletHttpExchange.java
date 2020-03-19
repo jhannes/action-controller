@@ -1,11 +1,13 @@
 package org.actioncontroller.servlet;
 
+import org.actioncontroller.ExceptionUtil;
 import org.actioncontroller.HttpActionException;
 import org.actioncontroller.HttpRequestException;
 import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.OutputStreamConsumer;
 import org.actioncontroller.meta.WriterConsumer;
 
+import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -22,6 +24,7 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
@@ -203,7 +206,7 @@ public class ServletHttpExchange implements ApiHttpExchange {
             cookie = new Cookie(name, URLEncoder.encode(value, CHARSET));
         }
         cookie.setSecure(secure);
-        cookie.setPath(req.getContextPath() + req.getServletPath());
+        cookie.setPath(req.getContextPath());
         resp.addCookie(cookie);
     }
 
@@ -282,6 +285,21 @@ public class ServletHttpExchange implements ApiHttpExchange {
     @Override
     public X509Certificate[] getClientCertificate() {
         return (X509Certificate[]) req.getAttribute("javax.servlet.request.X509Certificate");
+    }
+
+    @Override
+    public Principal getUserPrincipal() {
+        return req.getUserPrincipal();
+    }
+
+    @Override
+    public void authenticate() throws IOException {
+        try {
+            req.authenticate(resp);
+        } catch (ServletException e) {
+            throw ExceptionUtil.softenException(e);
+        }
+
     }
 
     @Override

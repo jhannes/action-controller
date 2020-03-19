@@ -19,6 +19,8 @@ import org.logevents.extend.junit.ExpectedLogEventsRule;
 import org.slf4j.event.Level;
 
 import javax.crypto.Cipher;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -126,6 +128,14 @@ public class AnnotationConfigurationTest {
     public void shouldUseConfigurationValue() throws MalformedURLException, ServletException, GeneralSecurityException {
         String encryptionKey = UUID.randomUUID().toString();
         SecretKeySpec keySpec = new SecretKeySpec(encryptionKey.getBytes(), "Blowfish");
+        /*
+        byte[] salt = "12345678".getBytes();
+        int iterationCount = 40000;
+        int keyLength = 128;
+        String password = UUID.randomUUID().toString();
+        SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512");
+        PBEKeySpec keySpec = new PBEKeySpec(password.toCharArray(), salt, iterationCount, keyLength);
+*/
 
         final URL contextRoot = new URL("http://example.com/test");
         final ApiServlet servlet = new ApiServlet(new Controller());

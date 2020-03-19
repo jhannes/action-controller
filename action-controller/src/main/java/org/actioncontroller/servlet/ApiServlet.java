@@ -4,6 +4,7 @@ import org.actioncontroller.ApiControllerAction;
 import org.actioncontroller.ApiControllerCompositeException;
 import org.actioncontroller.ApiControllerContext;
 import org.actioncontroller.ApiControllerMethodAction;
+import org.actioncontroller.ExceptionUtil;
 import org.actioncontroller.HttpActionException;
 import org.actioncontroller.UserContext;
 import org.actioncontroller.jmx.ApiControllerActionMXBeanAdaptor;
@@ -12,8 +13,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-import javax.management.JMException;
+import javax.management.InstanceAlreadyExistsException;
+import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -21,6 +25,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -89,14 +94,12 @@ public class ApiServlet extends HttpServlet implements UserContext {
 
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        try {
-            MDC.put("clientIp", req.getRemoteAddr());
-            MDC.put("request", req.getContextPath() + req.getServletPath() + req.getPathInfo());
-
+        try (
+                MDC.MDCCloseable ignored = MDC.putCloseable("clientIp", req.getRemoteAddr());
+                MDC.MDCCloseable ignored2 = MDC.putCloseable("request", req.getContextPath() + req.getServletPath() + req.getPathInfo())
+        ) {
             verifyNoExceptions();
             invokeAction(new ServletHttpExchange(req, resp));
-        } finally {
-            MDC.clear();
         }
     }
 
@@ -179,12 +182,16 @@ public class ApiServlet extends HttpServlet implements UserContext {
         }
     }
 
-    public void registerMBeans(MBeanServer mBeanServer) throws JMException {
-        for (ApiControllerAction action : actions) {
-            mBeanServer.registerMBean(
-                    new ApiControllerActionMXBeanAdaptor(action),
-                    new ObjectName("org.actioncontroller:controller=" + action.getController().getClass().getName() + ",action=" + action.getAction().getName())
-            );
+    public void registerMBeans(MBeanServer mBeanServer) {
+        try {
+            for (ApiControllerAction action : actions) {
+                mBeanServer.registerMBean(
+                        new ApiControllerActionMXBeanAdaptor(action),
+                        new ObjectName("org.actioncontroller:controller=" + action.getController().getClass().getName() + ",action=" + action.getAction().getName())
+                );
+            }
+        } catch (InstanceAlreadyExistsException | MBeanRegistrationException | NotCompliantMBeanException | MalformedObjectNameException e) {
+            throw ExceptionUtil.softenException(e);
         }
 
     }

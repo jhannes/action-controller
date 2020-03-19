@@ -2,14 +2,15 @@ package org.actioncontrollerdemo.jetty;
 
 import org.actioncontroller.config.ConfigObserver;
 import org.actioncontrollerdemo.servlet.DemoListener;
+import org.actioncontrollerdemo.servlet.RedirectHandler;
 import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -20,12 +21,15 @@ public class JettyDemoServer {
     private Server server = new Server();
     private ServerConnector connector = new ServerConnector(server);
     private String localhostName;
-    private ConfigObserver config = new ConfigObserver(new File("."), "demoserver");
+    private ConfigObserver config = new ConfigObserver("demoserver");
 
     public JettyDemoServer() throws Exception {
         server.addConnector(connector);
         localhostName = InetAddress.getLocalHost().getHostAddress();
-        server.setHandler(createServletContext());
+        HandlerList handlers = new HandlerList();
+        handlers.addHandler(new RedirectHandler("/", "/demo"));
+        handlers.addHandler(createServletContext("/demo"));
+        server.setHandler(handlers);
         MBeanContainer mbeanContainer = new MBeanContainer(ManagementFactory.getPlatformMBeanServer());
         server.addBean(mbeanContainer);
         server.start();
@@ -50,9 +54,9 @@ public class JettyDemoServer {
         logger.warn("Listening on {}", getUrl(connector));
     }
 
-    private ServletContextHandler createServletContext() {
+    private ServletContextHandler createServletContext(String contextPath) {
         ServletContextHandler handler = new ServletContextHandler();
-        handler.setContextPath("/demo");
+        handler.setContextPath(contextPath);
         handler.addEventListener(new DemoListener(() -> System.out.println("Hello world")));
         return handler;
     }

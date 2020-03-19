@@ -12,6 +12,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.Map;
 import java.util.Optional;
@@ -226,4 +227,8 @@ public interface ApiHttpExchange {
     void calculatePathParams(String[] pathPattern);
 
     X509Certificate[] getClientCertificate();
+
+    Principal getUserPrincipal();
+
+    void authenticate() throws IOException;
 }

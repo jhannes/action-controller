@@ -20,8 +20,18 @@ public class ApiHandler implements UserContext, HttpHandler {
 
     private List<ApiControllerAction> actions = new ArrayList<>();
 
+    public ApiHandler(Object[] controllers, ApiControllerContext apiContext) {
+        for (Object controller : controllers) {
+            actions.addAll(ApiControllerMethodAction.registerActions(controller, apiContext));
+        }
+    }
+
     public ApiHandler(Object controller, ApiControllerContext apiContext) {
         this(new Object[] { controller }, apiContext);
+    }
+
+    public ApiHandler(Object[] controllers) {
+        this(controllers, new ApiControllerContext());
     }
 
     public ApiHandler(Object controller) {

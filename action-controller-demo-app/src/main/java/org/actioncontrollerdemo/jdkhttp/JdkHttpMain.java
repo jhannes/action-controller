@@ -44,7 +44,7 @@ public class JdkHttpMain {
     }
 
     private void start() {
-        ConfigObserver config = new ConfigObserver(new File("."), "demoserver");
+        ConfigObserver config = new ConfigObserver("demoserver");
         config.onInetSocketAddress("httpSocketAddress", inetSocketAddress -> {
             DemoServer oldServer = httpServer;
             httpServer = new DemoServer(inetSocketAddress);

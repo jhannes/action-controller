@@ -1,6 +1,7 @@
 package org.actioncontroller.httpserver;
 
 import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpPrincipal;
 import com.sun.net.httpserver.HttpsExchange;
 import org.actioncontroller.HttpActionException;
 import org.actioncontroller.meta.ApiHttpExchange;
@@ -8,6 +9,7 @@ import org.actioncontroller.meta.OutputStreamConsumer;
 import org.actioncontroller.meta.WriterConsumer;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -21,6 +23,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,14 +33,14 @@ import java.util.Optional;
 
 import static org.actioncontroller.ExceptionUtil.softenException;
 
-class JdkHttpExchange implements ApiHttpExchange {
+public class JdkHttpExchange implements ApiHttpExchange {
     private final HttpExchange exchange;
     private Map<String, String> pathParams = new HashMap<>();
     private final String contextPath;
     private Map<String, List<String>> parameters;
     private boolean responseSent = false;
 
-    public JdkHttpExchange(HttpExchange exchange) throws IOException {
+    public JdkHttpExchange(HttpExchange exchange) {
         this.exchange = exchange;
         this.contextPath = exchange.getHttpContext().getPath().equals("/") ? "" : exchange.getHttpContext().getPath();
         this.parameters = parseParameters(exchange.getRequestURI().getQuery());
@@ -125,13 +128,14 @@ class JdkHttpExchange implements ApiHttpExchange {
         return path.substring(contextPath.length());
     }
 
-    private String asString(InputStream inputStream) throws IOException {
-        StringBuilder stringBuilder = new StringBuilder();
-        int c;
-        while ((c = inputStream.read()) != -1) {
-            stringBuilder.append((char)c);
+    private String asString(InputStream inputStream) {
+        try {
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            inputStream.transferTo(buffer);
+            return new String(buffer.toByteArray());
+        } catch (IOException e) {
+            throw softenException(e);
         }
-        return stringBuilder.toString();
     }
 
     @Override
@@ -320,6 +324,24 @@ class JdkHttpExchange implements ApiHttpExchange {
             return (X509Certificate[]) ((HttpsExchange)exchange).getSSLSession().getPeerCertificates();
         } catch (SSLPeerUnverifiedException e) {
             return null;
+        }
+    }
+
+    @Override
+    public Principal getUserPrincipal() {
+        HttpPrincipal principal = exchange.getPrincipal();
+        if (principal instanceof NestedHttpPrincipal) {
+            return ((NestedHttpPrincipal)principal).getPrincipal();
+        }
+        return principal;
+    }
+
+    @Override
+    public void authenticate() throws IOException {
+        if (exchange.getHttpContext().getAuthenticator() instanceof ActionAuthenticator) {
+            ((ActionAuthenticator)exchange.getHttpContext().getAuthenticator()).login(this);
+        } else {
+            sendError(401, "Unauthenticated");
         }
     }
 

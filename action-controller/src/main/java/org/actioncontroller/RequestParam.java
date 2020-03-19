@@ -14,6 +14,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Parameter;
+import java.util.Optional;
 
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -99,8 +100,27 @@ public @interface RequestParam {
     class PrincipalParameterMapperFactory implements HttpParameterMapperFactory<Principal> {
         @Override
         public HttpParameterMapper create(Principal annotation, Parameter parameter, ApiControllerContext context) {
-            return ApiHttpExchange
-                    .withOptional(parameter, exchange -> ((ServletHttpExchange) exchange).getRequest().getUserPrincipal());
+            if (parameter.getType() == Optional.class) {
+                return exchange -> {
+                    java.security.Principal principal = exchange.getUserPrincipal();
+                    if (principal == null) {
+                        return Optional.empty();
+                    } else if ( ((Class<?>) ApiHttpExchange.getOptionalType(parameter)).isAssignableFrom(principal.getClass())) {
+                        return Optional.of(principal);
+                    } else {
+                        throw new HttpActionLoginException("Login required");
+                    }
+                };
+            } else {
+                return exchange -> {
+                    java.security.Principal principal = exchange.getUserPrincipal();
+                    if (principal != null && parameter.getType().isAssignableFrom(principal.getClass())) {
+                        return principal;
+                    } else {
+                        throw new HttpActionLoginException("Login required");
+                    }
+                };
+            }
         }
 
         @Override

@@ -16,9 +16,15 @@ import java.util.List;
 
 public class ContentServlet extends HttpServlet {
 
+    private String resourceBase;
+
+    public ContentServlet(String resourceBase) {
+        this.resourceBase = resourceBase;
+    }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        URL baseResource = getClass().getResource("/webapp-actioncontrollerdemo/");
+        URL baseResource = getClass().getResource(resourceBase);
 
         if (baseResource.toString().contains("target/classes")) {
             URL sourceResources = new URL(baseResource.toString().replaceAll("target/classes", "src/main/resources"));
@@ -34,7 +40,11 @@ public class ContentServlet extends HttpServlet {
         URL resource = new URL(baseResource, req.getPathInfo().substring(1));
         if (!isDirectory(resource)) {
             resp.setContentType(getServletContext().getMimeType(req.getPathInfo()));
-            resource.openStream().transferTo(resp.getOutputStream());
+            try {
+                resource.openStream().transferTo(resp.getOutputStream());
+            } catch (FileNotFoundException ignored) {
+                resp.sendError(404);
+            }
         } else {
             for (String welcomeFile : welcomeFiles) {
                 try {

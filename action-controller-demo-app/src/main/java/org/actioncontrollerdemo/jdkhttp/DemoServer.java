@@ -3,6 +3,7 @@ package org.actioncontrollerdemo.jdkhttp;
 import com.sun.net.httpserver.HttpServer;
 import org.actioncontroller.httpserver.ApiHandler;
 import org.actioncontrollerdemo.TestController;
+import org.actioncontrollerdemo.UserController;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -12,8 +13,11 @@ public class DemoServer {
 
     public DemoServer(InetSocketAddress inetSocketAddress) throws IOException {
         httpServer = HttpServer.create();
-        httpServer.createContext("/demo/swagger", StaticContent.createWebJar("swagger-ui", "/demo/swagger"));
-        httpServer.createContext("/demo/api", new ApiHandler(new TestController(() -> System.out.println("Hello"))));
+        httpServer.createContext("/demo/swagger", new WebjarContent("swagger-ui", "/demo/swagger"));
+        httpServer.createContext("/demo/api", new ApiHandler(new Object[] {
+                new TestController(() -> System.out.println("Hello")),
+                new UserController()
+        })).setAuthenticator(new DemoAuthenticator());
         httpServer.createContext("/demo", new StaticContent(getClass().getResource("/webapp-actioncontrollerdemo"), "/demo"));
         httpServer.createContext("/", new RedirectHandler("/demo"));
         httpServer.bind(inetSocketAddress, 0);

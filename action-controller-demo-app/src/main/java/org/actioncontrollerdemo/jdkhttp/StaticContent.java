@@ -2,6 +2,7 @@ package org.actioncontrollerdemo.jdkhttp;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import org.actioncontroller.ExceptionUtil;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -11,6 +12,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Objects;
 import java.util.Properties;
 
 public class StaticContent implements HttpHandler {
@@ -20,17 +22,17 @@ public class StaticContent implements HttpHandler {
     private static Properties mimeTypes = new Properties();
     static {
         try {
-            mimeTypes.load(StaticContent.class.getClassLoader().getResourceAsStream("mime-types.properties"));
+            mimeTypes.load(Objects.requireNonNull(StaticContent.class.getClassLoader().getResourceAsStream("mime-types.properties")));
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public StaticContent(URL baseResource, String prefix) throws MalformedURLException {
+    public StaticContent(URL baseResource, String prefix) {
         if (baseResource.getProtocol().equals("file")) {
             File resourceSrc = new File(baseResource.getPath().replace("/target/classes/", "/src/main/resources/"));
             if (resourceSrc.exists()) {
-                this.baseResource = resourceSrc.toURI().toURL();
+                this.baseResource = asURL(resourceSrc);
             } else {
                 this.baseResource = baseResource;
             }
@@ -40,19 +42,12 @@ public class StaticContent implements HttpHandler {
         this.prefix = prefix;
     }
 
-    static URL webJarResource(String webJarName) {
-        String prefix = "/META-INF/resources/webjars/" + webJarName;
-        Properties properties = new Properties();
-        try (InputStream pomProperties = StaticContent.class.getResourceAsStream("/META-INF/maven/org.webjars/" + webJarName + "/pom.properties")) {
-            properties.load(pomProperties);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+    public URL asURL(File resourceSrc) {
+        try {
+            return resourceSrc.toURI().toURL();
+        } catch (MalformedURLException e) {
+            throw ExceptionUtil.softenException(e);
         }
-        return StaticContent.class.getResource(prefix + "/" + properties.get("version"));
-    }
-
-    public static StaticContent createWebJar(String webJarName, String prefix) throws MalformedURLException {
-        return new StaticContent(webJarResource(webJarName), prefix);
     }
 
     public void handle(HttpExchange exchange) throws IOException {

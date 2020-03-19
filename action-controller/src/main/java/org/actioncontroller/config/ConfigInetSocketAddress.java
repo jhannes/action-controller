@@ -3,16 +3,21 @@ package org.actioncontroller.config;
 import java.net.InetSocketAddress;
 
 public class ConfigInetSocketAddress extends SingleValueConfigListener<InetSocketAddress> {
-    private int defaultPort;
+    private InetSocketAddress defaultValue;
 
     public ConfigInetSocketAddress(String key, ConfigValueListener<InetSocketAddress> listener, int defaultPort) {
         super(key, listener, null);
-        this.defaultPort = defaultPort;
+        defaultValue = new InetSocketAddress(defaultPort);
+    }
+
+    public ConfigInetSocketAddress(String key, ConfigValueListener<InetSocketAddress> listener, InetSocketAddress defaultValue) {
+        super(key, listener, null);
+        this.defaultValue = defaultValue;
     }
 
     @Override
     protected InetSocketAddress getDefaultValue() {
-        return new InetSocketAddress(defaultPort);
+        return defaultValue;
     }
 
     @Override

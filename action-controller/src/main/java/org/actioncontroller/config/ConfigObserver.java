@@ -41,6 +41,10 @@ public class ConfigObserver {
         fileScanner = new FileScanner(configDirectory, configLoader.getConfigurationFileNames(), this::handleFileChanged);
     }
 
+    public ConfigObserver(String applicationName) {
+        this(new File("."), applicationName);
+    }
+
     /**
      * The generic observer method. Call {@link ConfigListener#onConfigChanged} on
      * the listener when this method is first called and again each time config changes.
@@ -71,6 +75,10 @@ public class ConfigObserver {
         return onConfigChange(new ConfigInetSocketAddress(key, listener, defaultPort));
     }
 
+    public ConfigObserver onInetSocketAddress(String key, ConfigValueListener<InetSocketAddress> listener, InetSocketAddress defaultAddress) {
+        return onConfigChange(new ConfigInetSocketAddress(key, listener, defaultAddress));
+    }
+
     public ConfigObserver onDuration(String key, ConfigValueListener<Duration> listener) {
         return onSingleConfigValue(key, null, listener, Duration::parse);
     }
@@ -87,6 +95,8 @@ public class ConfigObserver {
         Map<String, String> newConfiguration = configLoader.loadConfiguration();
         Set<String> changedKeys = findChangedKeys(newConfiguration, currentConfiguration);
         this.currentConfiguration = newConfiguration;
+        logger.debug("Configuration files changed {}", changedFiles);
+        logger.trace("New configuration {}", newConfiguration);
         handleConfigurationChanged(changedKeys, newConfiguration);
     }
 
@@ -107,9 +117,10 @@ public class ConfigObserver {
 
     private void notifyListener(ConfigListener listener, Set<String> changedKeys, Map<String, String> newConfiguration) {
         try {
+            logger.trace("Notifying listener {}", listener);
             listener.onConfigChanged(changedKeys, newConfiguration);
         } catch (Exception e) {
-            logger.error("Failed to notify listener {}", listener, e);
+            logger.error("Failed to notify listener {} while reloading {}", listener, configLoader.describe(), e);
         }
     }
 }

@@ -30,7 +30,7 @@ public class SingleValueConfigListener<T> implements ConfigListener {
         if (changedKeys == null || changedKeys.contains(key)) {
             T configValue = Optional.ofNullable(newConfiguration.get(key))
                     .map(this::transform)
-                    .orElseGet(() -> this.getDefaultValue());
+                    .orElseGet(this::getDefaultValue);
             listener.apply(configValue);
         }
     }

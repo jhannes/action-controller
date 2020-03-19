@@ -5,7 +5,6 @@ import org.actioncontroller.httpserver.ApiHandler;
 import org.actioncontrollerdemo.TestController;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
 public class DemoServer {

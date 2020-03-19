@@ -12,15 +12,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ApiHandler implements UserContext, HttpHandler {
     private static Logger logger = LoggerFactory.getLogger(ApiHandler.class);
 
-    private List<ApiControllerAction> actions;
+    private List<ApiControllerAction> actions = new ArrayList<>();
 
     public ApiHandler(Object controller, ApiControllerContext apiContext) {
-        actions = ApiControllerMethodAction.registerActions(controller, apiContext);
+        this(new Object[] { controller }, apiContext);
     }
 
     public ApiHandler(Object controller) {

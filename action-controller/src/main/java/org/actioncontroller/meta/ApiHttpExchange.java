@@ -152,7 +152,7 @@ public interface ApiHttpExchange {
     static Object convertParameterType(String value, Type parameterType) {
         if (parameterType == String.class) {
             return value;
-        } else if (parameterType == Boolean.class) {
+        } else if (parameterType == Boolean.class || parameterType == Boolean.TYPE) {
             return Boolean.parseBoolean(value);
         } else if (parameterType == Integer.class || parameterType == Integer.TYPE) {
             return Integer.parseInt(value);

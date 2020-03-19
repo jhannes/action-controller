@@ -49,7 +49,7 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
     }
 
     @Test
-    public void gives404OnUnmappedController() throws MalformedURLException {
+    public void gives404OnUnmappedController() {
         expectedLogEvents.expect(ApiServlet.class, Level.INFO, "No route for GET /test/api[/not-mapped]");
         UnmappedController unmappedController = ApiClientClassProxy.create(UnmappedController.class,
                 new HttpURLConnectionApiClient(baseUrl + "/api"));
@@ -116,7 +116,7 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
                 "/test/api/someNiceMath",
                 new ArithmeticException("/ by zero")
         );
-        assertThatThrownBy(() -> client.divide(10, 0))
+        assertThatThrownBy(() -> client.divide(10, 0, false))
                 .isInstanceOf(HttpClientException.class)
                 .hasMessageContaining("Server Error");
     }

@@ -45,8 +45,8 @@ public abstract class AbstractApiClientProxyTest {
 
         @GET("/someNiceMath")
         @ContentBody
-        public int divide(@RequestParam("whole") int whole, @RequestParam("divisor") int divisor) {
-            return whole / divisor;
+        public int divide(@RequestParam("whole") int whole, @RequestParam("divisor") int divisor, @RequestParam("remainder") boolean remainder) {
+            return remainder ? whole % divisor : whole / divisor;
         }
 
         @GET("/enumText")
@@ -149,7 +149,7 @@ public abstract class AbstractApiClientProxyTest {
 
     @Test
     public void shouldConvertParameters() {
-        assertThat(client.divide(8, 2)).isEqualTo(4);
+        assertThat(client.divide(8, 2, false)).isEqualTo(4);
     }
 
     @Test

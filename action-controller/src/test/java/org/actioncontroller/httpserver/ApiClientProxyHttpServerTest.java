@@ -35,7 +35,7 @@ public class ApiClientProxyHttpServerTest extends AbstractApiClientProxyTest {
     }
 
     @Test
-    public void gives404OnUnmappedController() throws MalformedURLException {
+    public void gives404OnUnmappedController() {
         expectedLogEvents.expect(ApiHandler.class, Level.WARN, "No route for JdkHttpExchange{GET [/not-mapped]}");
         UnmappedController unmappedController = ApiClientClassProxy.create(UnmappedController.class,
                         new HttpURLConnectionApiClient(baseUrl));
@@ -68,7 +68,7 @@ public class ApiClientProxyHttpServerTest extends AbstractApiClientProxyTest {
                 "While handling JdkHttpExchange{GET [/someNiceMath]} with ApiControllerMethodAction{GET /someNiceMath => TestController.divide(int,int)}",
                 new ArithmeticException("/ by zero")
         );
-        assertThatThrownBy(() -> client.divide(10, 0))
+        assertThatThrownBy(() -> client.divide(10, 0, false))
                 .isInstanceOf(HttpClientException.class)
                 .hasMessageContaining("Server Error");
     }

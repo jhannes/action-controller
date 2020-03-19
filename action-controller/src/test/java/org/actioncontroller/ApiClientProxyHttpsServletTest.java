@@ -59,7 +59,7 @@ public class ApiClientProxyHttpsServletTest extends AbstractApiClientProxyTest {
                 "/test/api/someNiceMath",
                 new ArithmeticException("/ by zero")
         );
-        assertThatThrownBy(() -> client.divide(10, 0))
+        assertThatThrownBy(() -> client.divide(10, 0, false))
                 .isInstanceOf(HttpClientException.class)
                 .hasMessageContaining("Server Error");
     }

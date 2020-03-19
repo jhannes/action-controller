@@ -33,7 +33,7 @@ public class ApiClientProxyFakeServletTest extends AbstractApiClientProxyTest {
                 new ArithmeticException("/ by zero")
         );
          */
-        assertThatThrownBy(() -> client.divide(10, 0))
+        assertThatThrownBy(() -> client.divide(10, 0, false))
                 .isInstanceOf(ArithmeticException.class)
                 .hasMessageContaining("/ by zero");
     }

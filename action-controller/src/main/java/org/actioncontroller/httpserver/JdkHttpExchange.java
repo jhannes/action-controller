@@ -154,7 +154,7 @@ public class JdkHttpExchange implements ApiHttpExchange {
     }
 
     @Override
-    public Optional getSessionAttribute(String name, boolean createIfMissing) {
+    public Optional<?> getSessionAttribute(String name, boolean createIfMissing) {
         throw new UnsupportedOperationException(getClass().getName() + " does not implement sessions");
     }
 
@@ -348,23 +348,5 @@ public class JdkHttpExchange implements ApiHttpExchange {
     @Override
     public String toString() {
         return getClass().getSimpleName() + "{" + getHttpMethod() + " " + contextPath + "[" + getPathInfo() + "]}";
-    }
-
-    public void calculatePathParams(String[] patternParts) {
-        HashMap<String, String> pathParameters = new HashMap<>();
-
-        String[] actualParts = getPathInfo().split("/");
-        if (patternParts.length != actualParts.length) {
-            throw new IllegalArgumentException("Paths don't match <" + String.join("/", patternParts) + ">, but was <" + getPathInfo() + ">");
-        }
-
-        for (int i = 0; i < patternParts.length; i++) {
-            if (patternParts[i].startsWith(":")) {
-                pathParameters.put(patternParts[i].substring(1), actualParts[i]);
-            } else if (!patternParts[i].equals(actualParts[i])) {
-                throw new IllegalArgumentException("Paths don't match <" + String.join("/", patternParts) + ">, but was <" + getPathInfo() + ">");
-            }
-        }
-        setPathParameters(pathParameters);
     }
 }

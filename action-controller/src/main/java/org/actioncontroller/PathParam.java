@@ -36,7 +36,7 @@ public @interface PathParam {
             String name = annotation.value();
             return ((exchange, arg) -> {
                 String pathInfo = exchange.getPathInfo();
-                pathInfo = pathInfo.replace("/:" + name, "/" + arg.toString());
+                pathInfo = pathInfo.replaceAll("/:" + name + "|/\\{" + name + "}", "/" + arg.toString());
                 exchange.setPathInfo(pathInfo);
             });
         }

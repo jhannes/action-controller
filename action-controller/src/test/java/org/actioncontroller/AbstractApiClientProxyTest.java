@@ -17,6 +17,7 @@ import java.util.function.Consumer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@SuppressWarnings({"ConstantConditions", "OptionalAssignedToNull"})
 public abstract class AbstractApiClientProxyTest {
 
     public static class TestController {
@@ -59,6 +60,12 @@ public abstract class AbstractApiClientProxyTest {
         @ContentLocationHeader
         public String storeNewEntry(@PathParam("id") String id) {
             return "/entries/" + id;
+        }
+
+        @GET("/person/{personId}")
+        @ContentBody
+        public String getName(@PathParam("personId") String personId) {
+            return personId + "'s name";
         }
 
         @PUT("/loginSession/me")
@@ -174,6 +181,11 @@ public abstract class AbstractApiClientProxyTest {
     @Test
     public void shouldHandleContentHeaders() {
         assertThat(client.storeNewEntry("someUrl")).endsWith("/entries/" + "someUrl");
+    }
+
+    @Test
+    public void shouldHandlePathParams() {
+        assertThat(client.getName("SomePerson")).isEqualTo("SomePerson's name");
     }
 
     private String sessionCookie;

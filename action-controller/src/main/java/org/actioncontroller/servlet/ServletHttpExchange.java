@@ -143,7 +143,7 @@ public class ServletHttpExchange implements ApiHttpExchange {
     public Object pathParam(String name, Parameter parameter) throws HttpActionException {
         String result = this.pathParams.get(name);
         if (result == null) {
-            throw new HttpActionException(500, "Path parameter :" + name + " not matched");
+            throw new HttpActionException(500, "Path parameter :" + name + " not matched in " + pathParams.keySet());
         }
         return ApiHttpExchange.convertTo(result, name, parameter);
     }
@@ -257,25 +257,6 @@ public class ServletHttpExchange implements ApiHttpExchange {
         return session != null
                 ? Optional.ofNullable(session.getAttribute(name))
                 : Optional.empty();
-    }
-
-    @Override
-    public void calculatePathParams(String[] patternParts) {
-        HashMap<String, String> pathParameters = new HashMap<>();
-
-        String[] actualParts = getPathInfo().split("/");
-        if (patternParts.length != actualParts.length) {
-            throw new IllegalArgumentException("Paths don't match <" + String.join("/", patternParts) + ">, but was <" + getPathInfo() + ">");
-        }
-
-        for (int i = 0; i < patternParts.length; i++) {
-            if (patternParts[i].startsWith(":")) {
-                pathParameters.put(patternParts[i].substring(1), actualParts[i]);
-            } else if (!patternParts[i].equals(actualParts[i])) {
-                throw new IllegalArgumentException("Paths don't match <" + String.join("/", patternParts) + ">, but was <" + getPathInfo() + ">");
-            }
-        }
-        setPathParameters(pathParameters);
     }
 
     private String getFullURL() {

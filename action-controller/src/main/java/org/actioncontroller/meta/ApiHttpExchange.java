@@ -224,8 +224,6 @@ public interface ApiHttpExchange {
         return ((ParameterizedType) parameter.getParameterizedType()).getActualTypeArguments()[0];
     }
 
-    void calculatePathParams(String[] pathPattern);
-
     X509Certificate[] getClientCertificate();
 
     Principal getUserPrincipal();

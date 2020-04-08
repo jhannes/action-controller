@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -36,6 +38,7 @@ import java.util.stream.Stream;
  * For example <code>@Get("/helloWorld") public String hello(@RequestParam("greeter") String greeter)</code>
  * defines an action that responds to <code>GET /helloWorld?greeter=something</code> with a string.
  */
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class ApiControllerMethodAction implements ApiControllerAction {
 
     private final static Logger logger = LoggerFactory.getLogger(ApiControllerAction.class);
@@ -71,6 +74,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
     private String pattern;
 
     private final String[] patternParts;
+    private final String[] pathParams;
 
     private List<HttpParameterMapper> parameterMappers = new ArrayList<>();
 
@@ -83,15 +87,26 @@ public class ApiControllerMethodAction implements ApiControllerAction {
         this.pattern = pattern;
         if (pattern.indexOf('?') > 0) {
             this.patternParts = pattern.substring(0, pattern.indexOf('?')).split("/");
+            this.pathParams = new String[patternParts.length];
             this.requiredParameter = Optional.of(pattern.substring(pattern.indexOf('?') + 1));
         } else {
             this.patternParts = pattern.split("/");
+            this.pathParams = new String[patternParts.length];
             this.requiredParameter = Optional.empty();
         }
 
         Parameter[] parameters = action.getParameters();
         for (int i = 0; i < parameters.length; i++) {
             parameterMappers.add(createParameterMapper(parameters[i], i, context));
+        }
+
+        Pattern pathParamPattern = Pattern.compile("^:(.*)$|^\\{(.*)}$");
+        for (int i = 0; i < patternParts.length; i++) {
+            String patternPart = patternParts[i];
+            Matcher matcher = pathParamPattern.matcher(patternPart);
+            if (matcher.matches()) {
+                pathParams[i] = matcher.group(1) != null ? matcher.group(1) : matcher.group(2);
+            }
         }
 
         responseMapper = createResponseMapper();
@@ -111,9 +126,8 @@ public class ApiControllerMethodAction implements ApiControllerAction {
     }
 
     private void verifyPathParameters() {
-        List<String> specifiedPathParameters = Stream.of(pattern.split("/"))
-                .filter(s -> s.startsWith(":"))
-                .map(s -> s.substring(1))
+        List<String> specifiedPathParameters = Stream.of(pathParams)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
         List<String> boundPathParameters = Stream.of(action.getParameters())
                 .map(p -> p.getAnnotation(PathParam.class))
@@ -132,7 +146,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
         }
         if (!extraParameters.isEmpty()) {
             throw new ApiActionParameterUnknownMappingException(
-                    "Unknown parameters specified for " + action.getName() + ": " + extraParameters + " (did you forget @Retention(RUNTIME)?)");
+                    "Unknown parameters parameters specified for " + pattern + ": " + extraParameters + " not in " + specifiedPathParameters);
         }
     }
 
@@ -248,7 +262,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
         if (patternParts.length != actualParts.length) return false;
 
         for (int i = 0; i < patternParts.length; i++) {
-            if (!patternParts[i].startsWith(":") && !patternParts[i].equals(actualParts[i])) {
+            if (pathParams[i] == null && !patternParts[i].equals(actualParts[i])) {
                 return false;
             }
         }
@@ -259,11 +273,30 @@ public class ApiControllerMethodAction implements ApiControllerAction {
     @Override
     public void invoke(UserContext userContext, ApiHttpExchange exchange) throws IOException {
         verifyUserAccess(exchange, userContext);
-        exchange.calculatePathParams(patternParts);
+        calculatePathParams(exchange);
         Object[] arguments = createArguments(getAction(), exchange);
         logger.debug("Invoking {}", this);
         Object result = invoke(getController(), getAction(), arguments);
         convertReturnValue(result, exchange);
+    }
+
+    protected void calculatePathParams(ApiHttpExchange exchange) {
+        HashMap<String, String> pathParameters = new HashMap<>();
+
+        String pathInfo = exchange.getPathInfo();
+        String[] actualParts = pathInfo.split("/");
+        if (patternParts.length != actualParts.length) {
+            throw new IllegalArgumentException("Paths don't match <" + String.join("/", patternParts) + ">, but was <" + pathInfo + ">");
+        }
+
+        for (int i = 0; i < patternParts.length; i++) {
+            if (pathParams[i] != null) {
+                pathParameters.put(pathParams[i], actualParts[i]);
+            } else if (!patternParts[i].equals(actualParts[i])) {
+                throw new IllegalArgumentException("Paths don't match <" + String.join("/", patternParts) + ">, but was <" + pathInfo + ">");
+            }
+        }
+        exchange.setPathParameters(pathParameters);
     }
 
     /**

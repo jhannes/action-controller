@@ -35,7 +35,8 @@ public class ConfigLoader {
     public Map<String, String> loadConfiguration() {
         Properties properties = new Properties();
 
-        for (File file : getConfigurationFiles()) {
+        List<File> files = getConfigurationFiles();
+        for (File file : files) {
             loadConfigFile(properties, file);
         }
 
@@ -43,7 +44,7 @@ public class ConfigLoader {
         for (Map.Entry<Object, Object> entry : properties.entrySet()) {
             configuration.put((String) entry.getKey(), (String) entry.getValue());
         }
-        logger.debug("Loaded {} properties", configuration.size());
+        logger.debug("Loaded {} properties from {}", configuration.size(), configurationFileNames);
         return configuration;
     }
 

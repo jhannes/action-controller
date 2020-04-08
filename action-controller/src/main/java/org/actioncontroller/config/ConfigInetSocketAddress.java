@@ -21,17 +21,7 @@ public class ConfigInetSocketAddress extends SingleValueConfigListener<InetSocke
     }
 
     @Override
-    protected InetSocketAddress transform(String value) {
-        int colonPos = value.indexOf(':');
-        if (colonPos < 0) {
-            return new InetSocketAddress(Integer.parseInt(value));
-        } else if (colonPos == 0) {
-            return new InetSocketAddress(Integer.parseInt(value.substring(1)));
-        } else {
-            return new InetSocketAddress(
-                    value.substring(0, colonPos),
-                    Integer.parseInt(value.substring(colonPos+1))
-            );
-        }
+    protected InetSocketAddress transform(String s) {
+        return ConfigListener.asInetSocketAddress(s);
     }
 }

@@ -1,11 +1,15 @@
 package org.actioncontroller.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
 public class SingleValueConfigListener<T> implements ConfigListener {
+    private static final Logger logger = LoggerFactory.getLogger(SingleValueConfigListener.class);
     protected final String key;
     protected final ConfigValueListener<T> listener;
     private final T defaultValue;
@@ -31,6 +35,7 @@ public class SingleValueConfigListener<T> implements ConfigListener {
             T configValue = Optional.ofNullable(newConfiguration.get(key))
                     .map(this::transform)
                     .orElseGet(this::getDefaultValue);
+            logger.debug("onConfigChanged key={} value={}", key, configValue);
             listener.apply(configValue);
         }
     }

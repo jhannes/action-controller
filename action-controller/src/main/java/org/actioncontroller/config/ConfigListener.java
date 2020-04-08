@@ -1,5 +1,6 @@
 package org.actioncontroller.config;
 
+import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Set;
 
@@ -10,4 +11,19 @@ import java.util.Set;
 @FunctionalInterface
 public interface ConfigListener {
     void onConfigChanged(Set<String> changedKeys, Map<String, String> newConfiguration) throws Exception;
+
+    static InetSocketAddress asInetSocketAddress(String value) {
+        int colonPos = value.indexOf(':');
+        if (colonPos < 0) {
+            return new InetSocketAddress(Integer.parseInt(value));
+        } else if (colonPos == 0) {
+            return new InetSocketAddress(Integer.parseInt(value.substring(1)));
+        } else {
+            return new InetSocketAddress(
+                    value.substring(0, colonPos),
+                    Integer.parseInt(value.substring(colonPos+1))
+            );
+        }
+    }
+
 }

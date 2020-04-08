@@ -19,8 +19,6 @@ import org.logevents.extend.junit.ExpectedLogEventsRule;
 import org.slf4j.event.Level;
 
 import javax.crypto.Cipher;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -95,7 +93,7 @@ public class AnnotationConfigurationTest {
             }
 
             private HttpClientParameterMapper consumer(Parameter parameter, Function<ApiClientExchange,String> f) {
-                Type targetType = ApiHttpExchange.getConsumerType(parameter);
+                Type targetType = TypesUtil.typeParameter(parameter.getParameterizedType());
                 return (exchange, arg) -> ((Consumer)arg).accept(
                         ApiHttpExchange.convertParameterType(f.apply(exchange), targetType)
                 );

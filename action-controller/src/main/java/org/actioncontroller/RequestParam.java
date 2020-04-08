@@ -101,11 +101,12 @@ public @interface RequestParam {
         @Override
         public HttpParameterMapper create(Principal annotation, Parameter parameter, ApiControllerContext context) {
             if (parameter.getType() == Optional.class) {
+                Class<?> targetType = TypesUtil.typeParameter(parameter.getParameterizedType());
                 return exchange -> {
                     java.security.Principal principal = exchange.getUserPrincipal();
                     if (principal == null) {
                         return Optional.empty();
-                    } else if ( ((Class<?>) ApiHttpExchange.getOptionalType(parameter)).isAssignableFrom(principal.getClass())) {
+                    } else if (targetType.isAssignableFrom(principal.getClass())) {
                         return Optional.of(principal);
                     } else {
                         throw new HttpActionLoginException("Login required");

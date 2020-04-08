@@ -66,6 +66,7 @@ public class FakeApiClient implements ApiClient {
     }
 
     public class FakeApiClientExchange implements ApiClientExchange {
+        private final String apiUrl;
         private FakeServletRequest request;
 
         private FakeServletResponse response = new FakeServletResponse();
@@ -78,6 +79,7 @@ public class FakeApiClient implements ApiClient {
             request = new FakeServletRequest("GET", contextRoot, servletPath, "/");
             request.setSession(session);
             request.setCookies(requestCookies);
+            this.apiUrl = contextRoot + servletPath;
         }
 
         @Override
@@ -90,6 +92,11 @@ public class FakeApiClient implements ApiClient {
         @Override
         public String getRequestMethod() {
             return request.getMethod();
+        }
+
+        @Override
+        public String getApiURL() {
+            return apiUrl;
         }
 
         @Override

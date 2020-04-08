@@ -50,7 +50,7 @@ public @interface UnencryptedCookie {
         public HttpClientParameterMapper clientParameterMapper(UnencryptedCookie annotation, Parameter parameter) {
             String name = annotation.value();
             if (parameter.getType() == Consumer.class) {
-                Type targetType = ApiHttpExchange.getConsumerType(parameter);
+                Type targetType = TypesUtil.typeParameter(parameter.getParameterizedType());
                 return (exchange, arg) -> {
                     if (arg != null) {
                         ((Consumer) arg).accept(convertParameterType(exchange.getResponseCookie(name), targetType));

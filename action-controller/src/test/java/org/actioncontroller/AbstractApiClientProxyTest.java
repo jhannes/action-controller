@@ -10,6 +10,7 @@ import org.slf4j.event.Level;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Base64;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -60,6 +61,12 @@ public abstract class AbstractApiClientProxyTest {
         @ContentLocationHeader
         public String storeNewEntry(@PathParam("id") String id) {
             return "/entries/" + id;
+        }
+
+        @POST("/newResource")
+        @ContentLocationHeader("/resource/{resourceId}/data")
+        public UUID createNewResource(@RequestParam("id") UUID id) {
+            return id;
         }
 
         @GET("/person/{personId}")
@@ -181,6 +188,12 @@ public abstract class AbstractApiClientProxyTest {
     @Test
     public void shouldHandleContentHeaders() {
         assertThat(client.storeNewEntry("someUrl")).endsWith("/entries/" + "someUrl");
+    }
+
+    @Test
+    public void shouldHandleArgumentsInContentHeaders() {
+        UUID id = UUID.randomUUID();
+        assertThat(client.createNewResource(id)).isEqualTo(id);
     }
 
     @Test

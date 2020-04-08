@@ -46,6 +46,14 @@ public interface ApiClientExchange {
     void setRequestParameter(String name, Object value);
 
     /**
+     * Returns the path to where the controllers paths are evaluated relative to, that
+     * is, the Servlet's context URL. For example, if an {@link org.actioncontroller.servlet.ApiServlet}
+     * is bound as "/api/*" in a webapp mounted at "/app", getApiURL might return
+     * <code>https://example.com:7443/app/api</code>.
+     */
+    String getApiURL();
+
+    /**
      * Sets the specified HTTP cookie value
      *
      * @param name Name of the HTTP cookie to set
@@ -78,7 +86,7 @@ public interface ApiClientExchange {
     static HttpClientParameterMapper withOptional(Parameter parameter, HttpClientParameterMapper mapper) {
         if (parameter.getType() == Optional.class) {
             return (exchange, arg) -> {
-                Optional<?> opt = (Optional) arg;
+                Optional<?> opt = (Optional<?>) arg;
                 if (opt.isPresent()) {
                     mapper.apply(exchange, opt.get());
                 }

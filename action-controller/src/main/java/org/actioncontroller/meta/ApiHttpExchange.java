@@ -3,12 +3,12 @@ package org.actioncontroller.meta;
 import org.actioncontroller.ExceptionUtil;
 import org.actioncontroller.HttpActionException;
 import org.actioncontroller.HttpRequestException;
+import org.actioncontroller.TypesUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.lang.reflect.Parameter;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -200,7 +200,7 @@ public interface ApiHttpExchange {
             }
             return Optional.empty();
         } else if (optional) {
-            return Optional.of(convertParameterType(value, getOptionalType(parameter)));
+            return Optional.of(convertParameterType(value, TypesUtil.typeParameter(parameter.getParameterizedType())));
         } else {
             return convertParameterType(value, parameter.getType());
         }
@@ -208,20 +208,12 @@ public interface ApiHttpExchange {
 
     static Type getTargetType(Parameter parameter) {
         if (parameter.getType() == Consumer.class) {
-            return getConsumerType(parameter);
+            return TypesUtil.typeParameter(parameter.getParameterizedType());
         } else if (parameter.getType() == Optional.class) {
-            return getOptionalType(parameter);
+            return TypesUtil.typeParameter(parameter.getParameterizedType());
         } else {
             return parameter.getType();
         }
-    }
-
-    static Type getOptionalType(Parameter parameter) {
-        return ((ParameterizedType) parameter.getParameterizedType()).getActualTypeArguments()[0];
-    }
-
-    static Type getConsumerType(Parameter parameter) {
-        return ((ParameterizedType) parameter.getParameterizedType()).getActualTypeArguments()[0];
     }
 
     X509Certificate[] getClientCertificate();

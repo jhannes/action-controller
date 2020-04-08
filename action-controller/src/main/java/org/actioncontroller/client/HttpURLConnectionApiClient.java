@@ -171,6 +171,11 @@ public class HttpURLConnectionApiClient implements ApiClient {
         }
 
         @Override
+        public String getApiURL() {
+            return baseUrl.toString();
+        }
+
+        @Override
         public void setPathInfo(String pathInfo) {
             this.pathInfo = pathInfo;
         }
@@ -209,9 +214,7 @@ public class HttpURLConnectionApiClient implements ApiClient {
 
         @Override
         public void executeRequest() throws IOException {
-            String query = getQuery();
-            URL url = new URL(baseUrl + pathInfo +
-                    (query != null && isGetRequest() ? "?" + query : ""));
+            URL url = new URL(getRequestUrl());
             connection = openConnection(url);
             connection.setInstanceFollowRedirects(false);
             connection.setRequestMethod(method);
@@ -232,6 +235,7 @@ public class HttpURLConnectionApiClient implements ApiClient {
                 }
             }
 
+            String query = getQuery();
             if (query != null && !isGetRequest()) {
                 connection.setDoOutput(true);
                 connection.setRequestProperty("Content-type", "application/x-www-form-urlencoded");
@@ -252,6 +256,11 @@ public class HttpURLConnectionApiClient implements ApiClient {
                 responseCookies = HttpCookie.parse(setCookieField);
                 responseCookies.forEach(c -> clientCookies.put(c.getName(), c));
             }
+        }
+
+        public String getRequestUrl() {
+            String query = getQuery();
+            return baseUrl + pathInfo + (query != null && isGetRequest() ? "?" + query : "");
         }
 
         private boolean isHttps() {
@@ -343,6 +352,11 @@ public class HttpURLConnectionApiClient implements ApiClient {
 
         public String getContentType() {
             return contentType;
+        }
+
+        @Override
+        public String toString() {
+            return "ClientExchange{" + method + " " + getRequestUrl() + "}";
         }
     }
 

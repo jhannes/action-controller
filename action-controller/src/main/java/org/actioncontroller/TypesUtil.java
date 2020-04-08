@@ -33,7 +33,7 @@ public class TypesUtil {
     }
 
 
-    private static Class<?> typeParameter(Type type) {
+    public static Class<?> typeParameter(Type type) {
         return (Class<?>) ((ParameterizedType) type).getActualTypeArguments()[0];
     }
 }

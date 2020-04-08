@@ -182,6 +182,10 @@ public class ApiServlet extends HttpServlet implements UserContext {
         }
     }
 
+    public void registerMBeans() {
+        registerMBeans(ManagementFactory.getPlatformMBeanServer());
+    }
+
     public void registerMBeans(MBeanServer mBeanServer) {
         try {
             for (ApiControllerAction action : actions) {

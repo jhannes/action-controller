@@ -65,7 +65,7 @@ public class ApiClientProxyHttpServerTest extends AbstractApiClientProxyTest {
         expectedLogEvents.expect(
                 ApiHandler.class,
                 Level.ERROR,
-                "While handling JdkHttpExchange{GET [/someNiceMath]} with ApiControllerMethodAction{GET /someNiceMath => TestController.divide(int,int)}",
+                "While handling JdkHttpExchange{GET [/someNiceMath]} with ApiControllerMethodAction{GET /someNiceMath => TestController.divide(int,int,boolean)}",
                 new ArithmeticException("/ by zero")
         );
         assertThatThrownBy(() -> client.divide(10, 0, false))

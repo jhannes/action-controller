@@ -9,7 +9,7 @@ import org.junit.Before;
 
 import javax.servlet.ServletContextEvent;
 
-public class ServletHttpPrincipalTest extends AbstractHttpPrincipalTest {
+public class HttpPrincipalServletTest extends AbstractHttpPrincipalTest {
 
     @Before
     public void createServerAndClient() throws Exception {

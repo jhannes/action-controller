@@ -7,7 +7,7 @@ import org.junit.Before;
 
 import java.net.URL;
 
-public class FakeServletHttpPrincipalTest extends AbstractHttpPrincipalTest {
+public class HttpPrincipalFakeServletTest extends AbstractHttpPrincipalTest {
 
     @Before
     public void createServerAndClient() throws Exception {

@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ApiHandler implements UserContext, HttpHandler {
     private static Logger logger = LoggerFactory.getLogger(ApiHandler.class);
@@ -41,24 +42,39 @@ public class ApiHandler implements UserContext, HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         JdkHttpExchange httpExchange = new JdkHttpExchange(exchange);
+        List<ApiControllerAction> candidates = new ArrayList<>();
+
         for (ApiControllerAction action : actions) {
             if (action.matches(httpExchange)) {
-                try {
-                    action.invoke(this, httpExchange);
-                } catch (HttpActionException e) {
-                    e.sendError(httpExchange);
-                } catch (Exception e) {
-                    logger.error("While handling {} with {}", httpExchange, action, e);
-                    httpExchange.sendError(500, "Internal server error");
-                }
-                httpExchange.close();
-                return;
+                candidates.add(action);
             }
         }
-        logger.warn("No route for {}", httpExchange);
-        logger.info("Routes {}", actions);
-        httpExchange.sendError(404, "No route for " + httpExchange.getHttpMethod() + ": " + httpExchange.getApiURL() + httpExchange.getPathInfo());
-        httpExchange.close();
+
+        if (candidates.size() > 1) {
+            candidates = candidates.stream().filter(ApiControllerAction::requiresParameter).collect(Collectors.toList());
+        }
+
+        if (candidates.size() == 1) {
+            try {
+                candidates.get(0).invoke(this, httpExchange);
+            } catch (HttpActionException e) {
+                e.sendError(httpExchange);
+            } catch (Exception e) {
+                logger.error("While handling {} with {}", httpExchange, candidates.get(0), e);
+                httpExchange.sendError(500, "Internal server error");
+            }
+            httpExchange.close();
+        } else if (candidates.isEmpty()) {
+            logger.info("No route for {}", httpExchange.getHttpMethod() + " " + httpExchange.getApiURL().getPath() + "[" + httpExchange.getPathInfo() + "]");
+            logger.debug("Routes {}", actions);
+            httpExchange.sendError(404, "No route for " + httpExchange.getHttpMethod() + ": " + httpExchange.getApiURL() + httpExchange.getPathInfo());
+            httpExchange.close();
+        } else {
+            logger.warn("Ambiguous route for {}", httpExchange.getHttpMethod() + " " + httpExchange.getApiURL().getPath() + "[" + httpExchange.getPathInfo() + "]");
+            logger.debug("Routes {}", candidates);
+            httpExchange.sendError(404, "No route for " + httpExchange.getHttpMethod() + ": " + httpExchange.getApiURL() + httpExchange.getPathInfo());
+            httpExchange.close();
+        }
     }
 
     @Override

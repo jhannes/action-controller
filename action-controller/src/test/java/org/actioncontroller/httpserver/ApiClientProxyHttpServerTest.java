@@ -36,7 +36,7 @@ public class ApiClientProxyHttpServerTest extends AbstractApiClientProxyTest {
 
     @Test
     public void gives404OnUnmappedController() {
-        expectedLogEvents.expect(ApiHandler.class, Level.WARN, "No route for JdkHttpExchange{GET [/not-mapped]}");
+        expectedLogEvents.expect(ApiHandler.class, Level.INFO, "No route for GET [/not-mapped]");
         UnmappedController unmappedController = ApiClientClassProxy.create(UnmappedController.class,
                         new HttpURLConnectionApiClient(baseUrl));
         assertThatThrownBy(unmappedController::notHere)

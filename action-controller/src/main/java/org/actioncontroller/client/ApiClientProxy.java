@@ -55,7 +55,7 @@ public class ApiClientProxy {
         return (proxy, method, args) -> invoke(client, method, args);
     }
 
-    private static Object invoke(ApiClient client, Method method, Object[] args) throws IllegalAccessException, InvocationTargetException, IOException, InstantiationException, NoSuchMethodException {
+    private static Object invoke(ApiClient client, Method method, Object[] args) throws IllegalAccessException, InvocationTargetException, InstantiationException, NoSuchMethodException, IOException {
         if (method.getDeclaringClass() == Object.class) {
             return method.invoke(client, args);
         }

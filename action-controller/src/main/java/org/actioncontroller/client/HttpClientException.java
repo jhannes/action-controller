@@ -1,27 +1,29 @@
 package org.actioncontroller.client;
 
-import org.actioncontroller.HttpActionException;
-
 import java.net.URL;
 import java.util.Objects;
 
 /**
  * Thrown by {@link ApiClientProxy} when the HTTP request returned a failure status code.
  */
-public class HttpClientException extends HttpActionException {
+public class HttpClientException extends RuntimeException {
     private final String responseBody;
     private final URL url;
+    private int statusCode;
 
     public HttpClientException(int responseCode, String responseMessage, String responseBody, URL url) {
-        super(responseCode, responseMessage);
+        super(responseMessage);
+        this.statusCode = responseCode;
         this.responseBody = responseBody;
         this.url = url;
     }
 
     public HttpClientException(int responseCode, String responseMessage) {
-        super(responseCode, responseMessage);
-        this.responseBody = null;
-        this.url = null;
+        this(responseCode, responseMessage, null, null);
+    }
+
+    public int getStatusCode() {
+        return statusCode;
     }
 
     @Override

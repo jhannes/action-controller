@@ -54,8 +54,8 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
         UnmappedController unmappedController = ApiClientClassProxy.create(UnmappedController.class,
                 new HttpURLConnectionApiClient(baseUrl + "/api"));
         assertThatThrownBy(unmappedController::notHere)
-                .isInstanceOf(HttpActionException.class)
-                .satisfies(e -> assertThat(((HttpActionException)e).getStatusCode()).isEqualTo(404));
+                .isInstanceOf(HttpClientException.class)
+                .satisfies(e -> assertThat(((HttpClientException)e).getStatusCode()).isEqualTo(404));
     }
 
     @Test

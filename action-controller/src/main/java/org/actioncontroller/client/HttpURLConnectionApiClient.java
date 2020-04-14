@@ -59,6 +59,10 @@ public class HttpURLConnectionApiClient implements ApiClient {
         }
     }
 
+    public HttpURLConnectionApiClient(URL baseUrl) {
+        this.baseUrl = baseUrl;
+    }
+
     @Override
     public ClientExchange createExchange() {
         return new ClientExchange();

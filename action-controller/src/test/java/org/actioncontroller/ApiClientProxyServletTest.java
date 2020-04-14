@@ -15,7 +15,6 @@ import org.slf4j.event.Level;
 
 import javax.servlet.ServletContextEvent;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.URL;
 

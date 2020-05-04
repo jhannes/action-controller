@@ -109,7 +109,7 @@ public @interface RequestParam {
                     } else if (targetType.isAssignableFrom(principal.getClass())) {
                         return Optional.of(principal);
                     } else {
-                        throw new HttpActionLoginException("Login required");
+                        throw new HttpUnauthorizedException("Login required");
                     }
                 };
             } else {
@@ -118,7 +118,7 @@ public @interface RequestParam {
                     if (principal != null && parameter.getType().isAssignableFrom(principal.getClass())) {
                         return principal;
                     } else {
-                        throw new HttpActionLoginException("Login required");
+                        throw new HttpUnauthorizedException("Login required");
                     }
                 };
             }

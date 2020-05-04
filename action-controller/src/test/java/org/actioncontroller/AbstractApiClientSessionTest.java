@@ -182,7 +182,6 @@ public class AbstractApiClientSessionTest {
         assertThat(logoutRedirect).isEqualTo(baseUrl + "/favorites");
         assertThat(client.getFavorites(null)).isEqualTo("<no session>");
 
-        expectedLogEvents.expectPattern(ApiControllerAction.class, Level.WARN, "While processing {} arguments to {}");
         assertThatThrownBy(() -> client.userinfo(null))
                 .isEqualTo(new HttpClientException(401, "Missing required session parameter username"));
     }

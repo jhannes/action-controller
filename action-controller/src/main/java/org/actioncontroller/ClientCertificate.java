@@ -32,7 +32,7 @@ public @interface ClientCertificate {
                 return exchange -> {
                     X509Certificate[] clientCertificate = exchange.getClientCertificate();
                     if (clientCertificate == null) {
-                        throw new HttpRequestException(401, "Missing client certificate");
+                        throw new HttpUnauthorizedException("Missing client certificate");
                     }
                     return clientCertificate[0];
                 };

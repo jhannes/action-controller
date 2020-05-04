@@ -146,7 +146,7 @@ public @interface SessionParameter {
             } else if (value.isPresent()) {
                 return value.get();
             } else {
-                throw new HttpActionException(401, "Missing required session parameter " + this.name);
+                throw new HttpUnauthorizedException("Missing required session parameter " + this.name);
             }
         }
     }

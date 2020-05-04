@@ -331,7 +331,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
                 }
             }
             return arguments;
-        } catch (HttpRequestException|HttpRedirectException| HttpActionLoginException e) {
+        } catch (HttpRequestException|HttpRedirectException e) {
             logger.debug("While processing {} arguments to {}: {}", exchange, this, e.toString());
             throw e;
         } catch (HttpActionException e) {

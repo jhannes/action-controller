@@ -66,8 +66,8 @@ public class ApiClientProxy {
         logger.debug("{}: {}", getMethodName(method), exchange);
         exchange.executeRequest();
 
-        processConsumerParameters(args, exchange, parameters);
         exchange.checkForError();
+        processConsumerParameters(args, exchange, parameters);
         return transformReturnValue(method, exchange);
     }
 

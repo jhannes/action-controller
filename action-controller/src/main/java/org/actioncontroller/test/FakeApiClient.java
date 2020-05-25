@@ -1,5 +1,6 @@
 package org.actioncontroller.test;
 
+import org.actioncontroller.IOUtil;
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.client.HttpClientException;
@@ -16,7 +17,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
@@ -111,11 +111,7 @@ public class FakeApiClient implements ApiClient {
 
         @Override
         public URL getRequestURL() {
-            try {
-                return new URL(request.getRequestURL().toString());
-            } catch (MalformedURLException e) {
-                throw new RuntimeException(e);
-            }
+            return IOUtil.asURL(request.getRequestURL().toString());
         }
 
         @Override

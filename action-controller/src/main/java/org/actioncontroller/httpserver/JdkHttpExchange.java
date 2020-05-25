@@ -4,6 +4,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpPrincipal;
 import com.sun.net.httpserver.HttpsExchange;
 import org.actioncontroller.HttpActionException;
+import org.actioncontroller.IOUtil;
 import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.OutputStreamConsumer;
 import org.actioncontroller.meta.WriterConsumer;
@@ -19,7 +20,6 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.lang.reflect.Parameter;
 import java.net.HttpCookie;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -66,15 +66,7 @@ public class JdkHttpExchange implements ApiHttpExchange {
 
     @Override
     public URL getContextURL() {
-        return toURL(getServerURL() + contextPath);
-    }
-
-    private URL toURL(String s) {
-        try {
-            return new URL(s);
-        } catch (MalformedURLException e) {
-            throw softenException(e);
-        }
+        return IOUtil.asURL(getServerURL() + contextPath);
     }
 
     @Override
@@ -119,7 +111,7 @@ public class JdkHttpExchange implements ApiHttpExchange {
 
     @Override
     public URL getApiURL() {
-        return toURL(getServerURL() + contextPath);
+        return IOUtil.asURL(getServerURL() + contextPath);
     }
 
     @Override

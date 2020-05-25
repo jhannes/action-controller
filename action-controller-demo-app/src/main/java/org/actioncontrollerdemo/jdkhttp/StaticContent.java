@@ -2,7 +2,6 @@ package org.actioncontrollerdemo.jdkhttp;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import org.actioncontroller.ExceptionUtil;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -28,11 +27,11 @@ public class StaticContent implements HttpHandler {
         }
     }
 
-    public StaticContent(URL baseResource, String prefix) {
+    public StaticContent(URL baseResource, String prefix) throws MalformedURLException {
         if (baseResource.getProtocol().equals("file")) {
             File resourceSrc = new File(baseResource.getPath().replace("/target/classes/", "/src/main/resources/"));
             if (resourceSrc.exists()) {
-                this.baseResource = asURL(resourceSrc);
+                this.baseResource = resourceSrc.toURI().toURL();
             } else {
                 this.baseResource = baseResource;
             }
@@ -40,14 +39,6 @@ public class StaticContent implements HttpHandler {
             this.baseResource = baseResource;
         }
         this.prefix = prefix;
-    }
-
-    public URL asURL(File resourceSrc) {
-        try {
-            return resourceSrc.toURI().toURL();
-        } catch (MalformedURLException e) {
-            throw ExceptionUtil.softenException(e);
-        }
     }
 
     public void handle(HttpExchange exchange) throws IOException {

@@ -1,8 +1,8 @@
 package org.actioncontroller.meta;
 
-import org.actioncontroller.ExceptionUtil;
 import org.actioncontroller.HttpActionException;
 import org.actioncontroller.HttpRequestException;
+import org.actioncontroller.IOUtil;
 import org.actioncontroller.TypesUtil;
 
 import java.io.IOException;
@@ -10,7 +10,6 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
@@ -166,11 +165,7 @@ public interface ApiHttpExchange {
         } else if (Enum.class.isAssignableFrom((Class<?>)parameterType)) {
             return Enum.valueOf((Class) parameterType, value);
         } else if (URL.class.isAssignableFrom((Class<?>)parameterType)) {
-            try {
-                return new URL(value);
-            } catch (MalformedURLException e) {
-                throw ExceptionUtil.softenException(e);
-            }
+            return IOUtil.asURL(value);
         } else {
             throw new HttpActionException(500, "Unhandled parameter type " + parameterType);
         }

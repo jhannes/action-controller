@@ -3,6 +3,7 @@ package org.actioncontroller.servlet;
 import org.actioncontroller.ExceptionUtil;
 import org.actioncontroller.HttpActionException;
 import org.actioncontroller.HttpRequestException;
+import org.actioncontroller.IOUtil;
 import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.OutputStreamConsumer;
 import org.actioncontroller.meta.WriterConsumer;
@@ -18,7 +19,6 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.lang.reflect.Parameter;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -30,8 +30,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
-
-import static org.actioncontroller.ExceptionUtil.softenException;
 
 public class ServletHttpExchange implements ApiHttpExchange {
 
@@ -92,25 +90,17 @@ public class ServletHttpExchange implements ApiHttpExchange {
 
     @Override
     public URL getContextURL() {
-        return toURL(getServerURL() + req.getContextPath());
+        return IOUtil.asURL(getServerURL() + req.getContextPath());
     }
 
     @Override
     public URL getApiURL() {
-        return toURL(getServerURL() + req.getContextPath() + req.getServletPath());
+        return IOUtil.asURL(getServerURL() + req.getContextPath() + req.getServletPath());
     }
 
     @Override
     public String getRequestURL() {
         return getFullURL();
-    }
-
-    private URL toURL(String s) {
-        try {
-            return new URL(s);
-        } catch (MalformedURLException e) {
-            throw softenException(e);
-        }
     }
 
     @Override

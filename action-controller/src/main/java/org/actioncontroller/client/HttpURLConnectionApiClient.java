@@ -1,6 +1,6 @@
 package org.actioncontroller.client;
 
-import org.actioncontroller.ExceptionUtil;
+import org.actioncontroller.IOUtil;
 import org.actioncontroller.meta.OutputStreamConsumer;
 import org.actioncontroller.meta.WriterConsumer;
 
@@ -17,7 +17,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.HttpCookie;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -52,11 +51,7 @@ public class HttpURLConnectionApiClient implements ApiClient {
     private byte[] requestBody;
 
     public HttpURLConnectionApiClient(String baseUrl) {
-        try {
-            this.baseUrl = new URL(baseUrl);
-        } catch (MalformedURLException e) {
-            throw ExceptionUtil.softenException(e);
-        }
+        this.baseUrl = IOUtil.asURL(baseUrl);
     }
 
     public HttpURLConnectionApiClient(URL baseUrl) {
@@ -218,8 +213,7 @@ public class HttpURLConnectionApiClient implements ApiClient {
 
         @Override
         public void executeRequest() throws IOException {
-            URL url = new URL(getRequestUrl());
-            connection = openConnection(url);
+            connection = openConnection(IOUtil.asURL(getRequestUrl()));
             connection.setInstanceFollowRedirects(false);
             connection.setRequestMethod(method);
             if (!requestCookies.isEmpty()) {

@@ -92,11 +92,14 @@ public class ConfigObserver {
     }
 
     protected void handleFileChanged(List<String> changedFiles) {
-        Map<String, String> newConfiguration = configLoader.loadConfiguration();
+        logger.debug("Configuration files changed {}", changedFiles);
+        updateConfiguration(configLoader.loadConfiguration());
+    }
+
+    public void updateConfiguration(Map<String, String> newConfiguration) {
+        logger.trace("New configuration {}", newConfiguration);
         Set<String> changedKeys = findChangedKeys(newConfiguration, currentConfiguration);
         this.currentConfiguration = newConfiguration;
-        logger.debug("Configuration files changed {}", changedFiles);
-        logger.trace("New configuration {}", newConfiguration);
         handleConfigurationChanged(changedKeys, newConfiguration);
     }
 

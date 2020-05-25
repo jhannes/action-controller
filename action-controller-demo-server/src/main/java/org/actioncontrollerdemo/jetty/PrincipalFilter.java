@@ -1,4 +1,4 @@
-package org.actioncontrollerdemo.servlet;
+package org.actioncontrollerdemo.jetty;
 
 import org.eclipse.jetty.server.Request;
 

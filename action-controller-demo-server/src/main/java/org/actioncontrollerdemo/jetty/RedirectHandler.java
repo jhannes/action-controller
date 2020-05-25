@@ -1,9 +1,8 @@
-package org.actioncontrollerdemo.servlet;
+package org.actioncontrollerdemo.jetty;
 
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;

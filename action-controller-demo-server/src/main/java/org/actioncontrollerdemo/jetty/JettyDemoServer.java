@@ -2,7 +2,6 @@ package org.actioncontrollerdemo.jetty;
 
 import org.actioncontroller.config.ConfigObserver;
 import org.actioncontrollerdemo.servlet.DemoListener;
-import org.actioncontrollerdemo.servlet.RedirectHandler;
 import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -57,7 +56,7 @@ public class JettyDemoServer {
     private ServletContextHandler createServletContext(String contextPath) {
         ServletContextHandler handler = new ServletContextHandler();
         handler.setContextPath(contextPath);
-        handler.addEventListener(new DemoListener(() -> System.out.println("Hello world")));
+        handler.addEventListener(new DemoListener(() -> System.out.println("Hello world"), new PrincipalFilter()));
         return handler;
     }
 
@@ -66,10 +65,14 @@ public class JettyDemoServer {
     }
 
     private String getUrl(ServerConnector connector) {
-        return "http://" + getHost(connector) + ":" + connector.getLocalPort();
+        return "http://" + getHost(connector) + ":" + getPort();
     }
 
     private String getHost(ServerConnector connector) {
         return connector.getHost() != null ? connector.getHost() : localhostName;
+    }
+
+    public int getPort() {
+        return connector.getLocalPort();
     }
 }

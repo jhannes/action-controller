@@ -5,16 +5,19 @@ import org.actioncontrollerdemo.TestController;
 import org.actioncontrollerdemo.UserController;
 
 import javax.servlet.DispatcherType;
+import javax.servlet.Filter;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import java.util.EnumSet;
 
 public class DemoListener implements ServletContextListener {
+    private final Filter principalFilter;
     private Runnable updater;
 
-    public DemoListener(Runnable updater) {
+    public DemoListener(Runnable updater, Filter principalFilter) {
         this.updater = updater;
+        this.principalFilter = principalFilter;
     }
 
     @Override
@@ -29,7 +32,7 @@ public class DemoListener implements ServletContextListener {
                 .addMapping("/*");
         context.addFilter("secureConnectionFilter", new SecureConnectionFilter())
                 .addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, "*");
-        context.addFilter("principalFilter", new PrincipalFilter())
+        context.addFilter("principalFilter", principalFilter)
                 .addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST),  false, "*");
     }
 

@@ -126,7 +126,7 @@ public class FakeApiClient implements ApiClient {
 
         @Override
         public void setHeader(String name, Object value) {
-            possiblyOptionalToString(value, s -> request.setHeader(name, s));
+            possiblyOptionalToString(value, s -> request.addHeader(name, s));
         }
 
         private void possiblyOptionalToString(Object value, Consumer<String> consumer) {

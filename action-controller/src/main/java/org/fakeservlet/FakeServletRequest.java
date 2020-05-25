@@ -506,8 +506,8 @@ public class FakeServletRequest implements HttpServletRequest {
         this.method = method;
     }
 
-    public void setHeader(String name, String value) {
-        headers.put(name, Collections.singletonList(value));
+    public void addHeader(String name, String value) {
+        headers.computeIfAbsent(name, n -> new ArrayList<>()).add(value);
     }
 
     public void setRequestBody(byte[] requestBody) {

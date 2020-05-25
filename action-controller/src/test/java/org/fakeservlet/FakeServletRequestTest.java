@@ -49,7 +49,16 @@ public class FakeServletRequestTest {
                 .containsExactlyInAnyOrder("one", "another");
     }
 
+    @Test
+    public void shouldReturnHeaders() {
+        request.addHeader("X-My-Header", "First value");
+        request.addHeader("X-My-Header", "Second value");
+        request.addHeader("Content-Length", "301130");
 
-
-
+        assertThat(Collections.list(request.getHeaderNames()))
+                .containsOnlyOnce("X-My-Header");
+        assertThat(Collections.list(request.getHeaders("X-My-Header")))
+                .containsOnlyOnce("First value", "Second value");
+        assertThat(request.getIntHeader("Content-Length")).isEqualTo(301130);
+    }
 }

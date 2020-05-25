@@ -1,8 +1,7 @@
-package org.actioncontrollerdemo.servlet;
+package org.actioncontrollerdemo.jetty;
 
-import org.actioncontrollerdemo.AdminPrincipal;
+import org.actioncontroller.servlet.ServletHttpExchange;
 import org.actioncontrollerdemo.DemoPrincipal;
-import org.actioncontrollerdemo.DemoUser;
 import org.eclipse.jetty.security.DefaultUserIdentity;
 import org.eclipse.jetty.security.UserAuthentication;
 import org.eclipse.jetty.server.Authentication;
@@ -15,31 +14,21 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
-import java.util.stream.Stream;
+import java.security.Principal;
 
 public class DemoDeferredAuthentication implements Authentication.Deferred {
+
     @Override
     public Authentication authenticate(ServletRequest servletRequest) {
-        HttpServletRequest req = (HttpServletRequest) servletRequest;
-        return Optional.ofNullable(req.getCookies())
-                .flatMap(cookies -> Stream.of(cookies).filter(c -> c.getName().equals("username")).findAny())
-                .map(c -> fetchUserInfo(c.getValue()))
-                .map(this::createAuthentication)
+        return ServletHttpExchange.getCookie("username", (HttpServletRequest) servletRequest)
+                .map(s -> getAuthentication(DemoPrincipal.createPrincipal(s)))
                 .orElse(this);
     }
 
-    private Authentication createAuthentication(DemoUser demoUser) {
+    private Authentication getAuthentication(Principal principal) {
         Subject subject = new Subject();
-        DemoPrincipal principal = demoUser.getUsername().equals("johannes")
-                ? new AdminPrincipal(demoUser)
-                : new DemoPrincipal(demoUser);
         subject.getPrincipals().add(principal);
         return new UserAuthentication("demo", new DefaultUserIdentity(subject, principal, new String[0]));
-    }
-
-    private DemoUser fetchUserInfo(String username) {
-        return new DemoUser(username);
     }
 
     @Override

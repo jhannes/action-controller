@@ -1,5 +1,6 @@
 package org.actioncontroller.httpserver;
 
+import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpPrincipal;
 import com.sun.net.httpserver.HttpsExchange;
@@ -22,6 +23,8 @@ import java.lang.reflect.Parameter;
 import java.net.HttpCookie;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
@@ -34,6 +37,8 @@ import java.util.Optional;
 import static org.actioncontroller.ExceptionUtil.softenException;
 
 public class JdkHttpExchange implements ApiHttpExchange {
+    public static final Charset CHARSET = StandardCharsets.ISO_8859_1;
+
     private final HttpExchange exchange;
     private Map<String, String> pathParams = new HashMap<>();
     private final String contextPath;
@@ -248,27 +253,32 @@ public class JdkHttpExchange implements ApiHttpExchange {
             secure = false;
         }
 
-        HttpCookie httpCookie = new HttpCookie(name, value);
-        httpCookie.setSecure(secure);
         if (value == null) {
             // HACK: HttpCookie doesn't serialize to Set-Cookie format! More work is needed
-            exchange.getResponseHeaders().add("Set-Cookie", httpCookie.toString() + "; Max-age=0");
+            HttpCookie httpCookie = new HttpCookie(name, null);
+            httpCookie.setSecure(secure);
+            exchange.getResponseHeaders().add("Set-Cookie", httpCookie + "; Max-age=0");
         } else {
+            HttpCookie httpCookie = new HttpCookie(name, URLEncoder.encode(value, CHARSET));
+            httpCookie.setSecure(secure);
             exchange.getResponseHeaders().add("Set-Cookie", httpCookie.toString());
         }
     }
 
     @Override
     public String getCookie(String name) {
-        if (!exchange.getRequestHeaders().containsKey("Cookie")) {
-            return null;
+        return getCookie(name, exchange.getRequestHeaders()).orElse(null);
+    }
+
+    public static Optional<String> getCookie(String name, Headers requestHeaders) {
+        if (!requestHeaders.containsKey("Cookie")) {
+            return Optional.empty();
         }
-        return HttpCookie.parse(exchange.getRequestHeaders().getFirst("Cookie"))
+        return HttpCookie.parse(requestHeaders.getFirst("Cookie"))
                 .stream()
                 .filter(c -> c.getName().equals(name))
-                .map(HttpCookie::getValue)
-                .findFirst()
-                .orElse(null);
+                .map(httpCookie -> URLDecoder.decode(httpCookie.getValue(), CHARSET))
+                .findFirst();
     }
 
     @Override

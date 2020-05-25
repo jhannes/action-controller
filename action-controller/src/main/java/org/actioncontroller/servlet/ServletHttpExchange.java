@@ -211,10 +211,13 @@ public class ServletHttpExchange implements ApiHttpExchange {
 
     @Override
     public String getCookie(String name) {
+        return getCookie(name, req).orElse(null);
+    }
+
+    public static Optional<String> getCookie(String name, HttpServletRequest req) {
         return Optional.ofNullable(req.getCookies()).map(Stream::of)
                 .flatMap(cookieStream -> cookieStream.filter(c -> c.getName().equalsIgnoreCase(name)).findAny())
-                .map(c -> URLDecoder.decode(c.getValue(), CHARSET))
-                .orElse(null);
+                .map(c -> URLDecoder.decode(c.getValue(), CHARSET));
     }
 
     @Override

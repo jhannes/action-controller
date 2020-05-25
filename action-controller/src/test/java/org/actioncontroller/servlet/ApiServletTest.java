@@ -1,15 +1,17 @@
 package org.actioncontroller.servlet;
 
 import org.actioncontroller.ApiControllerAction;
+import org.actioncontroller.ApiControllerContext;
 import org.actioncontroller.GET;
 import org.actioncontroller.HttpActionException;
 import org.actioncontroller.HttpRequestException;
-import org.actioncontroller.PathParam;
 import org.actioncontroller.POST;
+import org.actioncontroller.PathParam;
 import org.actioncontroller.RequestParam;
 import org.actioncontroller.RequireUserRole;
 import org.actioncontroller.SendRedirect;
 import org.actioncontroller.SessionParameter;
+import org.actioncontroller.jmx.ApiControllerActionMXBeanAdaptor;
 import org.actioncontroller.json.JsonBody;
 import org.actioncontroller.meta.ApiHttpExchange;
 import org.fakeservlet.FakeServletRequest;
@@ -23,6 +25,9 @@ import org.logevents.extend.junit.ExpectedLogEventsRule;
 import org.mockito.Mockito;
 import org.slf4j.event.Level;
 
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -33,6 +38,7 @@ import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.annotation.ElementType;
+import java.lang.management.ManagementFactory;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
@@ -40,6 +46,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 
+import static org.actioncontroller.ApiControllerMethodAction.createActions;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -389,6 +396,25 @@ public class ApiServletTest {
         assertThat(JsonObject.parse(responseBody.toString()).requiredString("message"))
                 .isEqualTo("Insufficient permissions");
     }
+
+    @Test
+    public void shouldCreateMBeans() throws MalformedObjectNameException {
+        MBeanServer mbeanServer = ManagementFactory.getPlatformMBeanServer();
+        servlet.registerMBeans(mbeanServer);
+
+        assertThat(mbeanServer.queryMBeans(new ObjectName("org.actioncontroller:controller=" + ExampleController.class.getName() + ",action=one"), null))
+                .anySatisfy(a -> assertThat(a.getClassName()).contains("ApiControllerActionMXBeanAdaptor"));
+    }
+
+    @Test
+    public void shouldQueryMBean() {
+        ApiControllerAction action = createActions(new ExampleController(), new ApiControllerContext())
+                .stream().filter(a -> a.getAction().getName().equals("postAction")).findFirst().orElseThrow();
+        ApiControllerActionMXBeanAdaptor mbean = new ApiControllerActionMXBeanAdaptor(action);
+        assertThat(mbean.getHttpMethod()).isEqualTo("POST");
+        assertThat(mbean.getPath()).isEqualTo("/postMethod");
+    }
+
 
     @Before
     public void setupRequest() throws IOException, ServletException {

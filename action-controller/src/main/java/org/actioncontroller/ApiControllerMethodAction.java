@@ -44,7 +44,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
     private final static Logger logger = LoggerFactory.getLogger(ApiControllerAction.class);
     private final Optional<String> requiredParameter;
 
-    public static List<ApiControllerAction> registerActions(Object controller, ApiControllerContext context) {
+    public static List<ApiControllerAction> createActions(Object controller, ApiControllerContext context) {
         List<ApiControllerAction> actions = new ArrayList<>();
         ApiControllerCompositeException exceptions = new ApiControllerCompositeException(controller);
         for (Method method : controller.getClass().getMethods()) {

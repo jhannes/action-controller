@@ -175,7 +175,7 @@ public class ApiServlet extends HttpServlet implements UserContext {
                 controllerException = new ActionControllerConfigurationCompositeException();
             }
             try {
-                this.actions.addAll(ApiControllerMethodAction.registerActions(controller, context));
+                this.actions.addAll(ApiControllerMethodAction.createActions(controller, context));
             } catch (ApiControllerCompositeException e) {
                 controllerException.addControllerException(e);
             }

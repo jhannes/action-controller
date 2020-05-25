@@ -150,6 +150,9 @@ public interface ApiHttpExchange {
 
     @SuppressWarnings("unchecked")
     static Object convertParameterType(String value, Type parameterType) {
+        if (value == null) {
+            return null;
+        }
         if (parameterType == String.class) {
             return value;
         } else if (parameterType == Boolean.class || parameterType == Boolean.TYPE) {

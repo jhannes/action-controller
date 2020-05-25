@@ -17,6 +17,7 @@ import java.lang.annotation.Target;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
@@ -42,8 +43,16 @@ public @interface HttpHeader {
             String name = annotation.value();
             if (parameter.getType() == Consumer.class) {
                 return exchange -> (Consumer<Object>) o -> exchange.setResponseHeader(annotation.value(), Objects.toString(o, null));
+            } else if (parameter.getType() == Optional.class) {
+                Class<?> optType = TypesUtil.typeParameter(parameter.getType());
+                return exchange -> Optional.ofNullable(ApiHttpExchange.convertParameterType(exchange.getHeader(name), optType));
             } else {
-                return exchange -> ApiHttpExchange.convertParameterType(exchange.getHeader(name), parameter.getType());
+                return exchange -> {
+                    if (exchange.getHeader(name) == null) {
+                        throw new HttpRequestException("Missing required header " + name);
+                    }
+                    return ApiHttpExchange.convertParameterType(exchange.getHeader(name), parameter.getType());
+                };
             }
         }
 

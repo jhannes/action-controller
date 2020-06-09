@@ -4,6 +4,7 @@ import org.actioncontroller.DELETE;
 import org.actioncontroller.GET;
 import org.actioncontroller.POST;
 import org.actioncontroller.PUT;
+import org.actioncontroller.meta.HttpClientReturnMapper;
 import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpReturnMapping;
 import org.slf4j.Logger;
@@ -130,7 +131,7 @@ public class ApiClientProxy {
         return parameters;
     }
 
-    private static ApiClientExchange createExchange(ApiClient client, Method method) {
+    private static ApiClientExchange createExchange(ApiClient client, Method method) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
         ApiClientExchange exchange = client.createExchange();
         Optional.ofNullable(method.getAnnotation(GET.class))
                 .ifPresent(a -> exchange.setTarget("GET", a.value()));
@@ -142,6 +143,16 @@ public class ApiClientProxy {
                 .ifPresent(a -> exchange.setTarget("DELETE", a.value()));
         if (exchange.getRequestMethod() == null) {
             throw new RuntimeException("Unsupported mapping to " + method);
+        }
+        for (Annotation annotation : method.getAnnotations()) {
+            HttpReturnMapping returnMapping = annotation.annotationType().getAnnotation(HttpReturnMapping.class);
+            if (returnMapping != null) {
+                HttpClientReturnMapper clientMapper = returnMapping.value()
+                        .getDeclaredConstructor()
+                        .newInstance()
+                        .createClientMapper(annotation, method.getGenericReturnType());
+                clientMapper.setupExchange(exchange);
+            }
         }
         return exchange;
     }

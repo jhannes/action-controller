@@ -125,6 +125,18 @@ public abstract class AbstractApiClientProxyTest {
             setContentType.accept("image/png");
             return Base64.getDecoder().decode("iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==");
         }
+
+        @GET("/error")
+        @ContentBody
+        public String sendError(@RequestParam("errorMessage") String errorMessage) {
+            throw new HttpRequestException(errorMessage);
+        }
+
+        @GET("/htmlError")
+        @ContentBody(contentType = "text/html")
+        public String sendHtmlError(@RequestParam("errorMessage") String errorMessage) {
+            throw new HttpRequestException(errorMessage);
+        }
     }
 
     public static class UnmappedController {
@@ -179,7 +191,7 @@ public abstract class AbstractApiClientProxyTest {
     @Test
     public void shouldReportActionExceptions() {
         assertThatThrownBy(() -> client.explicitError())
-                .isEqualTo(new HttpClientException(403, "You're not allowed to do this"));
+                .isEqualTo(new HttpClientException(403, "Forbidden", "You're not allowed to do this", null));
     }
 
     @Test
@@ -242,6 +254,19 @@ public abstract class AbstractApiClientProxyTest {
         assertThat(contentType.get()).isEqualTo("image/png");
     }
 
-    // TODO: User in role
+    @Test
+    public void shouldReceiveTextErrorMessage() {
+        expectedLogEvents.setAllowUnexpectedLogs(true);
+        assertThatThrownBy(() -> client.sendError("Something went wrong"))
+                .isInstanceOf(HttpClientException.class)
+                .satisfies(e -> assertThat(((HttpClientException)e).getResponseBody()).contains("MESSAGE: Something went wrong"));
+    }
 
+    @Test
+    public void shouldReceiveHtmlErrorMessage() {
+        expectedLogEvents.setAllowUnexpectedLogs(true);
+        assertThatThrownBy(() -> client.sendHtmlError("It went wrong"))
+                .isInstanceOf(HttpClientException.class)
+                .satisfies(e -> assertThat(((HttpClientException)e).getResponseBody()).contains("<tr><th>MESSAGE:</th><td>It went wrong</td></tr>"));
+    }
 }

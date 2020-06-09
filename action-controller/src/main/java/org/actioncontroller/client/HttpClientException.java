@@ -26,6 +26,10 @@ public class HttpClientException extends RuntimeException {
         return statusCode;
     }
 
+    public String getResponseBody() {
+        return responseBody;
+    }
+
     @Override
     public String toString() {
         return getClass().getName() + ": " + getStatusCode() + " " + getMessage() + " [" + url + "]";

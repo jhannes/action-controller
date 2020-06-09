@@ -80,8 +80,7 @@ public class FakeServletResponse implements HttpServletResponse {
 
     @Override
     public void sendError(int sc) {
-        this.statusCode = sc;
-        this.statusMessage = "Server Error";
+        sendError(sc, "Server Error");
     }
 
     @Override

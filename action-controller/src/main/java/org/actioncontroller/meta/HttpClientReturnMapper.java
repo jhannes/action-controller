@@ -13,4 +13,6 @@ import java.io.IOException;
 @FunctionalInterface
 public interface HttpClientReturnMapper {
     Object getReturnValue(ApiClientExchange exchange) throws IOException;
+
+    default void setupExchange(ApiClientExchange exchange) {}
 }

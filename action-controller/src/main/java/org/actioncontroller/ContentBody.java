@@ -12,6 +12,7 @@ import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.StringWriter;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -52,7 +53,17 @@ public @interface ContentBody {
             if (returnType instanceof Class<?> && ((Class<?>)returnType).isArray() && ((Class<?>)returnType).getComponentType() == byte.class) {
                 return ApiClientExchange::getResponseBodyBytes;
             }
-            return exchange -> ApiHttpExchange.convertParameterType(exchange.getResponseBody(), returnType);
+            return new HttpClientReturnMapper() {
+                @Override
+                public Object getReturnValue(ApiClientExchange exchange) throws IOException {
+                    return ApiHttpExchange.convertParameterType(exchange.getResponseBody(), returnType);
+                }
+
+                @Override
+                public void setupExchange(ApiClientExchange exchange) {
+                    exchange.setHeader("Accept", annotation.contentType());
+                }
+            };
         }
     }
 

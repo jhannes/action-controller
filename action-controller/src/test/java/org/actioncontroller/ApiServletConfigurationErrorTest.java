@@ -74,6 +74,15 @@ public class ApiServletConfigurationErrorTest {
                 .hasMessageContaining(controller.toString());
     }
 
+    @Test
+    public void shouldReportErrorOnRedirectWithBothValueAndReturn() {
+        expectedLogEventsRule.expectPattern(ApiControllerAction.class, Level.WARN, "Failed to setup {}");
+        ApiServlet servlet = new ApiServlet(new ControllerWithInvalidRedirect());
+        assertThatThrownBy(() -> servlet.init(null))
+                .isInstanceOf(ActionControllerConfigurationException.class)
+                .hasMessageContaining("with value(), return value must be void");
+    }
+
 
     public static class ParameterMapperWithoutProperConstructor implements
             HttpParameterMapperFactory<Annotation>,
@@ -140,5 +149,13 @@ public class ApiServletConfigurationErrorTest {
             return "";
         }
 
+    }
+
+    private class ControllerWithInvalidRedirect {
+        @GET("/redirector")
+        @SendRedirect("/")
+        public String redirect() {
+            return "/invalidToReturnWithParameter";
+        }
     }
 }

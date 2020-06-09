@@ -156,8 +156,19 @@ public class FakeApiClient implements ApiClient {
         @Override
         public void checkForError() throws HttpClientException {
             if (getResponseCode() >= 400) {
-                throw new HttpClientException(getResponseCode(), response.getStatusMessage(), getResponseBody(), getRequestURL());
+                throw new HttpClientException(getResponseCode(), response.getStatusMessage(), getErrorResponse(), getRequestURL());
             }
+        }
+
+        private String getErrorResponse() {
+            for (String contentType : Optional.ofNullable(request.getHeader("Accept")).orElse("").split(";")) {
+                if (contentType.trim().equalsIgnoreCase("application/json")) {
+                    return "{\"message\":\"" + response.getStatusMessage() + "\"}";
+                } else if (contentType.equalsIgnoreCase("text/html")) {
+                    return "<body><h2>Error " + response.getStatus() + " " + response.getStatusMessage() +  "</h2><table><tr><th>MESSAGE:</th><td>" + response.getStatusMessage() + "</td></tr></table></body>";
+                }
+            }
+            return "MESSAGE: " + response.getStatusMessage();
         }
 
         @Override

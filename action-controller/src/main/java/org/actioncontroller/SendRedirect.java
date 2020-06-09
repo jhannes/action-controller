@@ -4,6 +4,7 @@ import org.actioncontroller.meta.HttpClientReturnMapper;
 import org.actioncontroller.meta.HttpReturnMapper;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
+import org.actioncontroller.servlet.ActionControllerConfigurationException;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -30,7 +31,7 @@ public @interface SendRedirect {
         public HttpReturnMapper create(SendRedirect annotation, Type returnType) {
             if (!annotation.value().isEmpty()) {
                 if (returnType != Void.TYPE) {
-                    throw new IllegalArgumentException("When using " + SendRedirect.class.getName() + " with value(), return value must be void");
+                    throw new ActionControllerConfigurationException("When using " + SendRedirect.class.getName() + " with value(), return value must be void");
                 }
                 return (result, exchange) -> exchange.sendRedirect(annotation.value());
             }

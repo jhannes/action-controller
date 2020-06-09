@@ -2,14 +2,15 @@ package org.actioncontroller.servlet;
 
 import org.actioncontroller.ApiControllerAction;
 import org.actioncontroller.ApiControllerContext;
+import org.actioncontroller.ContentBody;
 import org.actioncontroller.GET;
 import org.actioncontroller.HttpActionException;
+import org.actioncontroller.HttpRedirectException;
 import org.actioncontroller.HttpRequestException;
 import org.actioncontroller.POST;
 import org.actioncontroller.PathParam;
 import org.actioncontroller.RequestParam;
 import org.actioncontroller.RequireUserRole;
-import org.actioncontroller.SendRedirect;
 import org.actioncontroller.SessionParameter;
 import org.actioncontroller.jmx.ApiControllerActionMXBeanAdaptor;
 import org.actioncontroller.json.JsonBody;
@@ -106,9 +107,9 @@ public class ApiServletTest {
         }
 
         @GET("/redirect")
-        @SendRedirect
+        @ContentBody
         public String redirector() {
-            return "login";
+            throw new HttpRedirectException("/login");
         }
     }
 
@@ -195,7 +196,7 @@ public class ApiServletTest {
         when(requestMock.getMethod()).thenReturn("GET");
         when(requestMock.getPathInfo()).thenReturn("/redirect");
         servlet.service(requestMock, responseMock);
-        verify(responseMock).sendRedirect("https://messages.example.com/login");
+        verify(responseMock).sendRedirect("/login");
     }
 
     @Test

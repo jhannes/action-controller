@@ -2,6 +2,7 @@ package org.actioncontroller.json;
 
 import org.actioncontroller.ApiControllerContext;
 import org.actioncontroller.TypesUtil;
+import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpClientReturnMapper;
 import org.actioncontroller.meta.HttpParameterMapper;
@@ -17,6 +18,7 @@ import org.jsonbuddy.parse.JsonParser;
 import org.jsonbuddy.pojo.JsonGenerator;
 import org.jsonbuddy.pojo.PojoMapper;
 
+import java.io.IOException;
 import java.io.StringReader;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -76,7 +78,7 @@ public @interface JsonBody {
         @Override
         public HttpClientReturnMapper createClientMapper(JsonBody annotation, Type returnType) {
             if (TypesUtil.isTypeOf(returnType, JsonNode.class)) {
-                return exchange -> JsonParser.parseNode(new StringReader(exchange.getResponseBody()));
+                return jsonNodeReturnMapper();
             }
 
             return TypesUtil.streamType(returnType, this::streamReturnMapper)
@@ -84,16 +86,34 @@ public @interface JsonBody {
                     .orElseGet(() -> objectReturnMapper((Class<?>) returnType));
         }
 
+        private HttpClientReturnMapper jsonNodeReturnMapper() {
+            return jsonMapper(exchange -> JsonParser.parseNode(new StringReader(exchange.getResponseBody())));
+        }
+
         private HttpClientReturnMapper streamReturnMapper(Class<?> type) {
-            return exchange -> (PojoMapper.map(JsonArray.parse(exchange.getResponseBody()), type)).stream();
+            return jsonMapper(exchange -> (PojoMapper.map(JsonArray.parse(exchange.getResponseBody()), type)).stream());
         }
 
         private HttpClientReturnMapper listReturnMapper(Class<?> type) {
-            return exchange -> (PojoMapper.map(JsonArray.parse(exchange.getResponseBody()), type));
+            return jsonMapper(exchange -> (PojoMapper.map(JsonArray.parse(exchange.getResponseBody()), type)));
         }
 
         private HttpClientReturnMapper objectReturnMapper(Class<?> type) {
-            return exchange -> PojoMapper.map(JsonObject.parse(exchange.getResponseBody()), type);
+            return jsonMapper(exchange -> PojoMapper.map(JsonObject.parse(exchange.getResponseBody()), type));
+        }
+
+        private HttpClientReturnMapper jsonMapper(HttpClientReturnMapper mapper) {
+            return new HttpClientReturnMapper() {
+                @Override
+                public Object getReturnValue(ApiClientExchange exchange) throws IOException {
+                    return mapper.getReturnValue(exchange);
+                }
+
+                @Override
+                public void setupExchange(ApiClientExchange exchange) {
+                    exchange.setHeader("Accept", "application/json");
+                }
+            };
         }
     }
 

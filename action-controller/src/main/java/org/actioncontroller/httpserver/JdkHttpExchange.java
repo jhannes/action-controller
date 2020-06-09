@@ -283,8 +283,20 @@ public class JdkHttpExchange implements ApiHttpExchange {
 
     @Override
     public void sendError(int statusCode, String message) throws IOException {
-        sendResponseHeaders(statusCode, message.getBytes().length);
-        exchange.getResponseBody().write(message.getBytes());
+        String body = getErrorResponse(statusCode, message);
+        sendResponseHeaders(statusCode, body.getBytes().length);
+        exchange.getResponseBody().write(body.getBytes());
+    }
+
+    private String getErrorResponse(int statusCode, String message) {
+        for (String contentType : Optional.ofNullable(getHeader("Accept")).orElse("").split(";")) {
+            if (contentType.trim().equalsIgnoreCase("application/json")) {
+                return "{\"message\":\"" + message + "\"}";
+            } else if (contentType.equalsIgnoreCase("text/html")) {
+                return "<body><h2>Error " + statusCode + " " + message +  "</h2><table><tr><th>MESSAGE:</th><td>" + message + "</td></tr></table></body>";
+            }
+        }
+        return "MESSAGE: " + message;
     }
 
     @Override

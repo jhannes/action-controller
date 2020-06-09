@@ -1,14 +1,15 @@
 package org.actioncontroller.json;
 
 import org.actioncontroller.GET;
+import org.actioncontroller.HttpRequestException;
+import org.actioncontroller.POST;
 import org.actioncontroller.client.ApiClientClassProxy;
-import org.actioncontroller.client.ApiClientProxy;
+import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.servlet.ApiServlet;
 import org.actioncontroller.test.FakeApiClient;
+import org.junit.Before;
 import org.junit.Test;
 
-import javax.servlet.ServletException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
@@ -16,8 +17,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class JsonBodyTest {
+
+    protected TestController client;
 
     public static class Person {
         private String firstName, lastName;
@@ -41,46 +45,51 @@ public class JsonBodyTest {
     }
 
     public static class TestController {
-        @GET("/")
+        @POST("/")
         @JsonBody
         public Stream<Person> getPeople(@JsonBody List<Person> persons) {
             return persons.stream();
         }
 
-        @GET("/json")
+        @POST("/json")
         @JsonBody(nameFormat = JsonBody.Naming.UNDERSCORE)
         public List<Person> toUpper(@JsonBody Stream<Person> persons) {
             return persons.map(p -> new Person(p.getFirstName().toUpperCase(), p.getLastName().toUpperCase())).collect(Collectors.toList());
         }
+
+        @GET("/error")
+        @JsonBody
+        public JsonBodyTest.Person throwError() {
+            throw new HttpRequestException("Missing value foo");
+        }
+    }
+
+    @Before
+    public void setUp() throws Exception {
+        final ApiServlet servlet = new ApiServlet(new TestController());
+        servlet.init(null);
+        FakeApiClient client = new FakeApiClient(new URL("http://example.com/test"), "/api", servlet);
+        this.client = ApiClientClassProxy.create(TestController.class, client);
     }
 
     @Test
-    public void shouldReturnStream() throws ServletException, MalformedURLException {
-        String baseUrl = "http://example.com/test";
-        final TestController controller = new TestController();
-        final URL contextRoot = new URL(baseUrl);
-        final ApiServlet servlet = new ApiServlet(controller);
-        servlet.init(null);
-        TestController client = ApiClientClassProxy.create(TestController.class, new FakeApiClient(contextRoot, "/api", servlet));
-
+    public void shouldReturnStream() {
         assertThat(client.getPeople(Arrays.asList(new Person("First", "Woman"), new Person("Second", "Man"))))
                 .extracting(Person::getLastName)
                 .contains("Woman", "Man");
     }
 
     @Test
-    public void shouldSupportUnderscoreMapping() throws MalformedURLException, ServletException {
-        String baseUrl = "http://example.com/test";
-        final TestController controller = new TestController();
-        final URL contextRoot = new URL(baseUrl);
-        final ApiServlet servlet = new ApiServlet(controller);
-        servlet.init(null);
-        TestController client = ApiClientClassProxy.create(TestController.class, new FakeApiClient(contextRoot, "/api", servlet));
-
+    public void shouldSupportUnderscoreMapping() {
         assertThat(client.toUpper(Stream.of(new Person("First", "Woman"))))
                 .extracting(Person::getLastName)
                 .contains("WOMAN");
-
     }
 
+    @Test
+    public void shouldConvertErrorToJson() {
+        assertThatThrownBy(() -> client.throwError())
+                .isInstanceOf(HttpClientException.class)
+                .satisfies(e -> assertThat(((HttpClientException)e).getResponseBody()).contains("\"message\":\"Missing value foo\""));
+    }
 }

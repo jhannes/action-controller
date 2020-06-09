@@ -75,7 +75,7 @@ public abstract class AbstractApiClientProxyHttpsTest {
         apiClient.addClientKey(clientKeyPair.getPrivate(), clientCertificate);
         ApiClientProxyHttpsServletTest.CertificateController clientProxy = ApiClientClassProxy.create(ApiClientProxyHttpsServletTest.CertificateController.class, apiClient);
         assertThatThrownBy(() -> clientProxy.getSubject(null))
-            .isEqualTo(new HttpClientException(401, "Missing client certificate"));
+            .isEqualTo(new HttpClientException(401, "Unauthorized", "Missing client certificate", null));
     }
 
     @Test

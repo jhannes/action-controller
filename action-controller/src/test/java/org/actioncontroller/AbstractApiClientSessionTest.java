@@ -183,7 +183,7 @@ public class AbstractApiClientSessionTest {
         assertThat(client.getFavorites(null)).isEqualTo("<no session>");
 
         assertThatThrownBy(() -> client.userinfo(null))
-                .isEqualTo(new HttpClientException(401, "Missing required session parameter username"));
+                .isEqualTo(new HttpClientException(401, "Unauthorized", "Missing required session parameter username", null));
     }
 
     @Test

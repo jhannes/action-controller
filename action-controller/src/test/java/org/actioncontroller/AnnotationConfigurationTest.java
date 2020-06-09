@@ -59,7 +59,7 @@ public class AnnotationConfigurationTest {
 
                 String name = annotation.value();
                 if (parameter.getType() == Consumer.class) {
-                    return exchange -> (Consumer<Object>) o -> exchange.setCookie(name, encrypt(encryptCipher, o.toString()), true);
+                    return exchange -> (Consumer<Object>) o -> exchange.setCookie(name, encrypt(encryptCipher, o.toString()), true, true);
                 } else {
                     return exchange -> ApiHttpExchange.convertTo(decrypt(decryptCipher, exchange.getCookie(name)), name, parameter);
                 }

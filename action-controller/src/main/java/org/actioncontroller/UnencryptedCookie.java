@@ -30,9 +30,22 @@ import static org.actioncontroller.meta.ApiHttpExchange.convertParameterType;
 @HttpParameterMapping(UnencryptedCookie.Factory.class)
 public @interface UnencryptedCookie {
 
+    /**
+     * The name of the cookie
+     */
     String value();
 
+    /**
+     * If false, omits the Secure flag on the cookie, meaning that the cookie will be sent over HTTP as well as HTTPS.
+     * For testing purposes, action-controller always omits the Secure flag for localhost addresses
+     */
     boolean secure() default true;
+
+    /**
+     * If false, omits the HttpOnly flag on the cookie, meaning that the cookie can be read by client-side JavaScript.
+     * You normally want HttpOnly to mitigate the impact of Cross-site Scripting attacks
+     */
+    boolean isHttpOnly() default true;
 
     class Factory implements HttpParameterMapperFactory<UnencryptedCookie> {
 
@@ -40,7 +53,7 @@ public @interface UnencryptedCookie {
         public HttpParameterMapper create(UnencryptedCookie annotation, Parameter parameter, ApiControllerContext context) {
             String name = annotation.value();
             if (parameter.getType() == Consumer.class) {
-                return exchange -> (Consumer<Object>) o -> exchange.setCookie(name, Objects.toString(o, null), annotation.secure());
+                return exchange -> (Consumer<Object>) o -> exchange.setCookie(name, Objects.toString(o, null), annotation.secure(), annotation.isHttpOnly());
             } else {
                 return exchange -> ApiHttpExchange.convertTo(exchange.getCookie(name), name, parameter);
             }

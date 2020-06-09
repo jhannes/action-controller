@@ -118,7 +118,7 @@ public interface ApiHttpExchange {
     /**
      * Sets a cookie with default values. If value == null, deletes the cookie
      */
-    void setCookie(String name, String value, boolean secure);
+    void setCookie(String name, String value, boolean secure, boolean isHttpOnly);
 
     String getCookie(String name);
 

@@ -80,7 +80,11 @@ public class ConfigObserver {
     }
 
     public ConfigObserver onDuration(String key, ConfigValueListener<Duration> listener) {
-        return onSingleConfigValue(key, null, listener, Duration::parse);
+        return onDuration(key, null, listener);
+    }
+
+    public ConfigObserver onDuration(String key, Duration defaultValue, ConfigValueListener<Duration> listener) {
+        return onSingleConfigValue(key, defaultValue, listener, Duration::parse);
     }
 
     public ConfigObserver onStringList(String key, String defaultValue, ConfigValueListener<List<String>> listener) {

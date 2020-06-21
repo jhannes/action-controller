@@ -191,7 +191,10 @@ public abstract class AbstractApiClientProxyTest {
     @Test
     public void shouldReportActionExceptions() {
         assertThatThrownBy(() -> client.explicitError())
-                .isEqualTo(new HttpClientException(403, "Forbidden", "You're not allowed to do this", null));
+                .isEqualTo(new HttpClientException(403, "Forbidden", "You're not allowed to do this", null))
+                .satisfies(e -> assertThat(((HttpClientException) e).getResponseBody()).contains("You're not allowed to do this"))
+                .satisfies(e -> assertThat(((HttpClientException) e).getUrl().toString()).endsWith("/explicitError"))
+        ;
     }
 
     @Test

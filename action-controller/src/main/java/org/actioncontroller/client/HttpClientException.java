@@ -9,7 +9,7 @@ import java.util.Objects;
 public class HttpClientException extends RuntimeException {
     private final String responseBody;
     private final URL url;
-    private int statusCode;
+    private final int statusCode;
 
     public HttpClientException(int responseCode, String responseMessage, String responseBody, URL url) {
         super(responseMessage);
@@ -28,6 +28,10 @@ public class HttpClientException extends RuntimeException {
 
     public String getResponseBody() {
         return responseBody;
+    }
+
+    public URL getUrl() {
+        return url;
     }
 
     @Override

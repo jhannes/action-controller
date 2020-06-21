@@ -419,8 +419,7 @@ public class ApiServletTest {
 
     @Before
     public void setupRequest() throws IOException, ServletException {
-        servlet.registerController(new ExampleController());
-        servlet.registerController(new ControllerWithTypedParameters());
+        servlet.registerControllers(new ExampleController(), new ControllerWithTypedParameters());
         servlet.init(null);
 
         when(responseMock.getWriter()).thenReturn(new PrintWriter(responseBody));

@@ -18,6 +18,7 @@ import java.lang.annotation.Retention;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.math.BigInteger;
+import java.util.List;
 
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -31,14 +32,9 @@ public class ApiServletConfigurationErrorTest {
     public void shouldReportAllActionErrors() {
         expectedLogEventsRule.expectPattern(ApiControllerAction.class, Level.WARN, "Unused path parameters for {}: {}");
         expectedLogEventsRule.expectPattern(ApiControllerAction.class, Level.WARN, "Failed to setup {}");
-        ApiServlet apiServlet = new ApiServlet() {
-            @Override
-            public void init() {
-                registerController(new ControllerWithErrors());
-                registerController(new OtherControllerWithErrors());
-                registerController(new ControllerWithMismatchedPathParams());
-            }
-        };
+        ApiServlet apiServlet = new ApiServlet(List.of(
+                new ControllerWithErrors(), new OtherControllerWithErrors(), new ControllerWithMismatchedPathParams())
+        );
 
         assertThatThrownBy(() -> apiServlet.init(null))
                 .isInstanceOf(ActionControllerConfigurationException.class)

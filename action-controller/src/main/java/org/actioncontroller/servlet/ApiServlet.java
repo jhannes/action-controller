@@ -27,6 +27,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -75,7 +76,7 @@ public class ApiServlet extends HttpServlet implements UserContext {
     public ApiServlet() {}
 
     public ApiServlet(Object controller) {
-        controllers.add(controller);
+        registerController(controller);
     }
 
     public ApiControllerContext getContext() {
@@ -113,7 +114,14 @@ public class ApiServlet extends HttpServlet implements UserContext {
         }
 
         if (candidates.size() > 1) {
-            candidates = candidates.stream().filter(ApiControllerAction::requiresParameter).collect(Collectors.toList());
+            List<ApiControllerAction> filteredCandidates = candidates.stream().filter(ApiControllerAction::requiresParameter).collect(Collectors.toList());
+            if (filteredCandidates.isEmpty()) {
+                logger.warn("Ambiguous route for {}", httpExchange.getHttpMethod() + " " + httpExchange.getApiURL().getPath() + "[" + httpExchange.getPathInfo() + "]");
+                logger.debug("Routes {}", candidates);
+                httpExchange.sendError(404, "No route for " + httpExchange.getHttpMethod() + ": " + httpExchange.getApiURL() + httpExchange.getPathInfo());
+                return;
+            }
+            candidates = filteredCandidates;
         }
 
         if (candidates.isEmpty()) {
@@ -134,11 +142,25 @@ public class ApiServlet extends HttpServlet implements UserContext {
     }
 
     public void registerController(Object controller) {
-        this.controllers.add(controller);
+        if (controller instanceof Collection) {
+            controllers.addAll((Collection<?>)controller);
+        } else {
+            controllers.add(controller);
+        }
+    }
+
+    public void registerControllers(Object... controllers) {
+        registerControllerList(List.of(controllers));
+    }
+
+    public void registerControllerList(List<Object> controllers) {
+        for (Object controller : controllers) {
+            registerController(controller);
+        }
     }
 
     @Override
-    public final void init(ServletConfig config) throws ServletException {
+    public void init(ServletConfig config) throws ServletException {
         if (!actions.isEmpty()) {
             return;
         }
@@ -154,13 +176,13 @@ public class ApiServlet extends HttpServlet implements UserContext {
         }
 
         this.controllerException = new ActionControllerConfigurationCompositeException();
-        super.init(config);
         setupActions();
         verifyNoExceptions();
 
         if (actions.isEmpty()) {
             throw new ActionControllerConfigurationException(getClass() + " has no controllers. Use ActionServlet(Object) constructor or registerAction() to create create a controller");
         }
+        super.init(config);
     }
 
     protected void verifyNoExceptions() {

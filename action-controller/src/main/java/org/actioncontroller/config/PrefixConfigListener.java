@@ -3,22 +3,25 @@ package org.actioncontroller.config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-public abstract class PrefixConfigListener<T> extends AbstractPrefixConfigListener {
+public abstract class PrefixConfigListener<T> implements ConfigListener {
+    private static final Logger logger = LoggerFactory.getLogger(PrefixConfigListener.class);
+
+    protected final String prefix;
     protected final ConfigValueListener<T> listener;
 
     public PrefixConfigListener(String prefix, ConfigValueListener<T> listener) {
-        super(prefix);
+        this.prefix = prefix;
         this.listener = listener;
     }
 
-    @Override
-    protected void handleConfigChanged(Map<String, String> config) throws Exception {
-        listener.apply(transform(config));
+    public void onConfigChanged(Set<String> changedKeys, ConfigMap config) throws Exception {
+        if (changeIncludes(changedKeys, prefix)) {
+            logger.debug("onConfigChanged prefix={} config={}", prefix, config);
+            listener.apply(transform(config));
+        }
     }
 
-    protected abstract T transform(Map<String, String> config) throws Exception;
+    protected abstract T transform(ConfigMap config) throws Exception;
 }

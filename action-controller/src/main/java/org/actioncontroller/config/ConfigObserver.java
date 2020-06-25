@@ -51,7 +51,7 @@ public class ConfigObserver {
      */
     public ConfigObserver onConfigChange(ConfigListener listener) {
         this.listeners.add(listener);
-        notifyListener(listener, null, currentConfiguration);
+        notifyListener(listener, null, new ConfigMap(currentConfiguration));
         return this;
     }
 
@@ -72,11 +72,11 @@ public class ConfigObserver {
     }
 
     public ConfigObserver onInetSocketAddress(String key, ConfigValueListener<InetSocketAddress> listener, int defaultPort) {
-        return onConfigChange(new ConfigInetSocketAddress(key, listener, defaultPort));
+        return onInetSocketAddress(key, listener, new InetSocketAddress(defaultPort));
     }
 
     public ConfigObserver onInetSocketAddress(String key, ConfigValueListener<InetSocketAddress> listener, InetSocketAddress defaultAddress) {
-        return onConfigChange(new ConfigInetSocketAddress(key, listener, defaultAddress));
+        return onSingleConfigValue(key, defaultAddress, listener, ConfigListener::asInetSocketAddress);
     }
 
     public ConfigObserver onDuration(String key, ConfigValueListener<Duration> listener) {
@@ -89,6 +89,23 @@ public class ConfigObserver {
 
     public ConfigObserver onStringList(String key, String defaultValue, ConfigValueListener<List<String>> listener) {
         return onSingleConfigValue(key, defaultValue != null ?  parseStringList(defaultValue) : null, listener, ConfigObserver::parseStringList);
+    }
+
+    public <T> ConfigObserver onPrefixedValue(String prefix, ConfigListener.Transformer<T> transformer, ConfigValueListener<T> listener) {
+        return onPrefixedValue(prefix, config -> listener.apply(transformer.apply(config)));
+    }
+
+    public ConfigObserver onPrefixedValue(String prefix, ConfigValueListener<ConfigMap> listener) {
+        return onConfigChange(new ConfigListener() {
+            @Override
+            public void onConfigChanged(Set<String> changedKeys, ConfigMap newConfiguration) throws Exception {
+                if (changeIncludes(changedKeys, prefix)) {
+                    ConfigMap configuration = new ConfigMap(prefix, newConfiguration);
+                    logger.debug("onConfigChanged key={} value={}", prefix, configuration);
+                    listener.apply(configuration);
+                }
+            }
+        });
     }
 
     private static List<String> parseStringList(String value) {
@@ -104,7 +121,7 @@ public class ConfigObserver {
         logger.trace("New configuration {}", newConfiguration);
         Set<String> changedKeys = findChangedKeys(newConfiguration, currentConfiguration);
         this.currentConfiguration = newConfiguration;
-        handleConfigurationChanged(changedKeys, newConfiguration);
+        handleConfigurationChanged(changedKeys, new ConfigMap(newConfiguration));
     }
 
     private Set<String> findChangedKeys(Map<String, String> newConfiguration, Map<String, String> currentConfiguration) {
@@ -116,13 +133,13 @@ public class ConfigObserver {
         return changedKeys;
     }
 
-    private void handleConfigurationChanged(Set<String> changedKeys, Map<String, String> newConfiguration) {
+    protected void handleConfigurationChanged(Set<String> changedKeys, ConfigMap newConfiguration) {
         for (ConfigListener listener : listeners) {
             notifyListener(listener, changedKeys, newConfiguration);
         }
     }
 
-    private void notifyListener(ConfigListener listener, Set<String> changedKeys, Map<String, String> newConfiguration) {
+    private void notifyListener(ConfigListener listener, Set<String> changedKeys, ConfigMap newConfiguration) {
         try {
             logger.trace("Notifying listener {}", listener);
             listener.onConfigChanged(changedKeys, newConfiguration);

@@ -15,12 +15,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,11 +33,9 @@ public class ConfigObserverTest {
     @Rule
     public ExpectedLogEventsRule expectedLogEvents = new ExpectedLogEventsRule(Level.WARN);
 
-    private File directory = new File("target/test/dir-" + UUID.randomUUID());
-    private InetSocketAddress httpListenAddress;
-    private DummyDataSource dataSource;
-    private BlockingQueue<Instant> reloadTimes = new ArrayBlockingQueue<>(10);
-    private ConfigObserver observer = new ConfigObserver(directory, "testApp") {
+    private final File directory = new File("target/test/dir-" + UUID.randomUUID());
+    private final BlockingQueue<Instant> reloadTimes = new ArrayBlockingQueue<>(10);
+    private final ConfigObserver observer = new ConfigObserver(directory, "testApp") {
         @Override
         protected void handleFileChanged(List<String> changedFiles) {
             super.handleFileChanged(changedFiles);
@@ -46,6 +46,9 @@ public class ConfigObserverTest {
             }
         }
     };
+
+    private InetSocketAddress httpListenAddress;
+    private DummyDataSource dataSource;
     private Duration daemonPollingInterval;
 
     @Test
@@ -63,6 +66,23 @@ public class ConfigObserverTest {
 
         writeConfigLine("daemonPollingInterval=PT1M");
         assertThat(daemonPollingInterval).isEqualTo(Duration.ofMinutes(1));
+    }
+
+    @Test
+    public void shouldUpdateWhenPropertyWasRemoved() {
+        AtomicReference<Set<String>> setChangedKeys = new AtomicReference<>();
+        ConfigObserver configObserver = new ConfigObserver(directory, "testApp") {
+            @Override
+            protected void handleConfigurationChanged(Set<String> changedKeys, ConfigMap newConfiguration) {
+                super.handleConfigurationChanged(changedKeys, newConfiguration);
+                setChangedKeys.set(changedKeys);
+            }
+        };
+
+        configObserver.updateConfiguration(Map.of("test.one", "value", "test.two", "other"));
+        assertThat(setChangedKeys.get()).contains("test.one", "test.two");
+        configObserver.updateConfiguration(Map.of("test.one", "value"));
+        assertThat(setChangedKeys.get()).contains("test.two").doesNotContain("test.one");
     }
 
     @Test
@@ -112,6 +132,32 @@ public class ConfigObserverTest {
         assertThat(value.get()).isEqualTo(1337L);
     }
 
+
+    static class Credentials {
+        String username;
+        String password;
+
+        Credentials(Map<String, String> config) {
+            this(config.get("username"), config.getOrDefault("password", null));
+        }
+
+        public Credentials(String username, String password) {
+            this.username = username;
+            this.password = password;
+        }
+    }
+
+    @Test
+    public void shouldTransformWithPrefix() {
+        AtomicReference<Credentials> credentials = new AtomicReference<>();
+        writeConfigLines("credentials.username=someuser");
+        observer.onPrefixedValue("credentials", Credentials::new, credentials::set);
+        assertThat(credentials.get()).isEqualToComparingFieldByField(new Credentials("someuser", null));
+
+        writeConfigLines("credentials.username=someuser2", "credentials.password=secret");
+        assertThat(credentials.get()).isEqualToComparingFieldByField(new Credentials("someuser2", "secret"));
+    }
+
     private static class DummyDataSource {
 
         final String url;
@@ -132,12 +178,12 @@ public class ConfigObserverTest {
         }
 
         @Override
-        protected DummyDataSource transform(Map<String, String> config) {
-            String url = config.get(prefix + ".jdbcUrl");
-            if (url == null) {
-                return null;
-            }
-            return new DummyDataSource(url, config.get(prefix + ".jdbcUsername"), config.get(prefix + ".jdbcPassword"));
+        protected DummyDataSource transform(ConfigMap config) {
+            return config.optional(prefix + ".jdbcUrl").map(url -> new DummyDataSource(
+                    url,
+                    config.get(prefix + ".jdbcUsername"),
+                    config.getOrDefault(prefix + ".jdbcPassword", "")
+            )).orElse(null);
         }
 
     }

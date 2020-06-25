@@ -10,7 +10,16 @@ import java.util.Set;
  */
 @FunctionalInterface
 public interface ConfigListener {
-    void onConfigChanged(Set<String> changedKeys, Map<String, String> newConfiguration) throws Exception;
+    @FunctionalInterface
+    interface Transformer<T> {
+        T apply(Map<String, String> configuration) throws Exception;
+    }
+
+    void onConfigChanged(Set<String> changedKeys, ConfigMap newConfiguration) throws Exception;
+
+    default boolean changeIncludes(Set<String> changedKeys, String prefix) {
+        return changedKeys == null || changedKeys.stream().anyMatch(key -> key.startsWith(prefix));
+    }
 
     static InetSocketAddress asInetSocketAddress(String value) {
         int colonPos = value.indexOf(':');

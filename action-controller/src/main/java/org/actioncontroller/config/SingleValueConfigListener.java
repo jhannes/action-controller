@@ -13,14 +13,7 @@ public class SingleValueConfigListener<T> implements ConfigListener {
     protected final String key;
     protected final ConfigValueListener<T> listener;
     private final T defaultValue;
-    private Function<String, T> transformer;
-
-    public SingleValueConfigListener(String key, ConfigValueListener<T> listener, Function<String, T> transformer) {
-        this.key = key;
-        this.listener = listener;
-        this.defaultValue = null;
-        this.transformer = transformer;
-    }
+    private final Function<String, T> transformer;
 
     public SingleValueConfigListener(String key, ConfigValueListener<T> listener, T defaultValue, Function<String, T> transformer) {
         this.key = key;
@@ -30,9 +23,9 @@ public class SingleValueConfigListener<T> implements ConfigListener {
     }
 
     @Override
-    public final void onConfigChanged(Set<String> changedKeys, Map<String, String> newConfiguration) throws Exception {
+    public final void onConfigChanged(Set<String> changedKeys, ConfigMap newConfiguration) throws Exception {
         if (changedKeys == null || changedKeys.contains(key)) {
-            T configValue = Optional.ofNullable(newConfiguration.get(key))
+            T configValue = Optional.ofNullable(newConfiguration.getOrDefault(key, null))
                     .map(this::transform)
                     .orElseGet(this::getDefaultValue);
             logger.debug("onConfigChanged key={} value={}", key, configValue);

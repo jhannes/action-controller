@@ -13,9 +13,9 @@ Example API:
 
 ```java
 public class MyApiServlet extends ApiServlet {
-    @Override
-    public void init() throws ServletException {
-        registerController(new MyApiController());
+
+    public MyApiServlet() {
+        super(new MyApiController());
     }
 }
 
@@ -212,7 +212,7 @@ public class MyApplication {
 
     public MyApplication(ConfigObserver config) {
         config.onConfigValue("myConfigValue", null, v -> this.myConfigValue = v);
-        config.onConfigChange(new DataSourceConfig("dataSource", dataSource -> this.dataSouce = dataSource));
+        config.onPrefixedValue("dataSource", DataSourceConfig::create, dataSource -> this.dataSouce = dataSource);
         config.onInetSocketAddress("serverAddress",
                 address -> {
                     if (serverSocket != null) serverSocket.close();

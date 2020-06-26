@@ -23,7 +23,7 @@
         <dependency>
             <groupId>org.logevents</groupId>
             <artifactId>logevents</artifactId>
-            <version>0.1.29</version>
+            <version>0.1.31</version>
         </dependency>
         <dependency>
             <groupId>com.zaxxer</groupId>

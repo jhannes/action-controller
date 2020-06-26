@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -149,13 +150,34 @@ public class ConfigObserverTest {
 
     @Test
     public void shouldTransformWithPrefix() {
-        AtomicReference<Credentials> credentials = new AtomicReference<>();
+        AtomicReference<Optional<Credentials>> credentials = new AtomicReference<>(Optional.empty());
         writeConfigLines("credentials.username=someuser");
-        observer.onPrefixedValue("credentials", Credentials::new, credentials::set);
-        assertThat(credentials.get()).isEqualToComparingFieldByField(new Credentials("someuser", null));
+        observer.onOptionalPrefixedValue("credentials", Credentials::new, credentials::set);
+        assertThat(credentials.get()).get().isEqualToComparingFieldByField(new Credentials("someuser", null));
 
         writeConfigLines("credentials.username=someuser2", "credentials.password=secret");
-        assertThat(credentials.get()).isEqualToComparingFieldByField(new Credentials("someuser2", "secret"));
+        assertThat(credentials.get()).get().isEqualToComparingFieldByField(new Credentials("someuser2", "secret"));
+    }
+
+    @Test
+    public void shouldValidateRequiredValue() {
+        AtomicReference<Credentials> credentials = new AtomicReference<>();
+        expectedLogEvents.expectPattern(ConfigObserver.class, Level.ERROR, "Failed to notify listener {} while reloading {}");
+        observer.onPrefixedValue("credentials", Credentials::new, credentials::set);
+    }
+
+    @Test
+    public void shouldSupportMissingValuesWithPrefix() {
+        AtomicReference<Optional<Credentials>> credentials = new AtomicReference<>(Optional.empty());
+        writeConfigLines("somethingElse.username=someuser");
+        observer.onOptionalPrefixedValue("credentials", Credentials::new, credentials::set);
+        assertThat(credentials.get()).isEmpty();
+
+        writeConfigLines("credentials.username=someuser2", "credentials.password=secret");
+        assertThat(credentials.get()).get().isEqualToComparingFieldByField(new Credentials("someuser2", "secret"));
+
+        writeConfigLines("somethingElse.username=someuser");
+        assertThat(credentials.get()).isEmpty();
     }
 
     private static class DummyDataSource {

@@ -31,9 +31,9 @@ public class FileScanner {
                             .map(e -> ((Path) e.context()).getFileName().toString())
                             .filter(fileNames::contains)
                             .collect(Collectors.toList());
-                    logger.debug("Files changed: {}", changedFiles);
                     key.reset();
                     if (!changedFiles.isEmpty()) {
+                        logger.debug("Files changed: {}", changedFiles);
                         fileChangeListener.accept(changedFiles);
                     }
                 }

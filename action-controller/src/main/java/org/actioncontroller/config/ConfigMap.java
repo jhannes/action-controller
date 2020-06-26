@@ -3,7 +3,6 @@ package org.actioncontroller.config;
 import org.assertj.core.annotations.NonNull;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -101,8 +100,8 @@ public class ConfigMap extends AbstractMap<String, String> {
         return new ConfigMap(this.innerMap);
     }
 
-    public ConfigMap subMap(String prefix) {
-        return new ConfigMap(prefix, this);
+    public Optional<ConfigMap> subMap(String prefix) {
+        return listSubMaps().contains(prefix) ? Optional.of(new ConfigMap(prefix, this)) : Optional.empty();
     }
 
     protected String getInnerKey(Object key) {

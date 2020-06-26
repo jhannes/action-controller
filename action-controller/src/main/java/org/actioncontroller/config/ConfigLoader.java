@@ -7,7 +7,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,9 +27,11 @@ public class ConfigLoader {
     private final File configDirectory;
     private final List<String> configurationFileNames;
 
-    public ConfigLoader(File configDirectory, String applicationName) {
+    public ConfigLoader(File configDirectory, String applicationName, List<String> profiles) {
         this.configDirectory = configDirectory;
-        this.configurationFileNames = Arrays.asList(applicationName + ".properties", applicationName + "-preview.properties");
+        this.configurationFileNames = new ArrayList<>();
+        configurationFileNames.add(applicationName + ".properties");
+        profiles.forEach(profile -> configurationFileNames.add(applicationName + "-" + profile + ".properties"));
     }
 
     public Map<String, String> loadConfiguration() {

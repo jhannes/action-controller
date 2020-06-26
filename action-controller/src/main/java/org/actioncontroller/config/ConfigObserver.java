@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -31,18 +32,22 @@ public class ConfigObserver {
 
     private ConfigLoader configLoader;
 
+    public ConfigObserver(String applicationName) {
+        this(new File("."), applicationName, new ArrayList<>());
+    }
+
     public ConfigObserver(File configDirectory, String applicationName) {
+        this(configDirectory, applicationName, new ArrayList<>());
+    }
+
+    public ConfigObserver(File configDirectory, String applicationName, List<String> profiles) {
         this.configDirectory = configDirectory;
         this.applicationName = applicationName;
         configDirectory.mkdirs();
 
-        configLoader = new ConfigLoader(configDirectory, applicationName);
+        configLoader = new ConfigLoader(configDirectory, applicationName, profiles);
         currentConfiguration = configLoader.loadConfiguration();
         fileScanner = new FileScanner(configDirectory, configLoader.getConfigurationFileNames(), this::handleFileChanged);
-    }
-
-    public ConfigObserver(String applicationName) {
-        this(new File("."), applicationName);
     }
 
     /**
@@ -91,16 +96,27 @@ public class ConfigObserver {
         return onSingleConfigValue(key, defaultValue != null ?  parseStringList(defaultValue) : null, listener, ConfigObserver::parseStringList);
     }
 
-    public <T> ConfigObserver onPrefixedValue(String prefix, ConfigListener.Transformer<T> transformer, ConfigValueListener<T> listener) {
-        return onPrefixedValue(prefix, config -> listener.apply(transformer.apply(config)));
+    public <T> ConfigObserver onOptionalPrefixedValue(String prefix, ConfigListener.Transformer<T> transformer, ConfigValueListener<Optional<T>> listener) {
+        return onOptionalPrefixedValue(
+                prefix,
+                config -> listener.apply(config.isPresent() ? Optional.of(transformer.apply(config.get())) : Optional.empty())
+        );
     }
 
-    public ConfigObserver onPrefixedValue(String prefix, ConfigValueListener<ConfigMap> listener) {
+    public <T> ConfigObserver onPrefixedValue(String prefix, ConfigListener.Transformer<T> transformer, ConfigValueListener<T> listener) {
+        return onOptionalPrefixedValue(prefix, config -> onOptionalPrefixedValue(
+                prefix,
+                transformer,
+                opt -> listener.apply(opt.orElseThrow(() -> new ConfigException("Missing required " + prefix)))
+        ));
+    }
+
+    public ConfigObserver onOptionalPrefixedValue(String prefix, ConfigValueListener<Optional<Map<String, String>>> listener) {
         return onConfigChange(new ConfigListener() {
             @Override
             public void onConfigChanged(Set<String> changedKeys, ConfigMap newConfiguration) throws Exception {
                 if (changeIncludes(changedKeys, prefix)) {
-                    ConfigMap configuration = new ConfigMap(prefix, newConfiguration);
+                    Optional<Map<String, String>> configuration = newConfiguration.subMap(prefix).map(Function.identity());
                     logger.debug("onConfigChanged key={} value={}", prefix, configuration);
                     listener.apply(configuration);
                 }
@@ -113,7 +129,6 @@ public class ConfigObserver {
     }
 
     protected void handleFileChanged(List<String> changedFiles) {
-        logger.debug("Configuration files changed {}", changedFiles);
         updateConfiguration(configLoader.loadConfiguration());
     }
 

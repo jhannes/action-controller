@@ -57,16 +57,14 @@ public class ConfigMapTest {
                 "apps.appTwo.clientId", "xyz"
         ));
         assertThat(new ConfigMap("appOne", configMap).get("clientId")).isEqualTo("abc");
-        assertThat(configMap.subMap("appOne").get("clientId")).isEqualTo("abc");
+        assertThat(configMap.subMap("appOne").orElseThrow().get("clientId")).isEqualTo("abc");
         assertThat(configMap.listSubMaps()).contains("appOne", "appTwo");
-        assertThatThrownBy(() -> configMap.subMap("missingApp"))
-                .isInstanceOf(ConfigException.class)
-                .hasMessageContaining("apps.missingApp");
+        assertThat(configMap.subMap("missingApp")).isEmpty();
 
         assertThat(configMap.subMap("appOne").toString()).contains("clientId=abc").contains("prefix=apps.appOne");
         assertThat(configMap.subMap("appTwo").toString()).contains("values={clientId=xyz}");
 
-        assertThat(configMap.subMap("appOne").getRoot().listSubMaps()).containsExactly("apps");
+        assertThat(configMap.subMap("appOne").orElseThrow().getRoot().listSubMaps()).containsExactly("apps");
     }
 
     private final File directory = new File("target/test/dir-" + UUID.randomUUID());
@@ -74,7 +72,7 @@ public class ConfigMapTest {
     @Test
     public void shouldReadConfigFile() throws IOException {
         List<String> lines = Arrays.asList("credentials.username=someuser2", "credentials.password=secret");
-        directory.mkdirs();
+        assertThat(directory.mkdirs()).isTrue();
         File file = new File(directory, "testApp.properties");
         Files.write(file.toPath(), lines);
 

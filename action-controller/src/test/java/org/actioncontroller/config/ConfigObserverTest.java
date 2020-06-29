@@ -54,7 +54,7 @@ public class ConfigObserverTest {
 
     @Test
     public void shouldOnlyUpdateWhenPropertyWasChanged() {
-        observer.onDuration("daemonPollingInterval", duration -> this.daemonPollingInterval = duration);
+        observer.onDurationValue("daemonPollingInterval", null, duration -> this.daemonPollingInterval = duration);
 
         assertThat(daemonPollingInterval).isEqualTo(null);
         daemonPollingInterval = Duration.ofMinutes(5);
@@ -89,8 +89,8 @@ public class ConfigObserverTest {
     @Test
     public void shouldListenToInetAddresses() {
         observer.onInetSocketAddress("httpListenAddress",
-                address -> this.httpListenAddress = address,
-                10080);
+                10080, address -> this.httpListenAddress = address
+        );
         assertThat(httpListenAddress).isEqualTo(new InetSocketAddress(10080));
 
         writeConfigLine("httpListenAddress=127.0.0.1:11080");
@@ -104,7 +104,7 @@ public class ConfigObserverTest {
     @Test
     public void shouldReadStringValue() {
         List<String> list = new ArrayList<>();
-        observer.onConfigValue("prop", "foo,bar", str -> {
+        observer.onStringValue("prop", "foo,bar", str -> {
             list.clear();
             list.add(str);
         });
@@ -152,7 +152,7 @@ public class ConfigObserverTest {
     public void shouldTransformWithPrefix() {
         AtomicReference<Optional<Credentials>> credentials = new AtomicReference<>(Optional.empty());
         writeConfigLines("credentials.username=someuser");
-        observer.onOptionalPrefixedValue("credentials", Credentials::new, credentials::set);
+        observer.onPrefixedOptionalValue("credentials", Credentials::new, credentials::set);
         assertThat(credentials.get()).get().isEqualToComparingFieldByField(new Credentials("someuser", null));
 
         writeConfigLines("credentials.username=someuser2", "credentials.password=secret");
@@ -170,7 +170,7 @@ public class ConfigObserverTest {
     public void shouldSupportMissingValuesWithPrefix() {
         AtomicReference<Optional<Credentials>> credentials = new AtomicReference<>(Optional.empty());
         writeConfigLines("somethingElse.username=someuser");
-        observer.onOptionalPrefixedValue("credentials", Credentials::new, credentials::set);
+        observer.onPrefixedOptionalValue("credentials", Credentials::new, credentials::set);
         assertThat(credentials.get()).isEmpty();
 
         writeConfigLines("credentials.username=someuser2", "credentials.password=secret");
@@ -238,7 +238,7 @@ public class ConfigObserverTest {
     @Test
     public void shouldReadStringList() {
         List<String> list = new ArrayList<>();
-        observer.onStringList("prop", "foo,bar", l -> {
+        observer.onStringListValue("prop", "foo,bar", l -> {
             list.clear();
             list.addAll(l);
         });
@@ -255,10 +255,10 @@ public class ConfigObserverTest {
         writeConfigLine("example.number=123");
 
         String[] fooValue = { null };
-        observer.onConfigValue("example.foo", null,
+        observer.onStringValue("example.foo", null,
                 v -> fooValue[0] = v
         );
-        observer.onConfigValue("example.number", "100", s -> { throw new RuntimeException(""); });
+        observer.onStringValue("example.number", "100", s -> { throw new RuntimeException(""); });
 
         assertThat(fooValue[0]).isNull();
 

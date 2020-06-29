@@ -16,7 +16,7 @@ public class JdkHttpMain {
 
     private void start() {
         ConfigObserver config = new ConfigObserver("demoserver");
-        config.onInetSocketAddress("httpSocketAddress", inetSocketAddress -> {
+        config.onInetSocketAddress("httpSocketAddress", 20080, inetSocketAddress -> {
             DemoServer oldServer = httpServer;
             httpServer = new DemoServer(inetSocketAddress);
             httpServer.start();
@@ -25,6 +25,6 @@ public class JdkHttpMain {
             if (oldServer != null) {
                 oldServer.stop(2);
             }
-        }, 20080);
+        });
     }
 }

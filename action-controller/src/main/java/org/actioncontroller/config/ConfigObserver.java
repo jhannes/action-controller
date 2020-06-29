@@ -60,64 +60,64 @@ public class ConfigObserver {
         return this;
     }
 
-    public <T> ConfigObserver onSingleConfigValue(String key, T defaultValue, ConfigValueListener<T> listener, Function<String, T> transformer) {
+    public <T> ConfigObserver onSingleConfigValue(String key, Function<String, T> transformer, T defaultValue, ConfigValueListener<T> listener) {
         return onConfigChange(new SingleValueConfigListener<>(key, listener, defaultValue, transformer));
     }
 
-    public ConfigObserver onConfigValue(String key, String defaultValue, ConfigValueListener<String> listener) {
-        return onSingleConfigValue(key, defaultValue, listener, Function.identity());
+    public ConfigObserver onStringValue(String key, String defaultValue, ConfigValueListener<String> listener) {
+        return onSingleConfigValue(key, Function.identity(), defaultValue, listener);
     }
 
     public ConfigObserver onIntValue(String key, int defaultValue, ConfigValueListener<Integer> listener) {
-        return onSingleConfigValue(key, defaultValue, listener, Integer::parseInt);
+        return onSingleConfigValue(key, Integer::parseInt, defaultValue, listener);
     }
 
     public ConfigObserver onLongValue(String key, long defaultValue, ConfigValueListener<Long> listener) {
-        return onSingleConfigValue(key, defaultValue, listener, Long::parseLong);
+        return onSingleConfigValue(key, Long::parseLong, defaultValue, listener);
     }
 
-    public ConfigObserver onInetSocketAddress(String key, ConfigValueListener<InetSocketAddress> listener, int defaultPort) {
-        return onInetSocketAddress(key, listener, new InetSocketAddress(defaultPort));
+    public ConfigObserver onInetSocketAddress(String key, int defaultPort, ConfigValueListener<InetSocketAddress> listener) {
+        return onInetSocketAddress(key, new InetSocketAddress(defaultPort), listener);
     }
 
-    public ConfigObserver onInetSocketAddress(String key, ConfigValueListener<InetSocketAddress> listener, InetSocketAddress defaultAddress) {
-        return onSingleConfigValue(key, defaultAddress, listener, ConfigListener::asInetSocketAddress);
+    public ConfigObserver onInetSocketAddress(String key, InetSocketAddress defaultAddress, ConfigValueListener<InetSocketAddress> listener) {
+        return onSingleConfigValue(key, ConfigListener::asInetSocketAddress, defaultAddress, listener);
     }
 
-    public ConfigObserver onDuration(String key, ConfigValueListener<Duration> listener) {
-        return onDuration(key, null, listener);
+    public ConfigObserver onDurationValue(String key, Duration defaultValue, ConfigValueListener<Duration> listener) {
+        return onSingleConfigValue(key, Duration::parse, defaultValue, listener);
     }
 
-    public ConfigObserver onDuration(String key, Duration defaultValue, ConfigValueListener<Duration> listener) {
-        return onSingleConfigValue(key, defaultValue, listener, Duration::parse);
+    public ConfigObserver onStringListValue(String key, String defaultValue, ConfigValueListener<List<String>> listener) {
+        return onSingleConfigValue(key, ConfigObserver::parseStringList, defaultValue != null ?  parseStringList(defaultValue) : null, listener);
     }
 
-    public ConfigObserver onStringList(String key, String defaultValue, ConfigValueListener<List<String>> listener) {
-        return onSingleConfigValue(key, defaultValue != null ?  parseStringList(defaultValue) : null, listener, ConfigObserver::parseStringList);
+    public <T> ConfigObserver onPrefixedValue(String prefix, ConfigValueListener<Map<String, String>> listener) {
+        return onPrefixedValue(prefix, map -> map, listener);
     }
 
-    public <T> ConfigObserver onOptionalPrefixedValue(String prefix, ConfigListener.Transformer<T> transformer, ConfigValueListener<Optional<T>> listener) {
-        return onOptionalPrefixedValue(
+    public <T> ConfigObserver onPrefixedValue(String prefix, ConfigListener.Transformer<T> transformer, ConfigValueListener<T> listener) {
+        return onPrefixedOptionalValue(prefix, config -> onPrefixedOptionalValue(
+                prefix,
+                transformer,
+                opt -> listener.apply(opt.orElseThrow(() -> new ConfigException("Missing required property group " + prefix)))
+        ));
+    }
+
+    public <T> ConfigObserver onPrefixedOptionalValue(String prefix, ConfigListener.Transformer<T> transformer, ConfigValueListener<Optional<T>> listener) {
+        return onPrefixedOptionalValue(
                 prefix,
                 config -> listener.apply(config.isPresent() ? Optional.of(transformer.apply(config.get())) : Optional.empty())
         );
     }
 
-    public <T> ConfigObserver onPrefixedValue(String prefix, ConfigListener.Transformer<T> transformer, ConfigValueListener<T> listener) {
-        return onOptionalPrefixedValue(prefix, config -> onOptionalPrefixedValue(
-                prefix,
-                transformer,
-                opt -> listener.apply(opt.orElseThrow(() -> new ConfigException("Missing required " + prefix)))
-        ));
-    }
-
-    public ConfigObserver onOptionalPrefixedValue(String prefix, ConfigValueListener<Optional<Map<String, String>>> listener) {
+    public ConfigObserver onPrefixedOptionalValue(String prefix, ConfigValueListener<Optional<Map<String, String>>> listener) {
         return onConfigChange(new ConfigListener() {
             @Override
             public void onConfigChanged(Set<String> changedKeys, ConfigMap newConfiguration) throws Exception {
                 if (changeIncludes(changedKeys, prefix)) {
                     Optional<Map<String, String>> configuration = newConfiguration.subMap(prefix).map(Function.identity());
-                    logger.debug("onConfigChanged key={} value={}", prefix, configuration);
+                    logger.debug("onConfigChange key={} value={}", prefix, configuration);
                     listener.apply(configuration);
                 }
             }

@@ -39,7 +39,7 @@ public class JettyDemoServer {
     }
 
     private void start() {
-        config.onInetSocketAddress("httpSocketAddress", this::startConnector, 10080);
+        config.onInetSocketAddress("httpSocketAddress", 10080, this::startConnector);
     }
 
     private void startConnector(InetSocketAddress httpSocketAddress) throws Exception {

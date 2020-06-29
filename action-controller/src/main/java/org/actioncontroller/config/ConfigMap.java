@@ -110,6 +110,14 @@ public class ConfigMap extends AbstractMap<String, String> {
 
     @Override
     public String toString() {
-        return "ConfigMap{prefix=" + prefix + ", values=" + super.toString() + '}';
+        String values = entrySet().stream().map(this::toString).collect(Collectors.joining(", "));
+        return "ConfigMap{prefix=" + prefix + ", values={" + values + "}}";
+    }
+
+    private String toString(Entry<String, String> entry) {
+        if (entry.getKey().toLowerCase().contains("password") || entry.getKey().toLowerCase().contains("secret")) {
+            return entry.getKey() + "=*****";
+        }
+        return entry.getKey() + "=" + entry.getValue();
     }
 }

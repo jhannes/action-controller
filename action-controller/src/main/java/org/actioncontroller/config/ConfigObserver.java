@@ -24,8 +24,6 @@ import java.util.stream.Stream;
  */
 public class ConfigObserver {
     private static final Logger logger = LoggerFactory.getLogger(ConfigObserver.class);
-    private final File configDirectory;
-    private final String applicationName;
     private final FileScanner fileScanner;
     private Map<String, String> currentConfiguration;
     private List<ConfigListener> listeners = new ArrayList<>();
@@ -41,8 +39,6 @@ public class ConfigObserver {
     }
 
     public ConfigObserver(File configDirectory, String applicationName, List<String> profiles) {
-        this.configDirectory = configDirectory;
-        this.applicationName = applicationName;
         configDirectory.mkdirs();
 
         configLoader = new ConfigLoader(configDirectory, applicationName, profiles);
@@ -61,7 +57,26 @@ public class ConfigObserver {
     }
 
     public <T> ConfigObserver onSingleConfigValue(String key, Function<String, T> transformer, T defaultValue, ConfigValueListener<T> listener) {
-        return onConfigChange(new SingleValueConfigListener<>(key, listener, defaultValue, transformer));
+        return onConfigChange(new ConfigListener() {
+            @Override
+            public void onConfigChanged(Set<String> changedKeys, ConfigMap newConfiguration) throws Exception {
+                if (changeIncludes(changedKeys, key)) {
+                    String value = newConfiguration.getOrDefault(key, null);
+                    T configValue;
+                    if (value == null) {
+                        configValue = defaultValue;
+                    } else {
+                        try {
+                            configValue = transformer.apply(value);
+                        } catch (Exception e) {
+                            throw new ConfigException("Failed to convert " + key + "=" + value, e);
+                        }
+                    }
+                    logger.info("onConfigChanged key={} value={}", key, configValue);
+                    listener.apply(configValue);
+                }
+            }
+        });
     }
 
     public ConfigObserver onStringValue(String key, String defaultValue, ConfigValueListener<String> listener) {
@@ -93,32 +108,57 @@ public class ConfigObserver {
     }
 
     public <T> ConfigObserver onPrefixedValue(String prefix, ConfigValueListener<Map<String, String>> listener) {
-        return onPrefixedValue(prefix, map -> map, listener);
+        return onPrefixedOptionalValue(
+                prefix,
+                opt -> listener.apply(opt.orElseThrow(() -> new ConfigException("Missing required property group " + prefix)))
+        );
     }
 
     public <T> ConfigObserver onPrefixedValue(String prefix, ConfigListener.Transformer<T> transformer, ConfigValueListener<T> listener) {
-        return onPrefixedOptionalValue(prefix, config -> onPrefixedOptionalValue(
+        return onPrefixedOptionalValue(
                 prefix,
                 transformer,
                 opt -> listener.apply(opt.orElseThrow(() -> new ConfigException("Missing required property group " + prefix)))
-        ));
+        );
     }
 
     public <T> ConfigObserver onPrefixedOptionalValue(String prefix, ConfigListener.Transformer<T> transformer, ConfigValueListener<Optional<T>> listener) {
-        return onPrefixedOptionalValue(
-                prefix,
-                config -> listener.apply(config.isPresent() ? Optional.of(transformer.apply(config.get())) : Optional.empty())
-        );
+        return onConfigChange(new ConfigListener() {
+            @Override
+            public void onConfigChanged(Set<String> changedKeys, ConfigMap newConfiguration) {
+                if (changeIncludes(changedKeys, prefix)) {
+                    Optional<Map<String, String>> configuration = newConfiguration.subMap(prefix).map(Function.identity());
+                    Optional<T> configValue = Optional.empty();
+                    if (configuration.isPresent()) {
+                        try {
+                            configValue = Optional.of(transformer.apply(configuration.get()));
+                        } catch (Exception e) {
+                            throw new ConfigException("Failed to convert " + configuration, e);
+                        }
+                    }
+                    logger.info("onConfigChanged config={} value={}", configuration, configValue);
+                    try {
+                        listener.apply(configValue);
+                    } catch (Exception e1) {
+                        throw new ConfigException("While applying " + configuration, e1);
+                    }
+                }
+            }
+        });
     }
 
     public ConfigObserver onPrefixedOptionalValue(String prefix, ConfigValueListener<Optional<Map<String, String>>> listener) {
         return onConfigChange(new ConfigListener() {
             @Override
-            public void onConfigChanged(Set<String> changedKeys, ConfigMap newConfiguration) throws Exception {
+            public void onConfigChanged(Set<String> changedKeys, ConfigMap newConfiguration) {
                 if (changeIncludes(changedKeys, prefix)) {
                     Optional<Map<String, String>> configuration = newConfiguration.subMap(prefix).map(Function.identity());
-                    logger.debug("onConfigChange key={} value={}", prefix, configuration);
-                    listener.apply(configuration);
+                    try {
+                        listener.apply(configuration);
+                        logger.info("onConfigChange key={} value={}", prefix, configuration);
+                    } catch (Exception e) {
+                        throw new ConfigException("While applying " + configuration, e);
+                    }
                 }
             }
         });
@@ -159,7 +199,7 @@ public class ConfigObserver {
             logger.trace("Notifying listener {}", listener);
             listener.onConfigChanged(changedKeys, newConfiguration);
         } catch (Exception e) {
-            logger.error("Failed to notify listener {} while reloading {}", listener, configLoader.describe(), e);
+            logger.error("Failed to notify listener while reloading {}", configLoader.describe(), e);
         }
     }
 }

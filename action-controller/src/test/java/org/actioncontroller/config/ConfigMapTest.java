@@ -80,4 +80,19 @@ public class ConfigMapTest {
         assertThat(configuration).containsEntry("credentials.username", "someuser2");
     }
 
+    @Test
+    public void shouldHideSecretsInToString() {
+        ConfigMap configMap = new ConfigMap("apps.appOne", Map.of(
+                "apps.appOne.clientId", "abc",
+                "apps.appOne.clientSecret", "my-secret",
+                "apps.appTwo.clientId", "xyz"
+        ));
+
+        assertThat(configMap.toString())
+                .contains("clientId=abc")
+                .contains("clientSecret=****")
+                .doesNotContain("my-secret")
+                .doesNotContain("xyz");
+    }
+
 }

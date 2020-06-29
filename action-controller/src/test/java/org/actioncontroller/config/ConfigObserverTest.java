@@ -160,9 +160,17 @@ public class ConfigObserverTest {
     }
 
     @Test
+    public void shouldReadOptionalValue() {
+        AtomicReference<Optional<Map<String, String>>> credentials = new AtomicReference<>(Optional.empty());
+        writeConfigLines("credentials.username=someuser");
+        observer.onPrefixedOptionalValue("credentials", credentials::set);
+        assertThat(credentials.get()).get().isEqualTo(Map.of("username", "someuser"));
+    }
+
+    @Test
     public void shouldValidateRequiredValue() {
         AtomicReference<Credentials> credentials = new AtomicReference<>();
-        expectedLogEvents.expectPattern(ConfigObserver.class, Level.ERROR, "Failed to notify listener {} while reloading {}");
+        expectedLogEvents.expectPattern(ConfigObserver.class, Level.ERROR, "Failed to notify listener while reloading {}");
         observer.onPrefixedValue("credentials", Credentials::new, credentials::set);
     }
 
@@ -251,7 +259,7 @@ public class ConfigObserverTest {
     @Test
     public void shouldRecoverFromErrorInListener() {
         expectedLogEvents.expectPattern(ConfigObserver.class, Level.ERROR,
-                "Failed to notify listener {} while reloading {}");
+                "Failed to notify listener while reloading {}");
         writeConfigLine("example.number=123");
 
         String[] fooValue = { null };

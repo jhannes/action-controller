@@ -281,13 +281,6 @@ public class JdkHttpExchange implements ApiHttpExchange {
                 .findFirst();
     }
 
-    @Override
-    public void sendError(int statusCode, String message) throws IOException {
-        String body = getErrorResponse(statusCode, message);
-        sendResponseHeaders(statusCode, body.getBytes().length);
-        exchange.getResponseBody().write(body.getBytes());
-    }
-
     private String getErrorResponse(int statusCode, String message) {
         for (String contentType : Optional.ofNullable(getHeader("Accept")).orElse("").split(";")) {
             if (contentType.trim().equalsIgnoreCase("application/json")) {
@@ -300,8 +293,20 @@ public class JdkHttpExchange implements ApiHttpExchange {
     }
 
     @Override
+    public void setStatus(int statusCode) throws IOException {
+        sendResponseHeaders(statusCode, 0);
+    }
+
+    @Override
     public void sendError(int statusCode) throws IOException {
         sendResponseHeaders(statusCode, 0);
+    }
+
+    @Override
+    public void sendError(int statusCode, String message) throws IOException {
+        String body = getErrorResponse(statusCode, message);
+        sendResponseHeaders(statusCode, body.getBytes().length);
+        exchange.getResponseBody().write(body.getBytes());
     }
 
     protected Map<String, List<String>> parseParameters(String query) {

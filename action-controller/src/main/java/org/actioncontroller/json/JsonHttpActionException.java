@@ -20,7 +20,7 @@ public class JsonHttpActionException extends HttpActionException {
 
     @Override
     public void sendError(ApiHttpExchange exchange) throws IOException {
-        exchange.sendError(getStatusCode(), getMessage());
+        exchange.setStatus(getStatusCode());
         exchange.write("application/json", writer -> jsonObject.toJson(writer));
     }
 

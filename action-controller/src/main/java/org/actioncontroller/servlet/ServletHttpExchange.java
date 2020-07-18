@@ -277,6 +277,11 @@ public class ServletHttpExchange implements ApiHttpExchange {
     }
 
     @Override
+    public void setStatus(int statusCode) {
+        resp.setStatus(statusCode);
+    }
+
+    @Override
     public void authenticate() throws IOException {
         try {
             req.authenticate(resp);

@@ -355,7 +355,7 @@ public class ApiServletTest {
         when(requestMock.getPathInfo()).thenReturn("/restricted");
         servlet.service(requestMock, responseMock);
 
-        verify(responseMock).sendError(401,"User must be logged in for public org.jsonbuddy.JsonObject org.actioncontroller.servlet.ApiServletTest$ExampleController.restrictedOperation()");
+        verify(responseMock).setStatus(401);
         verify(responseMock).setContentType("application/json");
         verify(responseMock).getCharacterEncoding();
         verify(responseMock).setCharacterEncoding(null);
@@ -389,11 +389,12 @@ public class ApiServletTest {
         when(requestMock.getPathInfo()).thenReturn("/restricted");
         servlet.service(requestMock, responseMock);
 
-        verify(responseMock).sendError(403, "User failed to authenticate for public org.jsonbuddy.JsonObject org.actioncontroller.servlet.ApiServletTest$ExampleController.restrictedOperation(): Missing role admin for user");
+        verify(responseMock).setStatus(403);
         verify(responseMock).setContentType("application/json");
         verify(responseMock).getCharacterEncoding();
         verify(responseMock).setCharacterEncoding(null);
         verify(responseMock).getWriter();
+        verifyNoMoreInteractions();
         assertThat(JsonObject.parse(responseBody.toString()).requiredString("message"))
                 .isEqualTo("Insufficient permissions");
     }

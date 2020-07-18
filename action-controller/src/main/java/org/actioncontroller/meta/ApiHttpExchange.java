@@ -126,6 +126,9 @@ public interface ApiHttpExchange {
 
     void sendError(int statusCode) throws IOException;
 
+    /** Sets the http status code, but don't trigger the error handler (servlets) */
+    void setStatus(int statusCode) throws IOException;
+
     boolean isUserLoggedIn();
 
     boolean isUserInRole(String role);

@@ -266,8 +266,8 @@ public class JdkHttpExchange implements ApiHttpExchange {
     }
 
     @Override
-    public String getCookie(String name) {
-        return getCookie(name, exchange.getRequestHeaders()).orElse(null);
+    public Optional<String> getCookie(String name) {
+        return getCookie(name, exchange.getRequestHeaders());
     }
 
     public static Optional<String> getCookie(String name, Headers requestHeaders) {

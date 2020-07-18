@@ -13,6 +13,7 @@ import java.lang.annotation.Target;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import static org.actioncontroller.meta.ApiHttpExchange.convertParameterType;
@@ -51,12 +52,22 @@ public @interface UnencryptedCookie {
 
         @Override
         public HttpParameterMapper create(UnencryptedCookie annotation, Parameter parameter, ApiControllerContext context) {
+            boolean optional = parameter.getType() == Optional.class;
+            Class<?> type = optional ? TypesUtil.typeParameter(parameter.getParameterizedType()) : parameter.getType();
+
             String name = annotation.value();
             if (parameter.getType() == Consumer.class) {
                 return exchange -> (Consumer<Object>) o -> exchange.setCookie(name, Objects.toString(o, null), annotation.secure(), annotation.isHttpOnly());
+            } else if (optional) {
+                return exchange -> getCookie(exchange, name, type);
             } else {
-                return exchange -> ApiHttpExchange.convertTo(exchange.getCookie(name), name, parameter);
+                return exchange -> getCookie(exchange, name, type)
+                        .orElseThrow(() -> new HttpRequestException("Missing cookie " + name));
             }
+        }
+
+        protected Optional<Object> getCookie(ApiHttpExchange exchange, String name, Class<?> type) {
+            return exchange.getCookie(name).map(value -> convertParameterType(value, type));
         }
 
         @Override
@@ -66,7 +77,8 @@ public @interface UnencryptedCookie {
                 Type targetType = TypesUtil.typeParameter(parameter.getParameterizedType());
                 return (exchange, arg) -> {
                     if (arg != null) {
-                        ((Consumer) arg).accept(convertParameterType(exchange.getResponseCookie(name), targetType));
+                        exchange.getResponseCookie(name)
+                                .ifPresent(string -> ((Consumer)arg).accept(convertParameterType(string, targetType)));
                     }
                 };
             } else {

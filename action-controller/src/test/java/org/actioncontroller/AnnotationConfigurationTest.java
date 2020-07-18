@@ -31,6 +31,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.util.Base64;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -61,7 +62,10 @@ public class AnnotationConfigurationTest {
                 if (parameter.getType() == Consumer.class) {
                     return exchange -> (Consumer<Object>) o -> exchange.setCookie(name, encrypt(encryptCipher, o.toString()), true, true);
                 } else {
-                    return exchange -> ApiHttpExchange.convertTo(decrypt(decryptCipher, exchange.getCookie(name)), name, parameter);
+                    return exchange ->  exchange.getCookie(name)
+                            .map(cookie -> decrypt(decryptCipher, cookie))
+                            .map(string -> ApiHttpExchange.convertTo(string, name, parameter))
+                            .orElseThrow();
                 }
             }
 
@@ -92,11 +96,10 @@ public class AnnotationConfigurationTest {
                 }
             }
 
-            private HttpClientParameterMapper consumer(Parameter parameter, Function<ApiClientExchange,String> f) {
+            private HttpClientParameterMapper consumer(Parameter parameter, Function<ApiClientExchange, Optional<String>> f) {
                 Type targetType = TypesUtil.typeParameter(parameter.getParameterizedType());
-                return (exchange, arg) -> ((Consumer)arg).accept(
-                        ApiHttpExchange.convertParameterType(f.apply(exchange), targetType)
-                );
+                return (exchange, arg) -> f.apply(exchange)
+                        .ifPresent(string -> ((Consumer)arg).accept(ApiHttpExchange.convertParameterType(string, targetType)));
             }
         }
     }

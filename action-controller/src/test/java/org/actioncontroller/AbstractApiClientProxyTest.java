@@ -90,6 +90,12 @@ public abstract class AbstractApiClientProxyTest {
             return sessionCookie.map(s -> s.split(":")[0]).orElse("<none>");
         }
 
+        @GET("/loginSession/me/required")
+        @HttpResponseHeader("X-Username")
+        public String whoAmIRequired(@UnencryptedCookie("sessionCookie") String sessionCookie) {
+            return sessionCookie.split(":")[0];
+        }
+
         @GET("/loginSession/endsession")
         @SendRedirect
         public String endsession(@UnencryptedCookie("sessionCookie") Consumer<String> setSessionCookie, @ContextUrl String url) {
@@ -236,6 +242,15 @@ public abstract class AbstractApiClientProxyTest {
         String redirectUrl = client.endsession(null, null);
         assertThat(redirectUrl).isEqualTo(baseUrl + "/frontPage");
         assertThat(client.whoAmI(null)).isEqualTo("<none>");
+    }
+
+    @Test
+    public void shouldRequireCookie() {
+        client.putLoginSession("the user", "let-me-in", null);
+        assertThat(client.whoAmIRequired(null)).isEqualTo("the user");
+        client.endsession(null, null);
+        assertThatThrownBy(() -> client.whoAmIRequired(null))
+            .isInstanceOf(HttpClientException.class);
     }
 
     @Test

@@ -211,8 +211,8 @@ public class ServletHttpExchange implements ApiHttpExchange {
     }
 
     @Override
-    public String getCookie(String name) {
-        return getCookie(name, req).orElse(null);
+    public Optional<String> getCookie(String name) {
+        return getCookie(name, req);
     }
 
     public static Optional<String> getCookie(String name, HttpServletRequest req) {

@@ -120,7 +120,7 @@ public interface ApiHttpExchange {
      */
     void setCookie(String name, String value, boolean secure, boolean isHttpOnly);
 
-    String getCookie(String name);
+    Optional<String> getCookie(String name);
 
     void sendError(int statusCode, String message) throws IOException;
 

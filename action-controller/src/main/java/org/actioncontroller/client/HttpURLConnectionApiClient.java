@@ -297,13 +297,12 @@ public class HttpURLConnectionApiClient implements ApiClient {
         }
 
         @Override
-        public String getResponseCookie(String name) {
+        public Optional<String> getResponseCookie(String name) {
             return responseCookies.stream()
                     .filter(c -> c.getName().equals(name))
                     .filter(HttpURLConnectionApiClient::isUnexpired)
                     .map(httpCookie -> URLDecoder.decode(httpCookie.getValue(), CHARSET))
-                    .findFirst()
-                    .orElse(null);
+                    .findFirst();
         }
 
         @Override

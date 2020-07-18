@@ -69,7 +69,7 @@ public interface ApiClientExchange {
 
     String getResponseHeader(String name);
 
-    String getResponseCookie(String name);
+    Optional<String> getResponseCookie(String name);
 
     String getResponseBody() throws IOException;
 

@@ -177,8 +177,8 @@ public class FakeApiClient implements ApiClient {
         }
 
         @Override
-        public String getResponseCookie(String name) {
-            return URLDecoder.decode(response.getCookie(name), CHARSET);
+        public Optional<String> getResponseCookie(String name) {
+            return Optional.ofNullable(response.getCookie(name)).map(c -> URLDecoder.decode(c, CHARSET));
         }
 
         @Override

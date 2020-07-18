@@ -71,10 +71,10 @@ public class ApiControllerMethodAction implements ApiControllerAction {
         return actions;
     }
 
-    private String pattern;
-
+    private final String pattern;
     private final String[] patternParts;
     private final String[] pathParams;
+    private final Pattern[] paramRegexp;
 
     private List<HttpParameterMapper> parameterMappers = new ArrayList<>();
 
@@ -87,25 +87,28 @@ public class ApiControllerMethodAction implements ApiControllerAction {
         this.pattern = pattern;
         if (pattern.indexOf('?') > 0) {
             this.patternParts = pattern.substring(0, pattern.indexOf('?')).split("/");
-            this.pathParams = new String[patternParts.length];
             this.requiredParameter = Optional.of(pattern.substring(pattern.indexOf('?') + 1));
         } else {
             this.patternParts = pattern.split("/");
-            this.pathParams = new String[patternParts.length];
             this.requiredParameter = Optional.empty();
         }
+        this.pathParams = new String[patternParts.length];
+        this.paramRegexp = new Pattern[patternParts.length];
 
         Parameter[] parameters = action.getParameters();
         for (int i = 0; i < parameters.length; i++) {
             parameterMappers.add(createParameterMapper(parameters[i], i, context));
         }
 
-        Pattern pathParamPattern = Pattern.compile("^:(.*)$|^\\{(.*)}$");
+        Pattern pathParamPattern = Pattern.compile("^(:(.\\w*)|^\\{(\\w*)})(\\.(\\w+))?$");
         for (int i = 0; i < patternParts.length; i++) {
             String patternPart = patternParts[i];
             Matcher matcher = pathParamPattern.matcher(patternPart);
             if (matcher.matches()) {
-                pathParams[i] = matcher.group(1) != null ? matcher.group(1) : matcher.group(2);
+                pathParams[i] = matcher.group(2) != null ? matcher.group(2) : matcher.group(3);
+                if (matcher.group(5) != null && !matcher.group(5).isEmpty()) {
+                    paramRegexp[i] = Pattern.compile("^(.+)\\." + matcher.group(5) + "$");
+                }
             }
         }
 
@@ -264,6 +267,8 @@ public class ApiControllerMethodAction implements ApiControllerAction {
         for (int i = 0; i < patternParts.length; i++) {
             if (pathParams[i] == null && !patternParts[i].equals(actualParts[i])) {
                 return false;
+            } else if (paramRegexp[i] != null && !paramRegexp[i].matcher(actualParts[i]).matches()) {
+                return false;
             }
         }
 
@@ -286,14 +291,22 @@ public class ApiControllerMethodAction implements ApiControllerAction {
         String pathInfo = exchange.getPathInfo();
         String[] actualParts = pathInfo.split("/");
         if (patternParts.length != actualParts.length) {
-            throw new IllegalArgumentException("Paths don't match <" + String.join("/", patternParts) + ">, but was <" + pathInfo + ">");
+            throw new IllegalArgumentException("Paths don't match <" + pattern + ">, but was <" + pathInfo + ">");
         }
 
         for (int i = 0; i < patternParts.length; i++) {
             if (pathParams[i] != null) {
-                pathParameters.put(pathParams[i], actualParts[i]);
+                if (paramRegexp[i] != null) {
+                    Matcher matcher = paramRegexp[i].matcher(actualParts[i]);
+                    if (!matcher.matches()) {
+                        throw new IllegalArgumentException("Paths don't match <" + pattern + ">, but was <" + pathInfo + ">");
+                    }
+                    pathParameters.put(pathParams[i], matcher.group(1));
+                } else {
+                    pathParameters.put(pathParams[i], actualParts[i]);
+                }
             } else if (!patternParts[i].equals(actualParts[i])) {
-                throw new IllegalArgumentException("Paths don't match <" + String.join("/", patternParts) + ">, but was <" + pathInfo + ">");
+                throw new IllegalArgumentException("Paths don't match <" + pattern + ">, but was <" + pathInfo + ">");
             }
         }
         exchange.setPathParameters(pathParameters);

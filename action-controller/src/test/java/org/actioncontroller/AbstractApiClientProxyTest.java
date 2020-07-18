@@ -143,6 +143,18 @@ public abstract class AbstractApiClientProxyTest {
         public String sendHtmlError(@RequestParam("errorMessage") String errorMessage) {
             throw new HttpRequestException(errorMessage);
         }
+
+        @GET("/files/{filename}.html")
+        @ContentBody(contentType =  "text/html")
+        public String getHtmlFile(@PathParam("filename") String filename) {
+            return "<html><h2>Hello from " + filename + "</h2></html>";
+        }
+
+        @GET("/files/:filename.txt")
+        @ContentBody()
+        public String getTextFile(@PathParam("filename") String filename) {
+            return "Hello from " + filename;
+        }
     }
 
     public static class UnmappedController {
@@ -286,5 +298,13 @@ public abstract class AbstractApiClientProxyTest {
         assertThatThrownBy(() -> client.sendHtmlError("It went wrong"))
                 .isInstanceOf(HttpClientException.class)
                 .satisfies(e -> assertThat(((HttpClientException)e).getResponseBody()).contains("<tr><th>MESSAGE:</th><td>It went wrong</td></tr>"));
+    }
+
+    @Test
+    public void shouldRouteWithExtension() {
+        assertThat(client.getHtmlFile("index"))
+                .isEqualTo("<html><h2>Hello from index</h2></html>");
+        assertThat(client.getTextFile("robots"))
+                .isEqualTo("Hello from robots");
     }
 }

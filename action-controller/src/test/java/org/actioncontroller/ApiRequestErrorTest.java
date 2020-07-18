@@ -11,6 +11,7 @@ import org.slf4j.event.Level;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ApiRequestErrorTest {
 
     private FakeServletResponse resp = new FakeServletResponse();
+    private URL contextRoot;
 
     public static class Controller {
         @GET("/hello")
@@ -36,8 +38,9 @@ public class ApiRequestErrorTest {
     private ApiServlet servlet = new ApiServlet(new Controller());
 
     @Before
-    public void setup() throws ServletException {
+    public void setup() throws ServletException, MalformedURLException {
         servlet.init(null);
+        contextRoot = new URL("http://my.example.com:8080/my/context");
     }
 
     @Rule
@@ -45,7 +48,7 @@ public class ApiRequestErrorTest {
 
     @Test
     public void shouldReportErrorOnUnmappedRootAction() throws IOException, ServletException {
-        FakeServletRequest request = new FakeServletRequest("GET", new URL("http://my.example.com:8080/my/context"), "/actions", null);
+        FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/actions", null);
 
         expectedLogEvents.expectMatch(e -> e
                 .logger(ApiServlet.class)
@@ -57,7 +60,7 @@ public class ApiRequestErrorTest {
 
     @Test
     public void shouldReportErrorOnParameterMismatch() throws IOException, ServletException {
-        FakeServletRequest request = new FakeServletRequest("GET", new URL("http://my.example.com:8080/my/context"), "/actions", "/hello");
+        FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/actions", "/hello");
         request.setParameter("number", "hello");
 
         servlet.service(request, resp);
@@ -67,8 +70,7 @@ public class ApiRequestErrorTest {
 
     @Test
     public void shouldReportErrorOnReturnValueMismatch() throws ServletException, IOException {
-        FakeServletResponse resp = new FakeServletResponse();
-        FakeServletRequest request = new FakeServletRequest("GET", new URL("http://my.example.com:8080/my/context"), "/actions", "/redirect");
+        FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/actions", "/redirect");
         expectedLogEvents.expectMatch(e -> e
                 .level(Level.ERROR)
                 .logger(ApiControllerAction.class)

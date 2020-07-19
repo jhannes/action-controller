@@ -56,4 +56,9 @@ public interface ApiControllerAction {
      * Otherwise action-controller throws an exception
      */
     boolean requiresParameter();
+
+    /**
+     * Returns true if the actions respond to the same routes
+     */
+    boolean matches(ApiControllerAction action);
 }

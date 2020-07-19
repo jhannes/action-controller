@@ -68,10 +68,10 @@ import java.util.stream.Collectors;
  */
 public class ApiServlet extends HttpServlet implements UserContext {
 
-    private static Logger logger = LoggerFactory.getLogger(ApiServlet.class);
-    private List<Object> controllers = new ArrayList<>();
-    private List<ApiControllerAction> actions = new ArrayList<>();
-    private ApiControllerContext context = new ApiControllerContext();
+    private static final Logger logger = LoggerFactory.getLogger(ApiServlet.class);
+    private final List<Object> controllers = new ArrayList<>();
+    private final List<ApiControllerAction> actions = new ArrayList<>();
+    private final ApiControllerContext context = new ApiControllerContext();
 
     public ApiServlet() {}
 
@@ -197,11 +197,23 @@ public class ApiServlet extends HttpServlet implements UserContext {
                 controllerException = new ActionControllerConfigurationCompositeException();
             }
             try {
-                this.actions.addAll(ApiControllerMethodAction.createActions(controller, context));
+                List<ApiControllerAction> actions = ApiControllerMethodAction.createActions(controller, context);
+                for (ApiControllerAction action : actions) {
+                    addAction(action);
+                }
             } catch (ApiControllerCompositeException e) {
                 controllerException.addControllerException(e);
             }
         }
+    }
+
+    private void addAction(ApiControllerAction action) {
+        for (ApiControllerAction existingAction : actions) {
+            if (existingAction.matches(action)) {
+                throw new ActionControllerConfigurationException(action + " is in conflict with " + existingAction);
+            }
+        }
+        this.actions.add(action);
     }
 
     public void registerMBeans() {

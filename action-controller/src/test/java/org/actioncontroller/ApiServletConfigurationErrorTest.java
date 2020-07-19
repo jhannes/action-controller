@@ -53,6 +53,49 @@ public class ApiServletConfigurationErrorTest {
     }
 
     @Test
+    public void shouldReportParameterizedRoutesWithConflicts() {
+        ControllerWithOverlappingPathParameters controller = new ControllerWithOverlappingPathParameters();
+        assertThatThrownBy(() -> new ApiServlet(controller).init(null))
+                .isInstanceOf(ActionControllerConfigurationException.class)
+                .hasMessageContaining("is in conflict with")
+                .hasMessageContaining("/files/{otherName}")
+                .hasMessageContaining("/files/{filename}")
+                .hasMessageContaining(controller.getClass().getSimpleName());
+    }
+
+    @Test
+    public void shouldReportRoutesWithConflicts() {
+        ControllerWithOverlappingPaths controller = new ControllerWithOverlappingPaths();
+        assertThatThrownBy(() -> new ApiServlet(controller).init(null))
+                .isInstanceOf(ActionControllerConfigurationException.class)
+                .hasMessageContaining("is in conflict with")
+                .hasMessageContaining("/files/index.html")
+                .hasMessageContaining("/files/{filename}")
+                .hasMessageContaining(controller.getClass().getSimpleName());
+    }
+
+    @Test
+    public void shouldReportQueryParametersWithConflicts() {
+        ControllerWithSameQuery controller = new ControllerWithSameQuery();
+        assertThatThrownBy(() -> new ApiServlet(controller).init(null))
+                .isInstanceOf(ActionControllerConfigurationException.class)
+                .hasMessageContaining("is in conflict with")
+                .hasMessageContaining("/files?extension")
+                .hasMessageContaining(controller.getClass().getSimpleName());
+    }
+
+    @Test
+    public void shouldReportRoutesWithConflictingPatterns() {
+        ControllerWithOverlappingPathExpressions controller = new ControllerWithOverlappingPathExpressions();
+        assertThatThrownBy(() -> new ApiServlet(controller).init(null))
+                .isInstanceOf(ActionControllerConfigurationException.class)
+                .hasMessageContaining("is in conflict with")
+                .hasMessageContaining("/files/{filename}.html")
+                .hasMessageContaining("/files/{otherName}.html")
+                .hasMessageContaining(controller.getClass().getSimpleName());
+    }
+
+    @Test
     public void shouldReportErrorForServletWithNoControllers() {
         ApiServlet apiServlet = new ApiServlet();
         assertThatThrownBy(() -> apiServlet.init(null))
@@ -108,7 +151,7 @@ public class ApiServletConfigurationErrorTest {
     }
 
 
-    private class ControllerWithErrors {
+    private static class ControllerWithErrors {
 
         @GET("/")
         public void actionWithUnboundParameter(@SuppressWarnings("unused") String parameter) {
@@ -122,7 +165,7 @@ public class ApiServletConfigurationErrorTest {
 
     }
 
-    private class ControllerWithMismatchedPathParams {
+    private static class ControllerWithMismatchedPathParams {
         @GET("/test/:myTest")
         public void actionWithParameterMismatch(@PathParam("incorrect") String param) {
 
@@ -130,7 +173,7 @@ public class ApiServletConfigurationErrorTest {
     }
 
 
-    private class OtherControllerWithErrors {
+    private static class OtherControllerWithErrors {
 
         @GET("/foo")
         public String actionWithInvalidMappingAnnotation(
@@ -147,11 +190,43 @@ public class ApiServletConfigurationErrorTest {
 
     }
 
-    private class ControllerWithInvalidRedirect {
+    private static class ControllerWithInvalidRedirect {
         @GET("/redirector")
         @SendRedirect("/")
         public String redirect() {
             return "/invalidToReturnWithParameter";
         }
+    }
+
+    private static class ControllerWithOverlappingPathParameters {
+        @POST("/files/{filename}")
+        public void doAction(@PathParam("filename") String filename) {}
+
+        @POST("/files/{otherName}")
+        public void doOtherAction(@PathParam("otherName") String otherName) {}
+    }
+
+    private static class ControllerWithOverlappingPathExpressions {
+        @POST("/files/{filename}.html")
+        public void doAction(@PathParam("filename") String filename) {}
+
+        @POST("/files/{otherName}.html")
+        public void doOtherAction(@PathParam("otherName") String otherName) {}
+    }
+
+    private static class ControllerWithOverlappingPaths {
+        @POST("/files/{filename}")
+        public void doAction(@PathParam("filename") String filename) {}
+
+        @POST("/files/index.html")
+        public void doOtherAction() {}
+    }
+
+    private static class ControllerWithSameQuery {
+        @POST("/files?extension")
+        public void doAction() {}
+
+        @POST("/files?extension")
+        public void doOtherAction() {}
     }
 }

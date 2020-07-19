@@ -43,6 +43,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
 
     private final static Logger logger = LoggerFactory.getLogger(ApiControllerAction.class);
     private final Optional<String> requiredParameter;
+    public static final Pattern PATH_PARAM_PATTERN = Pattern.compile("^(:(.\\w*)|^\\{(\\w*)})(\\.(\\w+))?$");
 
     public static List<ApiControllerAction> createActions(Object controller, ApiControllerContext context) {
         List<ApiControllerAction> actions = new ArrayList<>();
@@ -71,27 +72,25 @@ public class ApiControllerMethodAction implements ApiControllerAction {
         return actions;
     }
 
+    private final String httpMethod;
+    private final Object controller;
+    private final Method action;
     private final String pattern;
     private final String[] patternParts;
     private final String[] pathParams;
     private final Pattern[] paramRegexp;
 
-    private List<HttpParameterMapper> parameterMappers = new ArrayList<>();
+    private final List<HttpParameterMapper> parameterMappers = new ArrayList<>();
 
-    private HttpReturnMapper responseMapper;
+    private final HttpReturnMapper responseMapper;
 
     public ApiControllerMethodAction(String httpMethod, String pattern, Object controller, Method action, ApiControllerContext context) {
         this.httpMethod = httpMethod;
         this.controller = controller;
         this.action = action;
         this.pattern = pattern;
-        if (pattern.indexOf('?') > 0) {
-            this.patternParts = pattern.substring(0, pattern.indexOf('?')).split("/");
-            this.requiredParameter = Optional.of(pattern.substring(pattern.indexOf('?') + 1));
-        } else {
-            this.patternParts = pattern.split("/");
-            this.requiredParameter = Optional.empty();
-        }
+        this.patternParts = getPatternParts(pattern);
+        this.requiredParameter = getRequiredParameter(pattern);
         this.pathParams = new String[patternParts.length];
         this.paramRegexp = new Pattern[patternParts.length];
 
@@ -100,10 +99,9 @@ public class ApiControllerMethodAction implements ApiControllerAction {
             parameterMappers.add(createParameterMapper(parameters[i], i, context));
         }
 
-        Pattern pathParamPattern = Pattern.compile("^(:(.\\w*)|^\\{(\\w*)})(\\.(\\w+))?$");
         for (int i = 0; i < patternParts.length; i++) {
             String patternPart = patternParts[i];
-            Matcher matcher = pathParamPattern.matcher(patternPart);
+            Matcher matcher = PATH_PARAM_PATTERN.matcher(patternPart);
             if (matcher.matches()) {
                 pathParams[i] = matcher.group(2) != null ? matcher.group(2) : matcher.group(3);
                 if (matcher.group(5) != null && !matcher.group(5).isEmpty()) {
@@ -113,10 +111,16 @@ public class ApiControllerMethodAction implements ApiControllerAction {
         }
 
         responseMapper = createResponseMapper();
-
         verifyPathParameters();
     }
 
+    private static String[] getPatternParts(String pattern) {
+        return pattern.indexOf('?') > 0 ? pattern.substring(0, pattern.indexOf('?')).split("/") : pattern.split("/");
+    }
+
+    private static Optional<String> getRequiredParameter(String pattern) {
+        return pattern.indexOf('?') > 0 ? Optional.of(pattern.substring(pattern.indexOf('?') + 1)) : Optional.empty();
+    }
 
     private static <T> T newInstance(Class<? extends T> clazz) throws NoSuchMethodException {
         try {
@@ -153,7 +157,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
         }
     }
 
-    private static Map<Class<?>, HttpReturnMapper> typebasedResponseMapping = new HashMap<>();
+    private static final Map<Class<?>, HttpReturnMapper> typebasedResponseMapping = new HashMap<>();
     static {
         typebasedResponseMapping.put(URL.class, (o, exchange) -> exchange.sendRedirect(o.toString()));
         typebasedResponseMapping.put(Void.TYPE, (o, exchange) -> {});
@@ -215,15 +219,10 @@ public class ApiControllerMethodAction implements ApiControllerAction {
         throw new ApiActionParameterUnknownMappingException(action, index, parameter);
     }
 
-    private static Map<Class<?>, HttpParameterMapper> typebasedRequestMapping = new HashMap<>();
+    private static final Map<Class<?>, HttpParameterMapper> typebasedRequestMapping = new HashMap<>();
     static {
         typebasedRequestMapping.put(ApiHttpExchange.class, (exchange) -> exchange);
     }
-
-    private String httpMethod;
-    private final Object controller;
-
-    private final Method action;
 
     @Override
     public Object getController() {
@@ -272,6 +271,37 @@ public class ApiControllerMethodAction implements ApiControllerAction {
             }
         }
 
+        return true;
+    }
+
+    @Override
+    public boolean matches(ApiControllerAction otherAction) {
+        if (!getHttpMethod().equals(otherAction.getHttpMethod())) {
+            return false;
+        }
+
+        if (!getRequiredParameter(otherAction.getPattern()).equals(getRequiredParameter(pattern))) {
+            return false;
+        }
+
+        String[] otherPatternParts = getPatternParts(otherAction.getPattern());
+        if (otherPatternParts.length != this.patternParts.length) {
+            return false;
+        }
+        for (int i = 0; i < patternParts.length; i++) {
+            Matcher matcher = PATH_PARAM_PATTERN.matcher(patternParts[i]);
+            Matcher otherMatcher = PATH_PARAM_PATTERN.matcher(otherPatternParts[i]);
+
+            if (matcher.matches() || otherMatcher.matches()) {
+                if (matcher.matches() && otherMatcher.matches() && !Objects.equals(otherMatcher.group(5), matcher.group(5))) {
+                    return false;
+                }
+                continue;
+            }
+            if (!patternParts[i].equals(otherPatternParts[i])) {
+                return false;
+            }
+        }
         return true;
     }
 

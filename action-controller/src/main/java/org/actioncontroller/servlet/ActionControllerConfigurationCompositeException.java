@@ -32,4 +32,10 @@ public class ActionControllerConfigurationCompositeException extends ActionContr
     public boolean isEmpty() {
         return exceptions.isEmpty();
     }
+
+    public void verifyNoExceptions() {
+        if (!isEmpty()) {
+            throw this;
+        }
+    }
 }

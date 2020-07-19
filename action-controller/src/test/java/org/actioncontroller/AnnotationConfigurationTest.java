@@ -11,6 +11,7 @@ import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapperFactory;
 import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.servlet.ActionControllerConfigurationException;
+import org.actioncontroller.servlet.ApiControllerActionRouter;
 import org.actioncontroller.servlet.ApiServlet;
 import org.actioncontroller.test.FakeApiClient;
 import org.junit.Rule;
@@ -96,6 +97,7 @@ public class AnnotationConfigurationTest {
                 }
             }
 
+            @SuppressWarnings({"unchecked", "rawtypes"})
             private HttpClientParameterMapper consumer(Parameter parameter, Function<ApiClientExchange, Optional<String>> f) {
                 Type targetType = TypesUtil.typeParameter(parameter.getParameterizedType());
                 return (exchange, arg) -> f.apply(exchange)
@@ -158,12 +160,12 @@ public class AnnotationConfigurationTest {
 
     @Test
     public void shouldThrowExceptionOnMissingRequiredConfigurationValue() {
-        expectedLogEvents.expectMatch(event -> event.logger(ApiControllerAction.class)
+        expectedLogEvents.expectMatch(event -> event.logger(ApiControllerActionRouter.class)
                         .pattern("Failed to setup {}")
                         .exception(ActionControllerConfigurationException.class)
                         .args("Controller.setCookie(String,Consumer)")
         );
-        expectedLogEvents.expectMatch(event -> event.logger(ApiControllerAction.class)
+        expectedLogEvents.expectMatch(event -> event.logger(ApiControllerActionRouter.class)
                         .pattern("Failed to setup {}")
                         .exception(ActionControllerConfigurationException.class)
                         .args("Controller.getCookie(String)")
@@ -195,8 +197,8 @@ public class AnnotationConfigurationTest {
 
     @Test
     public void shouldThrowExceptionOnMissingRequiredConfigurationValueWithJdkHttpServer() {
-        expectedLogEvents.expectMatch(event -> event.logger(ApiControllerAction.class).formattedMessage("Failed to setup Controller.setCookie(String,Consumer)"));
-        expectedLogEvents.expectMatch(event -> event.logger(ApiControllerAction.class).formattedMessage("Failed to setup Controller.getCookie(String)"));
+        expectedLogEvents.expectMatch(event -> event.logger(ApiControllerActionRouter.class).formattedMessage("Failed to setup Controller.setCookie(String,Consumer)"));
+        expectedLogEvents.expectMatch(event -> event.logger(ApiControllerActionRouter.class).formattedMessage("Failed to setup Controller.getCookie(String)"));
 
         assertThatThrownBy(() -> new ApiHandler(new Controller()))
                 .isInstanceOf(ActionControllerConfigurationException.class)

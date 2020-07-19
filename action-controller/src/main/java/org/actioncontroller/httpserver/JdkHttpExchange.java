@@ -36,7 +36,7 @@ import java.util.Optional;
 
 import static org.actioncontroller.ExceptionUtil.softenException;
 
-public class JdkHttpExchange implements ApiHttpExchange {
+public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
     public static final Charset CHARSET = StandardCharsets.ISO_8859_1;
 
     private final HttpExchange exchange;

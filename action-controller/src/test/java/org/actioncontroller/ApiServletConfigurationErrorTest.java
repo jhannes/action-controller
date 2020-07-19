@@ -6,6 +6,7 @@ import org.actioncontroller.meta.HttpParameterMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
 import org.actioncontroller.meta.HttpReturnMapper;
+import org.actioncontroller.servlet.ApiControllerActionRouter;
 import org.actioncontroller.servlet.ApiServlet;
 import org.actioncontroller.servlet.ActionControllerConfigurationException;
 import org.junit.Rule;
@@ -31,7 +32,7 @@ public class ApiServletConfigurationErrorTest {
     @Test
     public void shouldReportAllActionErrors() {
         expectedLogEventsRule.expectPattern(ApiControllerAction.class, Level.WARN, "Unused path parameters for {}: {}");
-        expectedLogEventsRule.expectPattern(ApiControllerAction.class, Level.WARN, "Failed to setup {}");
+        expectedLogEventsRule.expectPattern(ApiControllerActionRouter.class, Level.WARN, "Failed to setup {}");
         ApiServlet apiServlet = new ApiServlet(List.of(
                 new ControllerWithErrors(), new OtherControllerWithErrors(), new ControllerWithMismatchedPathParams())
         );
@@ -47,7 +48,7 @@ public class ApiServletConfigurationErrorTest {
                 .hasMessageContaining("incorrect")
         ;
 
-        expectedLogEventsRule.expectPattern(ApiControllerAction.class, Level.WARN, "Failed to setup {}");
+        expectedLogEventsRule.expectPattern(ApiControllerActionRouter.class, Level.WARN, "Failed to setup {}");
         expectedLogEventsRule.expect(ApiControllerAction.class, Level.WARN,
                 "Unused path parameters for ControllerWithMismatchedPathParams.actionWithParameterMismatch(String): [myTest]");
     }
@@ -115,7 +116,7 @@ public class ApiServletConfigurationErrorTest {
 
     @Test
     public void shouldReportErrorOnRedirectWithBothValueAndReturn() {
-        expectedLogEventsRule.expectPattern(ApiControllerAction.class, Level.WARN, "Failed to setup {}");
+        expectedLogEventsRule.expectPattern(ApiControllerActionRouter.class, Level.WARN, "Failed to setup {}");
         ApiServlet servlet = new ApiServlet(new ControllerWithInvalidRedirect());
         assertThatThrownBy(() -> servlet.init(null))
                 .isInstanceOf(ActionControllerConfigurationException.class)

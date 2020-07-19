@@ -11,15 +11,15 @@ import java.lang.reflect.Parameter;
  */
 public class ApiActionParameterUnknownMappingException extends ActionControllerConfigurationException {
 
-    public ApiActionParameterUnknownMappingException(Method action, int index, Parameter parameter) {
-        this("No mapping annotation for " + action.getName() + "() parameter " + index + " of type " + parameter + additionalInfo(parameter));
+    public ApiActionParameterUnknownMappingException(Method action, int index) {
+        this("No mapping annotation for " + action.getName() + "() parameter " + index + " of type " + additionalInfo(action.getParameters()[index]));
     }
 
     private static String additionalInfo(Parameter parameter) {
         if (parameter.getAnnotations().length == 1) {
-            return " (should " + parameter.getAnnotations()[0].annotationType() + " have @HttpParameterMapping?)";
+            return parameter + " (should " + parameter.getAnnotations()[0].annotationType() + " have @HttpParameterMapping?)";
         } else {
-            return "";
+            return parameter.toString();
         }
     }
 

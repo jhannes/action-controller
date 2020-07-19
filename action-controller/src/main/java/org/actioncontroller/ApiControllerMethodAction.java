@@ -4,21 +4,15 @@ import org.actioncontroller.json.JsonHttpActionException;
 import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapperFactory;
-import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpReturnMapper;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
-import org.actioncontroller.meta.HttpReturnMapping;
-import org.actioncontroller.meta.HttpRouterMapping;
-import org.actioncontroller.servlet.ActionControllerConfigurationException;
 import org.jsonbuddy.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,39 +32,11 @@ import java.util.stream.Stream;
  * For example <code>@Get("/helloWorld") public String hello(@RequestParam("greeter") String greeter)</code>
  * defines an action that responds to <code>GET /helloWorld?greeter=something</code> with a string.
  */
-@SuppressWarnings({"rawtypes", "unchecked"})
 public class ApiControllerMethodAction implements ApiControllerAction {
 
     private final static Logger logger = LoggerFactory.getLogger(ApiControllerAction.class);
     private final Optional<String> requiredParameter;
     public static final Pattern PATH_PARAM_PATTERN = Pattern.compile("^(:(.\\w*)|^\\{(\\w*)})(\\.(\\w+))?$");
-
-    public static List<ApiControllerAction> createActions(Object controller, ApiControllerContext context) {
-        List<ApiControllerAction> actions = new ArrayList<>();
-        ApiControllerCompositeException exceptions = new ApiControllerCompositeException(controller);
-        for (Method method : controller.getClass().getMethods()) {
-            for (Annotation routingAnnotation : method.getAnnotations()) {
-                HttpRouterMapping routerMapping = routingAnnotation.annotationType().getAnnotation(HttpRouterMapping.class);
-                if (routerMapping != null) {
-                    try {
-                        ApiControllerAction action = newInstance(routerMapping.value()).create(routingAnnotation, controller, method, context);
-                        logger.info("Installing route {}", action);
-                        actions.add(action);
-                    } catch (ActionControllerConfigurationException|NoSuchMethodException e) {
-                        logger.warn("Failed to setup {}", getMethodName(method), e);
-                        exceptions.addActionException(e);
-                    }
-                }
-            }
-        }
-        if (!exceptions.isEmpty()) {
-            throw exceptions;
-        }
-        if (actions.isEmpty()) {
-            throw new ActionControllerConfigurationException("Controller has no actions: " + controller);
-        }
-        return actions;
-    }
 
     private final String httpMethod;
     private final Object controller;
@@ -94,9 +60,8 @@ public class ApiControllerMethodAction implements ApiControllerAction {
         this.pathParams = new String[patternParts.length];
         this.paramRegexp = new Pattern[patternParts.length];
 
-        Parameter[] parameters = action.getParameters();
-        for (int i = 0; i < parameters.length; i++) {
-            parameterMappers.add(createParameterMapper(parameters[i], i, context));
+        for (int i = 0; i < action.getParameters().length; i++) {
+            parameterMappers.add(createParameterMapper(i, context));
         }
 
         for (int i = 0; i < patternParts.length; i++) {
@@ -120,16 +85,6 @@ public class ApiControllerMethodAction implements ApiControllerAction {
 
     private static Optional<String> getRequiredParameter(String pattern) {
         return pattern.indexOf('?') > 0 ? Optional.of(pattern.substring(pattern.indexOf('?') + 1)) : Optional.empty();
-    }
-
-    private static <T> T newInstance(Class<? extends T> clazz) throws NoSuchMethodException {
-        try {
-            return clazz.getDeclaredConstructor().newInstance();
-        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | SecurityException e) {
-            throw ExceptionUtil.softenException(e);
-        } catch (InvocationTargetException e) {
-            throw ExceptionUtil.softenException(e.getTargetException());
-        }
     }
 
     private void verifyPathParameters() {
@@ -163,65 +118,21 @@ public class ApiControllerMethodAction implements ApiControllerAction {
         typebasedResponseMapping.put(Void.TYPE, (o, exchange) -> {});
     }
 
-    private HttpReturnMapper createResponseMapper() {
-        for (Annotation annotation : action.getAnnotations()) {
-            HttpReturnMapping mappingAnnotation = annotation.annotationType().getAnnotation(HttpReturnMapping.class);
-            if (mappingAnnotation != null) {
-                Class<? extends HttpReturnMapperFactory> value = mappingAnnotation.value();
-                try {
-                    return newInstance(value).create(annotation, action.getGenericReturnType());
-                } catch (NoSuchMethodException e) {
-                    throw new ApiActionResponseUnknownMappingException(
-                            "No mapping annotation for " + action.getName() + "() return type"
-                                    + ": Illegal mapping function for " + value + " (no default constructor)");
-                }
-            }
-        }
-
-        return Optional.ofNullable(typebasedResponseMapping.get(action.getReturnType()))
-                .orElseThrow(() -> new ApiActionResponseUnknownMappingException(action, action.getReturnType()));
-    }
-
-    private HttpParameterMapper createParameterMapper(Parameter parameter, int index, ApiControllerContext context) {
-        for (Annotation annotation : parameter.getAnnotations()) {
-            HttpParameterMapping mappingAnnotation = annotation.annotationType().getAnnotation(HttpParameterMapping.class);
-            if (mappingAnnotation != null) {
-                Class<? extends HttpParameterMapperFactory> value = mappingAnnotation.value();
-                HttpParameterMapperFactory mapperFactory;
-                try {
-                    mapperFactory = newInstance(value);
-                } catch (NoSuchMethodException e) {
-                    throw new ApiActionParameterUnknownMappingException(
-                            "No mapping annotation for " + action.getName() + "() parameter " + index
-                                    + ": Illegal mapping factory " + value + " (no default constructor)");
-                }
-
-                try {
-                    HttpParameterMapper parameterMapper = mapperFactory.create(annotation, parameter, context);
-                    if (parameterMapper == null) {
-                        throw new ActionControllerConfigurationException(
-                                mapperFactory.getClass().getName() + ".create(...) returned null for " + this
-                        );
-                    }
-                    return parameterMapper;
-                } catch (ActionControllerConfigurationException e) {
-                    throw e;
-                } catch (Exception e) {
-                    throw new ActionControllerConfigurationException("Failed to call " + value + " constructor", e);
-                }
-            }
-        }
-
-        HttpParameterMapper typeBasedMapping = typebasedRequestMapping.get(parameter.getType());
-        if (typeBasedMapping != null) {
-            return typeBasedMapping;
-        }
-        throw new ApiActionParameterUnknownMappingException(action, index, parameter);
-    }
-
     private static final Map<Class<?>, HttpParameterMapper> typebasedRequestMapping = new HashMap<>();
     static {
         typebasedRequestMapping.put(ApiHttpExchange.class, (exchange) -> exchange);
+    }
+
+    private HttpReturnMapper createResponseMapper() {
+        return HttpReturnMapperFactory.createNewInstance(action)
+                .or(() -> Optional.ofNullable(typebasedResponseMapping.get(action.getReturnType())))
+                .orElseThrow(() -> new ApiActionResponseUnknownMappingException(action, action.getReturnType()));
+    }
+
+    private HttpParameterMapper createParameterMapper(int index, ApiControllerContext context) {
+        return HttpParameterMapperFactory.createNewInstance(action.getParameters()[index], context)
+                .or(() -> Optional.ofNullable(typebasedRequestMapping.get(action.getParameters()[index].getType())))
+                .orElseThrow(() -> new ApiActionParameterUnknownMappingException(action, index));
     }
 
     @Override
@@ -307,12 +218,16 @@ public class ApiControllerMethodAction implements ApiControllerAction {
 
     @Override
     public void invoke(UserContext userContext, ApiHttpExchange exchange) throws IOException {
-        verifyUserAccess(exchange, userContext);
-        calculatePathParams(exchange);
-        Object[] arguments = createArguments(getAction(), exchange);
-        logger.debug("Invoking {}", this);
-        Object result = invoke(getController(), getAction(), arguments);
-        convertReturnValue(result, exchange);
+        try {
+            verifyUserAccess(exchange, userContext);
+            calculatePathParams(exchange);
+            Object[] arguments = createArguments(getAction(), exchange);
+            logger.debug("Invoking {}", this);
+            Object result = invoke(getController(), getAction(), arguments);
+            convertReturnValue(result, exchange);
+        } catch (HttpActionException e) {
+            e.sendError(exchange);
+        }
     }
 
     protected void calculatePathParams(ApiHttpExchange exchange) {

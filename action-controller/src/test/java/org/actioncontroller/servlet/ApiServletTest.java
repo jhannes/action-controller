@@ -47,7 +47,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-import static org.actioncontroller.ApiControllerMethodAction.createActions;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -172,7 +171,7 @@ public class ApiServletTest {
     @Test
     public void shouldGive404OnUnknownAction() throws IOException {
         FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/api", "/missing");
-        expectedLogEvents.expect(ApiServlet.class, Level.INFO, "No route for GET " + contextRoot.getPath() + "/api[/missing]");
+        expectedLogEvents.expect(ApiControllerActionRouter.class, Level.INFO, "No route for GET " + contextRoot.getPath() + "/api[/missing]");
         servlet.service(request, response);
         assertThat(response.getStatus()).isEqualTo(404);
     }
@@ -410,7 +409,7 @@ public class ApiServletTest {
 
     @Test
     public void shouldQueryMBean() {
-        ApiControllerAction action = createActions(new ExampleController(), new ApiControllerContext())
+        ApiControllerAction action = ApiControllerActionRouter.createActions(new ExampleController(), new ApiControllerContext())
                 .stream().filter(a -> a.getAction().getName().equals("postAction")).findFirst().orElseThrow();
         ApiControllerActionMXBeanAdaptor mbean = new ApiControllerActionMXBeanAdaptor(action);
         assertThat(mbean.getHttpMethod()).isEqualTo("POST");

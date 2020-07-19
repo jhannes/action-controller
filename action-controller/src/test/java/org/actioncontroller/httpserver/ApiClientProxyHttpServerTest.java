@@ -2,11 +2,11 @@ package org.actioncontroller.httpserver;
 
 import com.sun.net.httpserver.HttpServer;
 import org.actioncontroller.AbstractApiClientProxyTest;
-import org.actioncontroller.HttpActionException;
 import org.actioncontroller.SocketHttpClient;
 import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.client.HttpURLConnectionApiClient;
+import org.actioncontroller.servlet.ApiControllerActionRouter;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.event.Level;
@@ -35,7 +35,7 @@ public class ApiClientProxyHttpServerTest extends AbstractApiClientProxyTest {
 
     @Test
     public void gives404OnUnmappedController() {
-        expectedLogEvents.expect(ApiHandler.class, Level.INFO, "No route for GET [/not-mapped]");
+        expectedLogEvents.expect(ApiControllerActionRouter.class, Level.INFO, "No route for GET [/not-mapped]");
         UnmappedController unmappedController = ApiClientClassProxy.create(UnmappedController.class,
                         new HttpURLConnectionApiClient(baseUrl));
         assertThatThrownBy(unmappedController::notHere)
@@ -64,7 +64,7 @@ public class ApiClientProxyHttpServerTest extends AbstractApiClientProxyTest {
         expectedLogEvents.expect(
                 ApiHandler.class,
                 Level.ERROR,
-                "While handling JdkHttpExchange{GET [/someNiceMath]} with ApiControllerMethodAction{GET /someNiceMath => TestController.divide(int,int,boolean)}",
+                "While handling JdkHttpExchange{GET [/someNiceMath]}",
                 new ArithmeticException("/ by zero")
         );
         assertThatThrownBy(() -> client.divide(10, 0, false))

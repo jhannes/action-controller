@@ -1,24 +1,13 @@
 package org.actioncontroller.servlet;
 
-import org.actioncontroller.ApiControllerAction;
-import org.actioncontroller.ApiControllerCompositeException;
 import org.actioncontroller.ApiControllerContext;
-import org.actioncontroller.ApiControllerMethodAction;
-import org.actioncontroller.ExceptionUtil;
-import org.actioncontroller.HttpActionException;
 import org.actioncontroller.UserContext;
-import org.actioncontroller.jmx.ApiControllerActionMXBeanAdaptor;
 import org.actioncontroller.meta.ApiHttpExchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.ObjectName;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -70,7 +59,7 @@ public class ApiServlet extends HttpServlet implements UserContext {
 
     private static final Logger logger = LoggerFactory.getLogger(ApiServlet.class);
     private final List<Object> controllers = new ArrayList<>();
-    private final List<ApiControllerAction> actions = new ArrayList<>();
+    private final ApiControllerActionRouter actions = new ApiControllerActionRouter();
     private final ApiControllerContext context = new ApiControllerContext();
 
     public ApiServlet() {}
@@ -99,46 +88,13 @@ public class ApiServlet extends HttpServlet implements UserContext {
                 MDC.MDCCloseable ignored = MDC.putCloseable("clientIp", req.getRemoteAddr());
                 MDC.MDCCloseable ignored2 = MDC.putCloseable("request", req.getContextPath() + req.getServletPath() + req.getPathInfo())
         ) {
-            verifyNoExceptions();
+            controllerException.verifyNoExceptions();
             invokeAction(new ServletHttpExchange(req, resp));
         }
     }
 
     private void invokeAction(ApiHttpExchange httpExchange) throws IOException {
-        List<ApiControllerAction> candidates = new ArrayList<>();
-
-        for (ApiControllerAction action : actions) {
-            if (action.matches(httpExchange)) {
-                candidates.add(action);
-            }
-        }
-
-        if (candidates.size() > 1) {
-            List<ApiControllerAction> filteredCandidates = candidates.stream().filter(ApiControllerAction::requiresParameter).collect(Collectors.toList());
-            if (filteredCandidates.isEmpty()) {
-                logger.warn("Ambiguous route for {}", httpExchange.getHttpMethod() + " " + httpExchange.getApiURL().getPath() + "[" + httpExchange.getPathInfo() + "]");
-                logger.debug("Routes {}", candidates);
-                httpExchange.sendError(404, "No route for " + httpExchange.getHttpMethod() + ": " + httpExchange.getApiURL() + httpExchange.getPathInfo());
-                return;
-            }
-            candidates = filteredCandidates;
-        }
-
-        if (candidates.isEmpty()) {
-            logger.info("No route for {}", httpExchange.getHttpMethod() + " " + httpExchange.getApiURL().getPath() + "[" + httpExchange.getPathInfo() + "]");
-            logger.debug("Routes {}", actions);
-            httpExchange.sendError(404, "No route for " + httpExchange.getHttpMethod() + ": " + httpExchange.getApiURL() + httpExchange.getPathInfo());
-        } else if (candidates.size() > 1) {
-            logger.warn("Ambiguous route for {}", httpExchange.getHttpMethod() + " " + httpExchange.getApiURL().getPath() + "[" + httpExchange.getPathInfo() + "]");
-            logger.debug("Routes {}", candidates);
-            httpExchange.sendError(404, "No route for " + httpExchange.getHttpMethod() + ": " + httpExchange.getApiURL() + httpExchange.getPathInfo());
-        } else {
-            try {
-                candidates.get(0).invoke(this, httpExchange);
-            } catch (HttpActionException e) {
-                e.sendError(httpExchange);
-            }
-        }
+        actions.invokeAction(httpExchange, this);
     }
 
     public void registerController(Object controller) {
@@ -177,7 +133,7 @@ public class ApiServlet extends HttpServlet implements UserContext {
 
         this.controllerException = new ActionControllerConfigurationCompositeException();
         setupActions();
-        verifyNoExceptions();
+        controllerException.verifyNoExceptions();
 
         if (actions.isEmpty()) {
             throw new ActionControllerConfigurationException(getClass() + " has no controllers. Use ActionServlet(Object) constructor or registerAction() to create create a controller");
@@ -185,35 +141,8 @@ public class ApiServlet extends HttpServlet implements UserContext {
         super.init(config);
     }
 
-    protected void verifyNoExceptions() {
-        if (!controllerException.isEmpty()) {
-            throw controllerException;
-        }
-    }
-
     protected void setupActions() {
-        for (Object controller : controllers) {
-            if (controllerException == null) {
-                controllerException = new ActionControllerConfigurationCompositeException();
-            }
-            try {
-                List<ApiControllerAction> actions = ApiControllerMethodAction.createActions(controller, context);
-                for (ApiControllerAction action : actions) {
-                    addAction(action);
-                }
-            } catch (ApiControllerCompositeException e) {
-                controllerException.addControllerException(e);
-            }
-        }
-    }
-
-    private void addAction(ApiControllerAction action) {
-        for (ApiControllerAction existingAction : actions) {
-            if (existingAction.matches(action)) {
-                throw new ActionControllerConfigurationException(action + " is in conflict with " + existingAction);
-            }
-        }
-        this.actions.add(action);
+        actions.setupActions(controllers, context, controllerException);
     }
 
     public void registerMBeans() {
@@ -221,16 +150,6 @@ public class ApiServlet extends HttpServlet implements UserContext {
     }
 
     public void registerMBeans(MBeanServer mBeanServer) {
-        try {
-            for (ApiControllerAction action : actions) {
-                mBeanServer.registerMBean(
-                        new ApiControllerActionMXBeanAdaptor(action),
-                        new ObjectName("org.actioncontroller:controller=" + action.getController().getClass().getName() + ",action=" + action.getAction().getName())
-                );
-            }
-        } catch (InstanceAlreadyExistsException | MBeanRegistrationException | NotCompliantMBeanException | MalformedObjectNameException e) {
-            throw ExceptionUtil.softenException(e);
-        }
-
+        actions.registerMBeans(mBeanServer);
     }
 }

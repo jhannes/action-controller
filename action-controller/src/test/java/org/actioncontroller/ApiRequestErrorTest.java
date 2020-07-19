@@ -1,5 +1,6 @@
 package org.actioncontroller;
 
+import org.actioncontroller.servlet.ApiControllerActionRouter;
 import org.actioncontroller.servlet.ApiServlet;
 import org.fakeservlet.FakeServletRequest;
 import org.fakeservlet.FakeServletResponse;
@@ -51,7 +52,7 @@ public class ApiRequestErrorTest {
         FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/actions", null);
 
         expectedLogEvents.expectMatch(e -> e
-                .logger(ApiServlet.class)
+                .logger(ApiControllerActionRouter.class)
                 .formattedMessage("No route for GET /my/context/actions[]"));
         servlet.service(request, resp);
 

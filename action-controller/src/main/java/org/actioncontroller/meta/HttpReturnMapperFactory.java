@@ -17,6 +17,11 @@ public interface HttpReturnMapperFactory<ANNOTATION extends Annotation> extends 
                 .map(annotation -> createFactory(annotation).create(annotation, action.getGenericReturnType()));
     }
 
+    static Optional<HttpClientReturnMapper> createNewClientInstance(Method action) {
+        return AnnotationFactory.getAnnotatedAnnotation(action, HttpReturnMapping.class)
+                .map(annotation -> createFactory(annotation).createClientMapper(annotation, action.getGenericReturnType()));
+    }
+
     static <T extends Annotation> HttpReturnMapperFactory<T> createFactory(T annotation) {
         //noinspection unchecked
         return AnnotationFactory.newInstance(annotation.annotationType().getAnnotation(HttpReturnMapping.class).value());

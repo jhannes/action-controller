@@ -4,14 +4,14 @@ import org.actioncontroller.DELETE;
 import org.actioncontroller.GET;
 import org.actioncontroller.POST;
 import org.actioncontroller.PUT;
+import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpClientReturnMapper;
-import org.actioncontroller.meta.HttpParameterMapping;
-import org.actioncontroller.meta.HttpReturnMapping;
+import org.actioncontroller.meta.HttpParameterMapperFactory;
+import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -49,6 +49,7 @@ public class ApiClientProxy {
     private static final Logger logger = LoggerFactory.getLogger(ApiClientProxy.class);
 
     public static <T> T create(Class<T> controllerClass, ApiClient client) {
+        //noinspection unchecked
         return (T) Proxy.newProxyInstance(controllerClass.getClassLoader(), new Class[] { controllerClass }, createInvocationHandler(client));
     }
 
@@ -56,82 +57,66 @@ public class ApiClientProxy {
         return (proxy, method, args) -> invoke(client, method, args);
     }
 
-    private static Object invoke(ApiClient client, Method method, Object[] args) throws IllegalAccessException, InvocationTargetException, InstantiationException, NoSuchMethodException, IOException {
+    private static Object invoke(ApiClient client, Method method, Object[] args) throws IllegalAccessException, InvocationTargetException, IOException {
         if (method.getDeclaringClass() == Object.class) {
             return method.invoke(client, args);
         }
 
         ApiClientExchange exchange = createExchange(client, method);
-        Parameter[] parameters = processParameters(method, args, exchange);
+        HttpReturnMapperFactory.createNewClientInstance(method).ifPresent(mapper -> mapper.setupExchange(exchange));
+        processParameters(method, args, exchange);
 
         logger.debug("{}: {}", getMethodName(method), exchange);
         exchange.executeRequest();
 
         exchange.checkForError();
-        processConsumerParameters(args, exchange, parameters);
+        processConsumerParameters(method, args, exchange);
         return transformReturnValue(method, exchange);
     }
 
-    private static Object transformReturnValue(Method method, ApiClientExchange exchange) throws IOException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
-        for (Annotation annotation : method.getAnnotations()) {
-            HttpReturnMapping returnMapping = annotation.annotationType().getAnnotation(HttpReturnMapping.class);
-            if (returnMapping != null) {
-                Object returnValue = returnMapping.value()
-                        .getDeclaredConstructor()
-                        .newInstance()
-                        .createClientMapper(annotation, method.getGenericReturnType())
-                        .getReturnValue(exchange);
-                if (!isCorrectType(returnValue, method.getReturnType())) {
-                    throw new IllegalArgumentException(returnMapping + " returned the wrong type. Expected " + method.getReturnType() + " but was " + returnValue.getClass());
-                }
-
-                return returnValue;
+    private static Object transformReturnValue(Method method, ApiClientExchange exchange) throws IOException {
+        Optional<HttpClientReturnMapper> clientInstance = HttpReturnMapperFactory.createNewClientInstance(method);
+        if (clientInstance.isPresent()) {
+            Object returnValue = clientInstance.get().getReturnValue(exchange);
+            if (!isCorrectType(returnValue, method.getReturnType())) {
+                throw new IllegalArgumentException(getMethodName(method) + " returned the wrong type. Expected " + method.getReturnType() + " but was " + returnValue.getClass());
             }
-        }
 
+            return returnValue;
+        }
         if (method.getReturnType() == Void.TYPE) {
             return null;
         }
         throw new RuntimeException("Unsupported return type for to " + method);
     }
 
-    private static void processConsumerParameters(Object[] args, ApiClientExchange exchange, Parameter[] parameters) throws IOException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+    private static void processConsumerParameters(Method method, Object[] args, ApiClientExchange exchange) throws IOException {
+        Parameter[] parameters = method.getParameters();
         for (int i = 0; i < parameters.length; i++) {
             Parameter parameter = parameters[i];
             if (Consumer.class.isAssignableFrom(parameter.getType())) {
-                for (Annotation annotation : parameter.getAnnotations()) {
-                    HttpParameterMapping parameterMapping = annotation.annotationType().getAnnotation(HttpParameterMapping.class);
-                    if (parameterMapping != null) {
-                        parameterMapping.value()
-                                .getDeclaredConstructor().newInstance()
-                                .clientParameterMapper(annotation, parameter)
-                                .apply(exchange, args[i]);
-                    }
+                Optional<HttpClientParameterMapper> clientInstance = HttpParameterMapperFactory.createNewClientInstance(parameter);
+                if (clientInstance.isPresent()) {
+                    clientInstance.get().apply(exchange, args[i]);
                 }
             }
         }
     }
 
-    private static Parameter[] processParameters(Method method, Object[] args, ApiClientExchange exchange) throws IOException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+    private static void processParameters(Method method, Object[] args, ApiClientExchange exchange) throws IOException {
         Parameter[] parameters = method.getParameters();
         for (int i = 0; i < parameters.length; i++) {
             Parameter parameter = parameters[i];
             if (!Consumer.class.isAssignableFrom(parameter.getType())) {
-                for (Annotation annotation : parameter.getAnnotations()) {
-                    HttpParameterMapping parameterMapping = annotation.annotationType().getAnnotation(HttpParameterMapping.class);
-                    if (parameterMapping != null) {
-                        parameterMapping.value()
-                                .getDeclaredConstructor().newInstance()
-                                .clientParameterMapper(annotation, parameter)
-                                .apply(exchange, args[i]);
-                    }
+                Optional<HttpClientParameterMapper> clientInstance = HttpParameterMapperFactory.createNewClientInstance(parameter);
+                if (clientInstance.isPresent()) {
+                    clientInstance.get().apply(exchange, args[i]);
                 }
             }
         }
-        return parameters;
     }
 
-    private static ApiClientExchange createExchange(ApiClient client, Method method) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+    private static ApiClientExchange createExchange(ApiClient client, Method method) {
         ApiClientExchange exchange = client.createExchange();
         Optional.ofNullable(method.getAnnotation(GET.class))
                 .ifPresent(a -> exchange.setTarget("GET", a.value()));
@@ -143,16 +128,6 @@ public class ApiClientProxy {
                 .ifPresent(a -> exchange.setTarget("DELETE", a.value()));
         if (exchange.getRequestMethod() == null) {
             throw new RuntimeException("Unsupported mapping to " + method);
-        }
-        for (Annotation annotation : method.getAnnotations()) {
-            HttpReturnMapping returnMapping = annotation.annotationType().getAnnotation(HttpReturnMapping.class);
-            if (returnMapping != null) {
-                HttpClientReturnMapper clientMapper = returnMapping.value()
-                        .getDeclaredConstructor()
-                        .newInstance()
-                        .createClientMapper(annotation, method.getGenericReturnType());
-                clientMapper.setupExchange(exchange);
-            }
         }
         return exchange;
     }

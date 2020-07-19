@@ -18,7 +18,12 @@ public interface HttpParameterMapperFactory<ANNOTATION extends Annotation> exten
 
     static Optional<HttpParameterMapper> createNewInstance(Parameter parameter, ApiControllerContext context) {
         return AnnotationFactory.getAnnotatedAnnotation(parameter, HttpParameterMapping.class)
-                .map(value -> createFactory(value).safeCreate(value, parameter, context));
+                .map(annotation -> createFactory(annotation).safeCreate(annotation, parameter, context));
+    }
+
+    static Optional<HttpClientParameterMapper> createNewClientInstance(Parameter parameter) {
+        return AnnotationFactory.getAnnotatedAnnotation(parameter, HttpParameterMapping.class)
+                .map(annotation -> createFactory(annotation).clientParameterMapper(annotation, parameter));
     }
 
     static <T extends Annotation> HttpParameterMapperFactory<T> createFactory(T annotation) {

@@ -5,7 +5,7 @@
     <groupId>io.github.jhannes</groupId>
     <artifactId>action-controller-project</artifactId>
     <packaging>pom</packaging>
-    <version>0.0.19-SNAPSHOT</version>
+    <version>0.0.20-SNAPSHOT</version>
     <name>Action Controller</name>
     <description>Action Controller REST micro framework</description>
 

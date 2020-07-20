@@ -176,8 +176,8 @@ public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
     }
 
     @Override
-    public String getHeader(String name) {
-        return exchange.getRequestHeaders().getFirst(name);
+    public Optional<String> getHeader(String name) {
+        return Optional.ofNullable(exchange.getRequestHeaders().getFirst(name));
     }
 
     @Override
@@ -282,7 +282,7 @@ public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
     }
 
     private String getErrorResponse(int statusCode, String message) {
-        for (String contentType : Optional.ofNullable(getHeader("Accept")).orElse("").split(";")) {
+        for (String contentType : getHeader("Accept").orElse("").split(";")) {
             if (contentType.trim().equalsIgnoreCase("application/json")) {
                 return "{\"message\":\"" + message + "\"}";
             } else if (contentType.equalsIgnoreCase("text/html")) {

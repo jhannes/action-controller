@@ -86,13 +86,13 @@ public interface ApiHttpExchange {
 
     void output(String contentType, OutputStreamConsumer consumer) throws IOException;
 
-    String getHeader(String name);
+    Optional<String> getHeader(String name);
 
     /**
      * Returns true if the "Accept" request header matches the argument content type
      */
     default boolean accept(String contentType) {
-        return Optional.ofNullable(getHeader("Accept"))
+        return getHeader("Accept")
                 .map(acceptHeader -> Stream.of(acceptHeader.split(",")).anyMatch(type -> type.startsWith(contentType)))
                 .orElse(false);
 

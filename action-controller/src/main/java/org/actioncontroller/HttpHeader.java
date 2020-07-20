@@ -45,14 +45,12 @@ public @interface HttpHeader {
                 return exchange -> (Consumer<Object>) o -> exchange.setResponseHeader(annotation.value(), Objects.toString(o, null));
             } else if (parameter.getType() == Optional.class) {
                 Class<?> optType = TypesUtil.typeParameter(parameter.getType());
-                return exchange -> Optional.ofNullable(ApiHttpExchange.convertParameterType(exchange.getHeader(name), optType));
+                return exchange -> exchange.getHeader(name)
+                        .map(header -> ApiHttpExchange.convertParameterType(header, optType));
             } else {
-                return exchange -> {
-                    if (exchange.getHeader(name) == null) {
-                        throw new HttpRequestException("Missing required header " + name);
-                    }
-                    return ApiHttpExchange.convertParameterType(exchange.getHeader(name), parameter.getType());
-                };
+                return exchange -> exchange.getHeader(name)
+                        .map(header -> ApiHttpExchange.convertParameterType(header, parameter.getType()))
+                        .orElseThrow(() -> new HttpRequestException("Missing required header " + name));
             }
         }
 

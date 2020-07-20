@@ -222,8 +222,8 @@ public class ServletHttpExchange implements ApiHttpExchange {
     }
 
     @Override
-    public String getHeader(String name) {
-        return req.getHeader(name);
+    public Optional<String> getHeader(String name) {
+        return Optional.ofNullable(req.getHeader(name));
     }
 
     @Override

@@ -1,5 +1,7 @@
 package org.actioncontroller;
 
+import org.actioncontroller.client.ApiClientExchange;
+import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapperFactory;
@@ -24,36 +26,33 @@ public @interface ClientCertificate {
         @Override
         public HttpParameterMapper create(ClientCertificate annotation, Parameter parameter, ApiControllerContext context) {
             if (parameter.getType() == Optional.class) {
-                return exchange -> {
-                    X509Certificate[] clientCertificate = exchange.getClientCertificate();
-                    return clientCertificate != null ? Optional.of(clientCertificate[0]) : Optional.empty();
-                };
+                return this::getClientCertificate;
             } else if (parameter.getType().isAssignableFrom(X509Certificate.class)) {
-                return exchange -> {
-                    X509Certificate[] clientCertificate = exchange.getClientCertificate();
-                    if (clientCertificate == null) {
-                        throw new HttpUnauthorizedException("Missing client certificate");
-                    }
-                    return clientCertificate[0];
-                };
+                return exchange -> getClientCertificate(exchange)
+                        .orElseThrow(() -> new HttpUnauthorizedException("Missing client certificate"));
             } else {
                 throw new ActionControllerConfigurationException("Illegal type " + parameter.getParameterizedType() + " for " + ClientCertificate.class);
             }
         }
 
+        public Optional<X509Certificate> getClientCertificate(ApiHttpExchange exchange) {
+            X509Certificate[] clientCertificate = exchange.getClientCertificate();
+            return clientCertificate != null ? Optional.of(clientCertificate[0]) : Optional.empty();
+        }
+
         @Override
         public HttpClientParameterMapper clientParameterMapper(ClientCertificate annotation, Parameter parameter) {
             if (parameter.getType() == Optional.class) {
-                return (exchange, arg) -> {
-                    ((Optional<?>)arg).ifPresent(c -> exchange.setClientCertificate(new X509Certificate[]{(X509Certificate) c}));
-                };
+                return (exchange, arg) -> ((Optional<?>)arg).ifPresent(c -> setClientCertificate(exchange, c));
             } else if (parameter.getType().isAssignableFrom(X509Certificate.class)) {
-                return (exchange, arg) -> {
-                    exchange.setClientCertificate(new X509Certificate[]{(X509Certificate) arg});
-                };
+                return this::setClientCertificate;
             } else {
                 throw new ActionControllerConfigurationException("Illegal type " + parameter.getParameterizedType() + " for " + ClientCertificate.class);
             }
+        }
+
+        public void setClientCertificate(ApiClientExchange exchange, Object certificate) {
+            exchange.setClientCertificate(new X509Certificate[]{ (X509Certificate) certificate });
         }
     }
 }

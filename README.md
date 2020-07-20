@@ -1,5 +1,6 @@
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.jhannes/action-controller/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.jhannes/action-controller)
+[![Javadoc](https://img.shields.io/badge/javadoc-actioncontroller-blue)](https://jhannes.github.io/logevents/apidocs/)
 [![Build Status](https://travis-ci.org/jhannes/action-controller.png)](https://travis-ci.org/jhannes/action-controller)
 [![Coverage Status](https://coveralls.io/repos/github/jhannes/action-controller/badge.svg?branch=master)](https://coveralls.io/github/jhannes/action-controller?branch=master)
 [![Vulnerability scan](https://snyk.io/test/github/jhannes/action-controller/badge.svg?targetFile=pom.xml)](https://snyk.io/test/github/jhannes/action-controller?targetFile=pom.xml)
@@ -22,7 +23,7 @@ public class MyApiServlet extends ApiServlet {
 
 public class MyApiController {
 
-    @Get("/v1/api/objects")
+    @GET("/v1/api/objects")
     @JsonBody
     public List<SomePojo> listObjects(
         @RequestParam("query") Optional<String> query,
@@ -31,13 +32,13 @@ public class MyApiController {
         // ... this is up to you
     }
 
-    @Get("/v1/api/objects/:id")
+    @GET("/v1/api/objects/:id")
     @JsonBody
     public SomePojo getObject(@PathParam("id") UUID id) {
         // ... this is up to you
     }
 
-    @Post("/v1/api/objects/")
+    @POST("/v1/api/objects/")
     @SendRedirect
     public String postData(
         @JsonBody SomePojo myPojo,
@@ -47,7 +48,7 @@ public class MyApiController {
         return "/home/";
     }
     
-    @Get("/oauth2callback")
+    @GET("/oauth2callback")
     @SendRedirect
     public String establishUserSession(
             @RequestParam("code") String authenticationCode,
@@ -211,15 +212,14 @@ public class MyApplication {
     private ServerSocket serverSocket;
 
     public MyApplication(ConfigObserver config) {
-        config.onConfigValue("myConfigValue", null, v -> this.myConfigValue = v);
+        config.onStringValue("myConfigValue", null, v -> this.myConfigValue = v);
         config.onPrefixedValue("dataSource", DataSourceConfig::create, dataSource -> this.dataSouce = dataSource);
-        config.onInetSocketAddress("serverAddress",
+        config.onInetSocketAddress("serverAddress", 10080,
                 address -> {
                     if (serverSocket != null) serverSocket.close();
                     serverSocket = new ServerSocket(address);
                     startServerSocket(serverSocket);
-                },
-                10080);
+                });
     }
 
     public static void main(String[] args){

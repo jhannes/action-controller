@@ -12,20 +12,18 @@ import org.actioncontroller.meta.HttpReturnMapper;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
 import org.jsonbuddy.JsonArray;
-import org.jsonbuddy.JsonNode;
-import org.jsonbuddy.JsonObject;
 import org.jsonbuddy.parse.JsonParser;
 import org.jsonbuddy.pojo.JsonGenerator;
 import org.jsonbuddy.pojo.PojoMapper;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
+import java.util.stream.Stream;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.PARAMETER;
@@ -77,29 +75,11 @@ public @interface JsonBody {
 
         @Override
         public HttpClientReturnMapper createClientMapper(JsonBody annotation, Type returnType) {
-            if (TypesUtil.isTypeOf(returnType, JsonNode.class)) {
-                return jsonNodeReturnMapper();
+            // TODO: Next version of JsonBuddy will PojoMapper.mapType support Streams. Then remove the special case
+            if (TypesUtil.isTypeOf(returnType, Stream.class)) {
+                return (jsonMapper(exchange -> PojoMapper.map(JsonArray.parse(exchange.getResponseBody()), TypesUtil.typeParameter(returnType)).stream()));
             }
-
-            return TypesUtil.streamType(returnType, this::streamReturnMapper)
-                    .or(() -> TypesUtil.listType(returnType, this::listReturnMapper))
-                    .orElseGet(() -> objectReturnMapper((Class<?>) returnType));
-        }
-
-        private HttpClientReturnMapper jsonNodeReturnMapper() {
-            return jsonMapper(exchange -> JsonParser.parseNode(new StringReader(exchange.getResponseBody())));
-        }
-
-        private HttpClientReturnMapper streamReturnMapper(Class<?> type) {
-            return jsonMapper(exchange -> (PojoMapper.map(JsonArray.parse(exchange.getResponseBody()), type)).stream());
-        }
-
-        private HttpClientReturnMapper listReturnMapper(Class<?> type) {
-            return jsonMapper(exchange -> (PojoMapper.map(JsonArray.parse(exchange.getResponseBody()), type)));
-        }
-
-        private HttpClientReturnMapper objectReturnMapper(Class<?> type) {
-            return jsonMapper(exchange -> PojoMapper.map(JsonObject.parse(exchange.getResponseBody()), type));
+            return jsonMapper(exchange -> PojoMapper.mapType(JsonParser.parse(exchange.getResponseBody()), returnType));
         }
 
         private HttpClientReturnMapper jsonMapper(HttpClientReturnMapper mapper) {
@@ -120,21 +100,12 @@ public @interface JsonBody {
     class MapperFactory implements HttpParameterMapperFactory<JsonBody> {
         @Override
         public HttpParameterMapper create(JsonBody annotation, Parameter parameter, ApiControllerContext context) {
-            if (JsonNode.class.isAssignableFrom(parameter.getType())) {
-                return exchange -> JsonParser.parseNode(exchange.getReader());
+            // TODO: Next version of JsonBuddy will PojoMapper.mapType support Streams. Then remove the special case
+            Type type = parameter.getParameterizedType();
+            if (TypesUtil.isTypeOf(type, Stream.class)) {
+                return exchange -> PojoMapper.map(JsonArray.read(exchange.getReader()), TypesUtil.typeParameter(type)).stream();
             }
-
-            return TypesUtil.listType(parameter.getParameterizedType(), this::listParameterMapper)
-                    .or(() -> TypesUtil.streamType(parameter.getParameterizedType(), this::streamParameterMapper))
-                    .orElseGet(() -> exchange -> PojoMapper.map(JsonObject.read(exchange.getReader()), parameter.getType()));
-        }
-
-        private HttpParameterMapper listParameterMapper(Class<?> type) {
-            return exchange -> (PojoMapper.map(JsonArray.read(exchange.getReader()), type));
-        }
-
-        private HttpParameterMapper streamParameterMapper(Class<?> type) {
-            return exchange -> (PojoMapper.map(JsonArray.read(exchange.getReader()), type)).stream();
+            return exchange -> PojoMapper.mapType(JsonParser.parseNode(exchange.getReader()), type);
         }
 
         @Override

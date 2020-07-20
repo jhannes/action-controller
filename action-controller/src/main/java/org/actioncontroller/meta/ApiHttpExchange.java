@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
+import java.net.URI;
 import java.net.URL;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
@@ -167,6 +168,8 @@ public interface ApiHttpExchange {
             return Long.parseLong(value);
         } else if (Enum.class.isAssignableFrom((Class<?>)parameterType)) {
             return Enum.valueOf((Class) parameterType, value);
+        } else if (URI.class.isAssignableFrom((Class<?>)parameterType)) {
+            return IOUtil.asURI(value);
         } else if (URL.class.isAssignableFrom((Class<?>)parameterType)) {
             return IOUtil.asURL(value);
         } else {

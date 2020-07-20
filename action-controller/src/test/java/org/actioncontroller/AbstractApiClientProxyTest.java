@@ -8,6 +8,10 @@ import org.logevents.extend.junit.ExpectedLogEventsRule;
 import org.slf4j.event.Level;
 
 import java.lang.annotation.RetentionPolicy;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Base64;
 import java.util.Optional;
 import java.util.UUID;
@@ -150,6 +154,17 @@ public abstract class AbstractApiClientProxyTest {
             return "<html><h2>Hello from " + filename + "</h2></html>";
         }
 
+        @SendRedirect
+        @GET("/path")
+        public URL getPath(@ContextUrl URL url) {
+            return url;
+        }
+
+        @POST("/sendRedirect")
+        public void sendRedirect(@HttpHeader("content-location") Consumer<URI> setContentLocation) throws URISyntaxException {
+            setContentLocation.accept(new URI("https://github.com/jhannes"));
+        }
+
         @GET("/files/:filename.txt")
         @ContentBody()
         public String getTextFile(@PathParam("filename") String filename) {
@@ -199,6 +214,18 @@ public abstract class AbstractApiClientProxyTest {
     @Test
     public void shouldConvertEnums() {
         assertThat(client.enumText(Optional.of(RetentionPolicy.SOURCE))).isEqualTo("SOURCE");
+    }
+
+    @Test
+    public void shouldConvertUri() throws URISyntaxException {
+        AtomicReference<URI> contentLocation = new AtomicReference<>();
+        client.sendRedirect(contentLocation::set);
+        assertThat(contentLocation.get()).isEqualTo(new URI("https://github.com/jhannes"));
+    }
+
+    @Test
+    public void shouldConvertUrl() throws MalformedURLException {
+        assertThat(client.getPath(null)).isEqualTo(new URL(baseUrl));
     }
 
     @Test

@@ -1,5 +1,6 @@
 package org.actioncontroller;
 
+import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.HttpClientReturnMapper;
 import org.actioncontroller.meta.HttpReturnMapper;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
@@ -53,7 +54,7 @@ public @interface SendRedirect {
                 if (exchange.getResponseCode() < 300) {
                     throw new IllegalArgumentException("Expected redirect, but was " + exchange.getResponseCode());
                 }
-                return exchange.getResponseHeader("Location");
+                return ApiHttpExchange.convertParameterType(exchange.getResponseHeader("Location"), returnType);
             };
         }
     }

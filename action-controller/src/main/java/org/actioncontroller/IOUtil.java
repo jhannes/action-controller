@@ -1,6 +1,8 @@
 package org.actioncontroller;
 
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 
 import static org.actioncontroller.ExceptionUtil.softenException;
@@ -11,6 +13,14 @@ public class IOUtil {
         try {
             return new URL(s);
         } catch (MalformedURLException e) {
+            throw softenException(e);
+        }
+    }
+
+    public static URI asURI(String s) {
+        try {
+            return new URI(s);
+        } catch (URISyntaxException e) {
             throw softenException(e);
         }
     }

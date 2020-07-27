@@ -1,7 +1,6 @@
 package org.actioncontroller.json;
 
 import org.actioncontroller.ApiControllerContext;
-import org.actioncontroller.TypesUtil;
 import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpClientReturnMapper;
@@ -11,7 +10,6 @@ import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpReturnMapper;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
-import org.jsonbuddy.JsonArray;
 import org.jsonbuddy.parse.JsonParser;
 import org.jsonbuddy.pojo.JsonGenerator;
 import org.jsonbuddy.pojo.PojoMapper;
@@ -23,7 +21,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
-import java.util.stream.Stream;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.PARAMETER;
@@ -75,10 +72,6 @@ public @interface JsonBody {
 
         @Override
         public HttpClientReturnMapper createClientMapper(JsonBody annotation, Type returnType) {
-            // TODO: Next version of JsonBuddy will PojoMapper.mapType support Streams. Then remove the special case
-            if (TypesUtil.isTypeOf(returnType, Stream.class)) {
-                return (jsonMapper(exchange -> PojoMapper.map(JsonArray.parse(exchange.getResponseBody()), TypesUtil.typeParameter(returnType)).stream()));
-            }
             return jsonMapper(exchange -> PojoMapper.mapType(JsonParser.parse(exchange.getResponseBody()), returnType));
         }
 
@@ -98,14 +91,13 @@ public @interface JsonBody {
     }
 
     class MapperFactory implements HttpParameterMapperFactory<JsonBody> {
+
+        private final PojoMapper pojoMapper = PojoMapper.create();
+
         @Override
         public HttpParameterMapper create(JsonBody annotation, Parameter parameter, ApiControllerContext context) {
-            // TODO: Next version of JsonBuddy will PojoMapper.mapType support Streams. Then remove the special case
             Type type = parameter.getParameterizedType();
-            if (TypesUtil.isTypeOf(type, Stream.class)) {
-                return exchange -> PojoMapper.map(JsonArray.read(exchange.getReader()), TypesUtil.typeParameter(type)).stream();
-            }
-            return exchange -> PojoMapper.mapType(JsonParser.parseNode(exchange.getReader()), type);
+            return exchange -> pojoMapper.mapToPojo(JsonParser.parseNode(exchange.getReader()), type);
         }
 
         @Override

@@ -20,15 +20,14 @@ import java.util.stream.Stream;
 /**
  * Used to monitor a set of configuration files and notify {@link ConfigListener}s
  * on initialization and change. Given a directory and an application name,
- * appropriate resources and files are monitored with a {@link ConfigLoader}
+ * appropriate resources and files are monitored with a {@link ConfigDirectoryLoader}
  */
 public class ConfigObserver {
     private static final Logger logger = LoggerFactory.getLogger(ConfigObserver.class);
-    private final FileScanner fileScanner;
     private Map<String, String> currentConfiguration;
-    private List<ConfigListener> listeners = new ArrayList<>();
+    private final List<ConfigListener> listeners = new ArrayList<>();
 
-    private ConfigLoader configLoader;
+    private final ConfigLoader configLoader;
 
     public ConfigObserver(String applicationName) {
         this(new File("."), applicationName, new ArrayList<>());
@@ -39,11 +38,13 @@ public class ConfigObserver {
     }
 
     public ConfigObserver(File configDirectory, String applicationName, List<String> profiles) {
-        configDirectory.mkdirs();
+        this(new ConfigDirectoryLoader(configDirectory, applicationName, profiles));
+    }
 
-        configLoader = new ConfigLoader(configDirectory, applicationName, profiles);
-        currentConfiguration = configLoader.loadConfiguration();
-        fileScanner = new FileScanner(configDirectory, configLoader.getConfigurationFileNames(), this::handleFileChanged);
+    public ConfigObserver(ConfigLoader configLoader) {
+        this.configLoader = configLoader;
+        currentConfiguration = this.configLoader.loadConfiguration();
+        this.configLoader.watch(this::updateConfiguration);
     }
 
     /**
@@ -166,10 +167,6 @@ public class ConfigObserver {
 
     private static List<String> parseStringList(String value) {
         return Stream.of(value.split(",")).map(String::trim).collect(Collectors.toList());
-    }
-
-    protected void handleFileChanged(List<String> changedFiles) {
-        updateConfiguration(configLoader.loadConfiguration());
     }
 
     public void updateConfiguration(Map<String, String> newConfiguration) {

@@ -1,11 +1,13 @@
 package org.actioncontroller.config;
 
+import org.junit.AssumptionViolatedException;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -93,6 +95,20 @@ public class ConfigMapTest {
                 .contains("clientSecret=****")
                 .doesNotContain("my-secret")
                 .doesNotContain("xyz");
+    }
+
+    @Test
+    public void shouldReadFromEnvironment() {
+        String environmentVariableWithUnderscore = System.getenv().keySet().stream()
+                .filter(s -> s.contains("_"))
+                .findFirst()
+                .orElseThrow(() -> new AssumptionViolatedException("No environment variable with '_' in this environment"));
+        String environment = environmentVariableWithUnderscore.toLowerCase().replace('_', '.');
+        String prefix = environment.substring(0, environment.indexOf('.'));
+        String key = environment.substring(environment.indexOf('.')+1);
+
+        ConfigMap configMap = new ConfigMap(prefix, new HashMap<>());
+        assertThat(configMap.get(key)).isEqualTo(System.getenv(environmentVariableWithUnderscore));
     }
 
 }

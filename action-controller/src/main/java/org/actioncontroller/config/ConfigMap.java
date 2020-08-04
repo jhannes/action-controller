@@ -14,6 +14,27 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Extracts config values from an inner map or environment variables in a
+ * hierarchical fashion. For example
+ * <code>new ConfigMap(map).subMap("foo").get("bar")</code> will either
+ * return <code>map.get("foo.bar")</code>, <code>System.getenv("FOO_BAR")</code>,
+ * or throw {@link ConfigException}.
+ *
+ * <p>The most important operations:</p>
+ *
+ * <ul>
+ *     <li>{@link #get(Object)} returns the prefixed variable specified or
+ *     environment variable with a comparable name or else throws exception</li>
+ *     <li>{@link #getOrDefault(Object, String)} returns the prefixed variable
+ *     specified or environment variable with a comparable name or default value
+ *     </li>
+ *     <li>{@link #subMap(String)} returns a {@link ConfigMap} which resolves
+ *     all variables relative to the prefix</li>
+ *     <li>{@link #entrySet()} gets all entries with a key with the current prefix
+ *     <strong>does not include environment variables</strong></li>
+ * </ul>
+ */
 public class ConfigMap extends AbstractMap<String, String> {
     private final String prefix;
     private final Map<String, String> innerMap;
@@ -56,7 +77,8 @@ public class ConfigMap extends AbstractMap<String, String> {
     }
 
     public Optional<String> optional(Object key) {
-        return Optional.ofNullable(innerMap.get(getInnerKey(key))).map(String::trim).filter(s -> !s.isEmpty());
+        return Optional.ofNullable(innerMap.get(getInnerKey(key))).map(String::trim).filter(s -> !s.isEmpty())
+                .or(() -> Optional.ofNullable(System.getenv(getInnerKey(key).replace('.', '_').toUpperCase())));
     }
 
     /**

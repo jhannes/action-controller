@@ -38,8 +38,8 @@ public class ConfigObserverTest {
     private final BlockingQueue<Instant> reloadTimes = new ArrayBlockingQueue<>(10);
     private final ConfigObserver observer = new ConfigObserver(directory, "testApp") {
         @Override
-        protected void handleFileChanged(List<String> changedFiles) {
-            super.handleFileChanged(changedFiles);
+        public void updateConfiguration(Map<String, String> newConfiguration) {
+            super.updateConfiguration(newConfiguration);
             try {
                 reloadTimes.put(Instant.now());
             } catch (InterruptedException e) {
@@ -131,6 +131,15 @@ public class ConfigObserverTest {
         assertThat(value.get()).isEqualTo(11L);
         writeConfigLine("test = 1337");
         assertThat(value.get()).isEqualTo(1337L);
+    }
+
+    @Test
+    public void shouldDefaultToEnvironmentVariable() {
+        AtomicReference<String> path = new AtomicReference<>();
+        observer.onStringValue("path", null, path::set);
+        assertThat(path.get()).isEqualTo(System.getenv("PATH"));
+        writeConfigLine("path=test");
+        assertThat(path.get()).isEqualTo("test");
     }
 
 

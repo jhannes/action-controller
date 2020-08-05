@@ -51,7 +51,7 @@ public class ConfigMap extends AbstractMap<String, String> {
         if (innerMap instanceof ConfigMap) {
             ConfigMap configMap = (ConfigMap) innerMap;
             this.prefix = configMap.prefix + prefix + ".";
-            if (!configMap.listSubMaps().contains(prefix)) {
+            if (!configMap.listSubMaps().contains(prefix) && !hasEnvironmentPrefix(prefix)) {
                 throw new ConfigException("Missing key " + configMap.prefix + prefix);
             }
             this.innerMap = configMap.innerMap;
@@ -123,7 +123,11 @@ public class ConfigMap extends AbstractMap<String, String> {
     }
 
     public Optional<ConfigMap> subMap(String prefix) {
-        return listSubMaps().contains(prefix) ? Optional.of(new ConfigMap(prefix, this)) : Optional.empty();
+        return listSubMaps().contains(prefix) || hasEnvironmentPrefix(prefix) ? Optional.of(new ConfigMap(prefix, this)) : Optional.empty();
+    }
+
+    private boolean hasEnvironmentPrefix(String prefix) {
+        return System.getenv().keySet().stream().anyMatch(key -> key.toUpperCase().startsWith(prefix.toUpperCase() + "_"));
     }
 
     protected String getInnerKey(Object key) {

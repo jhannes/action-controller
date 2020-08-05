@@ -107,7 +107,7 @@ public class ConfigMapTest {
         String prefix = environment.substring(0, environment.indexOf('.'));
         String key = environment.substring(environment.indexOf('.')+1);
 
-        ConfigMap configMap = new ConfigMap(prefix, new HashMap<>());
+        ConfigMap configMap = new ConfigMap(new HashMap<>()).subMap(prefix).orElseThrow();
         assertThat(configMap.get(key)).isEqualTo(System.getenv(environmentVariableWithUnderscore));
     }
 

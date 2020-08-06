@@ -66,8 +66,10 @@ public class ApiClientProxy {
         HttpReturnMapperFactory.createNewClientInstance(method).ifPresent(mapper -> mapper.setupExchange(exchange));
         processParameters(method, args, exchange);
 
-        logger.debug("{}: {}", getMethodName(method), exchange);
+        long startTime = System.currentTimeMillis();
+        logger.trace("{}: {}", getMethodName(method), exchange);
         exchange.executeRequest();
+        logger.debug("{}: {} latency={}", getMethodName(method), exchange.getResponseCode(), System.currentTimeMillis()-startTime);
 
         exchange.checkForError();
         processConsumerParameters(method, args, exchange);

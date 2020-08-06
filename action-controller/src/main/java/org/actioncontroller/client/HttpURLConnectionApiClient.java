@@ -3,6 +3,8 @@ package org.actioncontroller.client;
 import org.actioncontroller.IOUtil;
 import org.actioncontroller.meta.OutputStreamConsumer;
 import org.actioncontroller.meta.WriterConsumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.KeyManager;
@@ -43,6 +45,8 @@ import java.util.stream.Collectors;
 import static org.actioncontroller.ExceptionUtil.softenException;
 
 public class HttpURLConnectionApiClient implements ApiClient {
+    private static final Logger logger = LoggerFactory.getLogger(HttpURLConnectionApiClient.class);
+
     private static final Charset CHARSET = StandardCharsets.ISO_8859_1;
     private URL baseUrl;
     private Map<String, HttpCookie> clientCookies = new HashMap<>();
@@ -233,6 +237,7 @@ public class HttpURLConnectionApiClient implements ApiClient {
                 }
             }
 
+            long startTime = System.currentTimeMillis();
             String query = getQuery();
             if (query != null && !isGetRequest()) {
                 connection.setDoOutput(true);
@@ -246,7 +251,13 @@ public class HttpURLConnectionApiClient implements ApiClient {
                 connection.getOutputStream().flush();
             }
 
-            connection.getResponseCode();
+            int responseCode = connection.getResponseCode();
+            logger.debug("\"{} {}\" {} latency={}",
+                    connection.getRequestMethod(),
+                    connection.getURL(),
+                    responseCode,
+                    (System.currentTimeMillis() - startTime)
+            );
 
             responseCookies = new ArrayList<>();
             String setCookieField = connection.getHeaderField("Set-Cookie");

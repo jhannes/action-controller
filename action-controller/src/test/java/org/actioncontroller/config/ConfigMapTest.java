@@ -111,4 +111,21 @@ public class ConfigMapTest {
         assertThat(configMap.get(key)).isEqualTo(System.getenv(environmentVariableWithUnderscore));
     }
 
+    @Test
+    public void shouldReadSubmapsFromEnvironment() {
+        String environmentVariableWithUnderscore = System.getenv().keySet().stream()
+                .filter(s -> s.length() - s.replace("_", "").length() >= 2)
+                .findFirst()
+                .orElseThrow(() -> new AssumptionViolatedException("No environment variable with two '_' in this environment"));
+        String environment = environmentVariableWithUnderscore.toLowerCase().replace('_', '.');
+        int firstPeriod = environment.indexOf('.');
+        String prefix1 = environment.substring(0, firstPeriod);
+        int secondPeriod = environment.indexOf('.', firstPeriod + 1);
+        String prefix2 = environment.substring(firstPeriod+1, secondPeriod);
+        String key = environment.substring(secondPeriod +1);
+
+        ConfigMap configMap = new ConfigMap(new HashMap<>()).subMap(prefix1).orElseThrow().subMap(prefix2).orElseThrow();
+        assertThat(configMap.get(key)).isEqualTo(System.getenv(environmentVariableWithUnderscore));
+    }
+
 }

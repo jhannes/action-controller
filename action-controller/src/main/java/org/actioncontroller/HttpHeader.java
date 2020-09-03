@@ -1,6 +1,5 @@
 package org.actioncontroller;
 
-import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpClientReturnMapper;
 import org.actioncontroller.meta.HttpParameterMapper;
@@ -18,7 +17,8 @@ import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
+
+import static org.actioncontroller.meta.ApiHttpExchange.convertParameterType;
 
 /**
  * When used on a parameter, maps the HTTP Request header to the parameter, converting the type if necessary.
@@ -41,17 +41,12 @@ public @interface HttpHeader {
         @Override
         public HttpParameterMapper create(HttpHeader annotation, Parameter parameter, ApiControllerContext context) {
             String name = annotation.value();
-            if (parameter.getType() == Consumer.class) {
-                return exchange -> (Consumer<Object>) o -> exchange.setResponseHeader(annotation.value(), Objects.toString(o, null));
-            } else if (parameter.getType() == Optional.class) {
-                Class<?> optType = TypesUtil.typeParameter(parameter.getType());
-                return exchange -> exchange.getHeader(name)
-                        .map(header -> ApiHttpExchange.convertParameterType(header, optType));
-            } else {
-                return exchange -> exchange.getHeader(name)
-                        .map(header -> ApiHttpExchange.convertParameterType(header, parameter.getType()))
-                        .orElseThrow(() -> new HttpRequestException("Missing required header " + name));
-            }
+            return HttpParameterMapperFactory.createMapper(
+                    parameter.getParameterizedType(),
+                    (exchange, type) -> exchange.getHeader(name).map(header -> convertParameterType(header, type)),
+                    (exchange, o) -> exchange.setResponseHeader(annotation.value(), Objects.toString(o, null)),
+                    () -> { throw new HttpRequestException("Missing required header " + name); }
+            );
         }
 
         @Override
@@ -61,15 +56,12 @@ public @interface HttpHeader {
 
         @Override
         public HttpClientParameterMapper clientParameterMapper(HttpHeader annotation, Parameter parameter) {
-            String name = annotation.value();
-            if (parameter.getType() == Consumer.class) {
-                Type targetType = ApiHttpExchange.getTargetType(parameter);
-                return (exchange, arg) -> ((Consumer) arg).accept(
-                        ApiHttpExchange.convertParameterType(exchange.getResponseHeader(name), targetType)
-                );
-            } else {
-                return (exchange, arg) -> exchange.setHeader(annotation.value(), arg);
-            }
+            return HttpParameterMapperFactory.createClientMapper(
+                    parameter.getParameterizedType(),
+                    (exchange, o) -> exchange.setHeader(annotation.value(), o),
+                    (exchange, type) -> Optional.ofNullable(exchange.getResponseHeader(annotation.value()))
+                        .map(value -> convertParameterType(value, type))
+            );
         }
 
         @Override

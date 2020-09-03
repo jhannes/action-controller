@@ -12,4 +12,9 @@ public interface HttpParameterMapper {
 
     Object apply(ApiHttpExchange exchange) throws IOException;
 
+    /**
+     * Invoked after the action method was completed successfully
+     */
+    default void onComplete(ApiHttpExchange exchange, Object argument){
+    }
 }

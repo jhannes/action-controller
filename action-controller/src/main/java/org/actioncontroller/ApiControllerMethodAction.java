@@ -221,9 +221,13 @@ public class ApiControllerMethodAction implements ApiControllerAction {
         try {
             verifyUserAccess(exchange, userContext);
             calculatePathParams(exchange);
-            Object[] arguments = createArguments(getAction(), exchange);
+            HttpParameterMapper[] parameterMappers = createParameterMappers(getAction());
+            Object[] arguments = createArguments(getAction(), exchange, parameterMappers);
             logger.debug("Invoking {}", this);
             Object result = invoke(getController(), getAction(), arguments);
+            for (int i = 0; i < parameterMappers.length; i++) {
+                parameterMappers[i].onComplete(exchange, arguments[i]);
+            }
             convertReturnValue(result, exchange);
         } catch (HttpActionException e) {
             e.sendError(exchange);
@@ -277,11 +281,11 @@ public class ApiControllerMethodAction implements ApiControllerAction {
         }
     }
 
-    private Object[] createArguments(Method method, ApiHttpExchange exchange) throws IOException {
+    private Object[] createArguments(Method method, ApiHttpExchange exchange, HttpParameterMapper[] parameterMappers) throws IOException {
         try {
-            Object[] arguments = new Object[method.getParameterCount()];
+            Object[] arguments = new Object[parameterMappers.length];
             for (int i = 0; i < arguments.length; i++) {
-                arguments[i] = parameterMappers.get(i).apply(exchange);
+                arguments[i] = parameterMappers[i].apply(exchange);
                 if (!isCorrectType(arguments[i], method.getParameterTypes()[i])) {
                     throw new HttpActionException(500, this + " parameter mapper " + i + " returned wrong type " + arguments[i].getClass() + " (expected " + method.getParameters()[i].getParameterizedType() + ")");
                 }
@@ -306,6 +310,14 @@ public class ApiControllerMethodAction implements ApiControllerAction {
             logger.warn("While processing {} arguments for {}", exchange, this, e);
             throw new HttpRequestException(e);
         }
+    }
+
+    private HttpParameterMapper[] createParameterMappers(Method method) {
+        HttpParameterMapper[] parameterMappers = new HttpParameterMapper[method.getParameterCount()];
+        for (int i = 0; i < parameterMappers.length; i++) {
+            parameterMappers[i] = this.parameterMappers.get(i);
+        }
+        return parameterMappers;
     }
 
     private boolean isCorrectType(Object argument, Class<?> requiredType) {

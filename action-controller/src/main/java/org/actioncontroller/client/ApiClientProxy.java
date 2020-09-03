@@ -18,6 +18,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Proxy;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -96,7 +97,7 @@ public class ApiClientProxy {
         Parameter[] parameters = method.getParameters();
         for (int i = 0; i < parameters.length; i++) {
             Parameter parameter = parameters[i];
-            if (Consumer.class.isAssignableFrom(parameter.getType())) {
+            if (Consumer.class.isAssignableFrom(parameter.getType()) || AtomicReference.class.isAssignableFrom(parameter.getType())) {
                 Optional<HttpClientParameterMapper> clientInstance = HttpParameterMapperFactory.createNewClientInstance(parameter);
                 if (clientInstance.isPresent()) {
                     clientInstance.get().apply(exchange, args[i]);

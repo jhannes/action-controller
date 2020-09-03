@@ -107,6 +107,14 @@ public abstract class AbstractApiClientProxyTest {
             return url + "/frontPage";
         }
 
+        @POST("/loginSession/changeUser")
+        @ContentBody
+        public String changeUser(@UnencryptedCookie("username") AtomicReference<String> usernameCookie, @RequestParam("username") String newUsername) {
+            String oldValue = usernameCookie.get();
+            usernameCookie.set(newUsername);
+            return oldValue;
+        }
+
         @GET("/explicitError")
         @ContentBody
         public String explicitError() {
@@ -290,6 +298,26 @@ public abstract class AbstractApiClientProxyTest {
         client.endsession(null, null);
         assertThatThrownBy(() -> client.whoAmIRequired(null))
             .isInstanceOf(HttpClientException.class);
+    }
+
+    @Test
+    public void shouldUpdateCookie() {
+        AtomicReference<String> usernameCookie = new AtomicReference<>("oldValue");
+        String oldValue = client.changeUser(usernameCookie, "newUser");
+        assertThat(oldValue).isEqualTo(oldValue);
+        assertThat(usernameCookie.get()).isEqualTo("newUser");
+    }
+
+    @Test
+    public void shouldHandleNullCookie() {
+        assertThat(client.changeUser(null, "newUser")).isEqualTo("null");
+    }
+
+    @Test
+    public void shouldHandleNewCookie() {
+        AtomicReference<String> usernameCookie = new AtomicReference<>(null);
+        assertThat(client.changeUser(usernameCookie, "newUser")).isEqualTo("null");
+        assertThat(usernameCookie.get()).isEqualTo("newUser");
     }
 
     @Test

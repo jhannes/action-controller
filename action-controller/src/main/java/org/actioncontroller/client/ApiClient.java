@@ -11,4 +11,6 @@ public interface ApiClient {
     void setTrustedCertificate(X509Certificate serverCertificate) throws GeneralSecurityException, IOException;
 
     void addClientKey(PrivateKey privateKey, X509Certificate certificate) throws GeneralSecurityException, IOException;
+
+    String getClientCookie(String key);
 }

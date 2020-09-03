@@ -67,6 +67,14 @@ public class HttpURLConnectionApiClient implements ApiClient {
         return new ClientExchange();
     }
 
+    @Override
+    public String getClientCookie(String key) {
+        return Optional.ofNullable(clientCookies.get(key))
+                .filter(HttpURLConnectionApiClient::isUnexpired)
+                .map(HttpCookie::getValue)
+                .orElse(null);
+    }
+
     public void setTrustStore(KeyStore trustStore) {
         this.trustStore = trustStore;
     }
@@ -128,7 +136,7 @@ public class HttpURLConnectionApiClient implements ApiClient {
         private List<HttpCookie> requestCookies = clientCookies.values().stream()
                 .filter(HttpURLConnectionApiClient::isUnexpired)
                 .collect(Collectors.toList());
-        private List<HttpCookie> responseCookies;
+        private List<HttpCookie> responseCookies = new ArrayList<>();
         private String errorBody;
         private KeyStore exchangeKeyStore = null;
         private String contentType;
@@ -259,7 +267,6 @@ public class HttpURLConnectionApiClient implements ApiClient {
                     (System.currentTimeMillis() - startTime)
             );
 
-            responseCookies = new ArrayList<>();
             String setCookieField = connection.getHeaderField("Set-Cookie");
             if (setCookieField != null) {
                 responseCookies = HttpCookie.parse(setCookieField);

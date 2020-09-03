@@ -84,6 +84,14 @@ public class SocketHttpClient implements ApiClient {
 
     }
 
+    @Override
+    public String getClientCookie(String key) {
+        return Optional.ofNullable(clientCookies.get(key))
+                .filter(SocketHttpClient::isUnexpired)
+                .map(HttpCookie::getValue)
+                .orElse(null);
+    }
+
     private static boolean isUnexpired(HttpCookie c) {
         return c.getMaxAge() == -1 || c.getMaxAge() > 0;
     }

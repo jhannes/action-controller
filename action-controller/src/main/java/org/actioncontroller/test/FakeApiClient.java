@@ -61,6 +61,14 @@ public class FakeApiClient implements ApiClient {
         this.clientCertificateDNs.add(certificate.getSubjectDN().getName());
     }
 
+    @Override
+    public String getClientCookie(String key) {
+        return Optional.ofNullable(clientCookies.get(key))
+                .filter(FakeApiClient::isUnexpired)
+                .map(Cookie::getValue)
+                .orElse(null);
+    }
+
     private static boolean isUnexpired(Cookie c) {
         return c.getMaxAge() == -1 || c.getMaxAge() > 0;
     }

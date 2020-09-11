@@ -206,7 +206,7 @@ public class ServletHttpExchange implements ApiHttpExchange {
         }
         cookie.setSecure(secure);
         cookie.setHttpOnly(isHttpOnly);
-        cookie.setPath(req.getContextPath());
+        cookie.setPath(req.getContextPath().isEmpty() ? "/" : req.getContextPath());
         resp.addCookie(cookie);
     }
 

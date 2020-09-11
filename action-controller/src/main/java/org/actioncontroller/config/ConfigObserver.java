@@ -7,6 +7,7 @@ import java.io.File;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -109,18 +110,29 @@ public class ConfigObserver {
     }
 
     public <T> ConfigObserver onPrefixedValue(String prefix, ConfigValueListener<Map<String, String>> listener) {
-        return onPrefixedOptionalValue(
-                prefix,
-                opt -> listener.apply(opt.orElseThrow(() -> new ConfigException("Missing required property group " + prefix)))
-        );
+        return onConfigChange(new ConfigListener() {
+            @Override
+            public void onConfigChanged(Set<String> changedKeys, ConfigMap newConfiguration) {
+                if (changeIncludes(changedKeys, prefix)) {
+                    applyConfiguration(listener, newConfiguration.subMap(prefix).orElse(new ConfigMap()));
+                }
+            }
+        });
     }
 
     public <T> ConfigObserver onPrefixedValue(String prefix, ConfigListener.Transformer<T> transformer, ConfigValueListener<T> listener) {
-        return onPrefixedOptionalValue(
-                prefix,
-                transformer,
-                opt -> listener.apply(opt.orElseThrow(() -> new ConfigException("Missing required property group " + prefix)))
-        );
+        return onConfigChange(new ConfigListener() {
+            @Override
+            public void onConfigChanged(Set<String> changedKeys, ConfigMap newConfiguration) {
+                if (changeIncludes(changedKeys, prefix)) {
+                    applyConfiguration(
+                            listener,
+                            transform(newConfiguration.subMap(prefix).orElse(new ConfigMap(prefix, new HashMap<>())), transformer)
+                    );
+                }
+            }
+
+        });
     }
 
     public <T> ConfigObserver onPrefixedOptionalValue(String prefix, ConfigListener.Transformer<T> transformer, ConfigValueListener<Optional<T>> listener) {
@@ -128,21 +140,10 @@ public class ConfigObserver {
             @Override
             public void onConfigChanged(Set<String> changedKeys, ConfigMap newConfiguration) {
                 if (changeIncludes(changedKeys, prefix)) {
-                    Optional<Map<String, String>> configuration = newConfiguration.subMap(prefix).map(Function.identity());
-                    Optional<T> configValue = Optional.empty();
-                    if (configuration.isPresent()) {
-                        try {
-                            configValue = Optional.of(transformer.apply(configuration.get()));
-                        } catch (Exception e) {
-                            throw new ConfigException("Failed to convert " + configuration, e);
-                        }
-                    }
-                    logger.info("onConfigChanged config={} value={}", configuration, configValue);
-                    try {
-                        listener.apply(configValue);
-                    } catch (Exception e1) {
-                        throw new ConfigException("While applying " + configuration, e1);
-                    }
+                    applyConfiguration(
+                            listener,
+                            newConfiguration.subMap(prefix).map(c -> transform(c, transformer))
+                    );
                 }
             }
         });
@@ -153,16 +154,27 @@ public class ConfigObserver {
             @Override
             public void onConfigChanged(Set<String> changedKeys, ConfigMap newConfiguration) {
                 if (changeIncludes(changedKeys, prefix)) {
-                    Optional<Map<String, String>> configuration = newConfiguration.subMap(prefix).map(Function.identity());
-                    try {
-                        listener.apply(configuration);
-                        logger.info("onConfigChange key={} value={}", prefix, configuration);
-                    } catch (Exception e) {
-                        throw new ConfigException("While applying " + configuration, e);
-                    }
+                    applyConfiguration(listener, newConfiguration.subMap(prefix).map(Function.identity()));
                 }
             }
         });
+    }
+
+    protected <T> T transform(Map<String, String> configuration, ConfigListener.Transformer<T> transformer) {
+        try {
+            return transformer.apply(configuration);
+        } catch (Exception e) {
+            throw new ConfigException("Failed to convert " + configuration, e);
+        }
+    }
+
+    protected <T> void applyConfiguration(ConfigValueListener<T> listener, T configuration) {
+        logger.info("onConfigChanged config={} value={}", configuration, configuration);
+        try {
+            listener.apply(configuration);
+        } catch (Exception e1) {
+            throw new ConfigException("While applying " + configuration, e1);
+        }
     }
 
     private static List<String> parseStringList(String value) {

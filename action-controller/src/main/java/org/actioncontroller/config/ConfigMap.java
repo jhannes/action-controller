@@ -70,6 +70,10 @@ public class ConfigMap extends AbstractMap<String, String> {
         }
     }
 
+    public ConfigMap() {
+        this(new HashMap<>());
+    }
+
     public ConfigMap(Properties properties) {
         this.prefix = "";
         this.innerMap = new HashMap<>();

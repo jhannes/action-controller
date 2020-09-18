@@ -86,7 +86,7 @@ public class ApiServlet extends HttpServlet implements UserContext {
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try (
                 MDC.MDCCloseable ignored = MDC.putCloseable("clientIp", req.getRemoteAddr());
-                MDC.MDCCloseable ignored2 = MDC.putCloseable("request", req.getContextPath() + req.getServletPath() + req.getPathInfo())
+                MDC.MDCCloseable ignored2 = MDC.putCloseable("requestPath", req.getContextPath() + req.getServletPath() + req.getPathInfo())
         ) {
             controllerException.verifyNoExceptions();
             invokeAction(new ServletHttpExchange(req, resp));

@@ -72,7 +72,7 @@ public interface HttpParameterMapperFactory<ANNOTATION extends Annotation> exten
 
                 @Override
                 public void onComplete(ApiHttpExchange exchange, Object argument) {
-                    setter.accept(exchange, argument);
+                    setter.accept(exchange, ((AtomicReference<?>) argument).get());
                 }
             };
         } else if (optional) {
@@ -105,7 +105,7 @@ public interface HttpParameterMapperFactory<ANNOTATION extends Annotation> exten
             return (exchange, arg) -> {
                 if (arg != null) {
                     exchangeReader.apply(exchange, typeParameter)
-                            .ifPresent(o -> ((Consumer)arg).accept(o));
+                            .ifPresent(((Consumer) arg)::accept);
                 }
             };
         } else if (type == AtomicReference.class) {
@@ -114,11 +114,11 @@ public interface HttpParameterMapperFactory<ANNOTATION extends Annotation> exten
                 if (arg != null) {
                     exchangeWriter.accept(exchange, ((AtomicReference<?>) arg).get());
                     exchangeReader.apply(exchange, typeParameter)
-                            .ifPresent(o -> ((AtomicReference) arg).set(o));
+                            .ifPresent(((AtomicReference) arg)::set);
                 }
             };
         } else {
-            return (exchange, arg) -> exchangeWriter.accept(exchange, arg);
+            return exchangeWriter::accept;
         }
     }
 

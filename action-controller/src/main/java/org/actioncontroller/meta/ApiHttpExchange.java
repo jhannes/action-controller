@@ -32,11 +32,19 @@ public interface ApiHttpExchange {
     String getHttpMethod();
 
     /**
+     * Returns the context path of the server. Blank if the server context is the root of the server
+     */
+    String getContextPath();
+
+    /**
      * Returns the scheme, hostname and port part of the requesting URL, for example
      * <code>http://www.example.com</code> or <code>https://localhost:8443</code>
      */
     String getServerURL();
 
+    /**
+     * Returns the scheme, hostname, port and context path of the server
+     */
     URL getContextURL();
 
     /**
@@ -119,7 +127,21 @@ public interface ApiHttpExchange {
     /**
      * Sets a cookie with default values. If value == null, deletes the cookie
      */
-    void setCookie(String name, String value, boolean secure, boolean isHttpOnly);
+    default void setCookie(String name, String value) {
+        setCookie(name, value, true, true);
+    }
+
+    /**
+     * Sets a cookie with default values. If value == null, deletes the cookie
+     */
+    default void setCookie(String name, String value, boolean secure, boolean isHttpOnly) {
+        setCookie(name, value, secure, isHttpOnly, getContextPath(), -1, null, null);
+    }
+
+    /**
+     * Sets a cookie with default values. If value == null, deletes the cookie
+     */
+    void setCookie(String name, String value, boolean secure, boolean isHttpOnly, String contextPath, int maxAge, String domain, String comment);
 
     Optional<String> getCookie(String name);
 

@@ -90,12 +90,17 @@ public class ServletHttpExchange implements ApiHttpExchange {
 
     @Override
     public URL getContextURL() {
-        return IOUtil.asURL(getServerURL() + req.getContextPath());
+        return IOUtil.asURL(getServerURL() + getContextPath());
+    }
+
+    @Override
+    public String getContextPath() {
+        return req.getContextPath();
     }
 
     @Override
     public URL getApiURL() {
-        return IOUtil.asURL(getServerURL() + req.getContextPath() + req.getServletPath());
+        return IOUtil.asURL(getServerURL() + getContextPath() + req.getServletPath());
     }
 
     @Override
@@ -193,7 +198,16 @@ public class ServletHttpExchange implements ApiHttpExchange {
     }
 
     @Override
-    public void setCookie(String name, String value, boolean secure, boolean isHttpOnly) {
+    public void setCookie(
+            String name,
+            String value,
+            boolean secure,
+            boolean isHttpOnly,
+            String path,
+            int maxAge,
+            String domain,
+            String comment
+    ) {
         if (req.getServerName().equals("localhost") && !req.isSecure()) {
             secure = false;
         }
@@ -203,10 +217,17 @@ public class ServletHttpExchange implements ApiHttpExchange {
             cookie.setMaxAge(0);
         } else {
             cookie = new Cookie(name, URLEncoder.encode(value, CHARSET));
+            cookie.setMaxAge(maxAge);
         }
         cookie.setSecure(secure);
         cookie.setHttpOnly(isHttpOnly);
-        cookie.setPath(req.getContextPath().isEmpty() ? "/" : req.getContextPath());
+        if (!path.isEmpty()) {
+            cookie.setPath(path);
+        }
+        if (domain != null) {
+            cookie.setDomain(domain);
+        }
+        cookie.setComment(comment);
         resp.addCookie(cookie);
     }
 
@@ -263,7 +284,7 @@ public class ServletHttpExchange implements ApiHttpExchange {
     }
 
     private String getFullURL() {
-        return getServerURL() + req.getContextPath() + req.getServletPath() + getPathInfo() + (req.getQueryString() != null ? "?" + req.getQueryString() : "");
+        return getServerURL() + getContextPath() + req.getServletPath() + getPathInfo() + (req.getQueryString() != null ? "?" + req.getQueryString() : "");
     }
 
     @Override

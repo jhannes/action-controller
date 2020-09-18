@@ -71,7 +71,12 @@ public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
 
     @Override
     public URL getContextURL() {
-        return IOUtil.asURL(getServerURL() + contextPath);
+        return IOUtil.asURL(getServerURL() + getContextPath());
+    }
+
+    @Override
+    public String getContextPath() {
+        return contextPath;
     }
 
     @Override
@@ -116,13 +121,13 @@ public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
 
     @Override
     public URL getApiURL() {
-        return IOUtil.asURL(getServerURL() + contextPath);
+        return IOUtil.asURL(getServerURL() + getContextPath());
     }
 
     @Override
     public String getPathInfo() {
         String path = exchange.getRequestURI().getPath();
-        return path.substring(contextPath.length());
+        return path.substring(getContextPath().length());
     }
 
     private String asString(InputStream inputStream) {
@@ -248,7 +253,16 @@ public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
     }
 
     @Override
-    public void setCookie(String name, String value, boolean secure, boolean isHttpOnly) {
+    public void setCookie(
+            String name,
+            String value,
+            boolean secure,
+            boolean isHttpOnly,
+            String contextPath,
+            int maxAge,
+            String domain,
+            String comment
+    ) {
         if (getServerName().equals("localhost") && !getScheme().equals("https")) {
             secure = false;
         }
@@ -257,10 +271,17 @@ public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
             // HACK: HttpCookie doesn't serialize to Set-Cookie format! More work is needed
             HttpCookie httpCookie = new HttpCookie(name, null);
             httpCookie.setSecure(secure);
+            httpCookie.setPath(contextPath);
+            httpCookie.setDomain(domain);
+            httpCookie.setComment(comment);
             exchange.getResponseHeaders().add("Set-Cookie", httpCookie + "; Max-age=0");
         } else {
             HttpCookie httpCookie = new HttpCookie(name, URLEncoder.encode(value, CHARSET));
             httpCookie.setSecure(secure);
+            httpCookie.setPath(contextPath);
+            httpCookie.setMaxAge(maxAge);
+            httpCookie.setDomain(domain);
+            httpCookie.setComment(comment);
             exchange.getResponseHeaders().add("Set-Cookie", httpCookie.toString());
         }
     }
@@ -366,6 +387,6 @@ public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{" + getHttpMethod() + " " + contextPath + "[" + getPathInfo() + "]}";
+        return getClass().getSimpleName() + "{" + getHttpMethod() + " " + getContextPath() + "[" + getPathInfo() + "]}";
     }
 }

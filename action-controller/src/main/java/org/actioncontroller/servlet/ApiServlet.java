@@ -1,6 +1,7 @@
 package org.actioncontroller.servlet;
 
 import org.actioncontroller.ApiControllerContext;
+import org.actioncontroller.TimerRegistry;
 import org.actioncontroller.UserContext;
 import org.actioncontroller.meta.ApiHttpExchange;
 import org.slf4j.Logger;
@@ -61,6 +62,7 @@ public class ApiServlet extends HttpServlet implements UserContext {
     private final List<Object> controllers = new ArrayList<>();
     private final ApiControllerActionRouter actions = new ApiControllerActionRouter();
     private final ApiControllerContext context = new ApiControllerContext();
+    private TimerRegistry timerRegistery = TimerRegistry.NULL;
 
     public ApiServlet() {}
 
@@ -72,10 +74,12 @@ public class ApiServlet extends HttpServlet implements UserContext {
         return context;
     }
 
+    @Override
     public boolean isUserLoggedIn(ApiHttpExchange exchange) {
         return exchange.isUserLoggedIn();
     }
 
+    @Override
     public boolean isUserInRole(ApiHttpExchange exchange, String role) {
         return exchange.isUserInRole(role);
     }
@@ -151,5 +155,14 @@ public class ApiServlet extends HttpServlet implements UserContext {
 
     public void registerMBeans(MBeanServer mBeanServer) {
         actions.registerMBeans(mBeanServer);
+    }
+
+    @Override
+    public TimerRegistry getTimerRegistry() {
+        return timerRegistery;
+    }
+
+    public void setTimerRegistry(TimerRegistry timerRegistry) {
+        this.timerRegistery = timerRegistry;
     }
 }

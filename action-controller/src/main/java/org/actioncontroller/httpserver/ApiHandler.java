@@ -3,6 +3,7 @@ package org.actioncontroller.httpserver;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import org.actioncontroller.ApiControllerContext;
+import org.actioncontroller.TimerRegistry;
 import org.actioncontroller.UserContext;
 import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.servlet.ActionControllerConfigurationCompositeException;
@@ -18,6 +19,7 @@ public class ApiHandler implements UserContext, HttpHandler {
 
     private final ApiControllerActionRouter router = new ApiControllerActionRouter();
     private final ActionControllerConfigurationCompositeException controllerException;
+    private TimerRegistry timerRegistry = TimerRegistry.NULL;
 
     public ApiHandler(Object[] controllers, ApiControllerContext apiContext) {
         this.controllerException = new ActionControllerConfigurationCompositeException();
@@ -57,5 +59,14 @@ public class ApiHandler implements UserContext, HttpHandler {
     @Override
     public boolean isUserInRole(ApiHttpExchange exchange, String role) {
         return exchange.isUserInRole(role);
+    }
+
+    @Override
+    public TimerRegistry getTimerRegistry() {
+        return timerRegistry;
+    }
+
+    public void setTimerRegistry(TimerRegistry timerRegistry) {
+        this.timerRegistry = timerRegistry;
     }
 }

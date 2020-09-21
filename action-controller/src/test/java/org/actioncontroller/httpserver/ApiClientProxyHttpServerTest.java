@@ -22,10 +22,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ApiClientProxyHttpServerTest extends AbstractApiClientProxyTest {
 
+    private final ApiHandler handler = new ApiHandler(new TestController());
+
     @Before
     public void createServerAndClient() throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-        server.createContext("/", new ApiHandler(new TestController()));
+        server.createContext("/", handler);
         server.start();
 
         baseUrl = "http://localhost:" + server.getAddress().getPort();
@@ -70,6 +72,14 @@ public class ApiClientProxyHttpServerTest extends AbstractApiClientProxyTest {
         assertThatThrownBy(() -> client.divide(10, 0, false))
                 .isInstanceOf(HttpClientException.class)
                 .hasMessageContaining("Server Error");
+    }
+
+    private long count = 0;
+    @Test
+    public void shouldCountExecutions() {
+        handler.setTimerRegistry(name -> duration -> count++);
+        client.first();
+        assertThat(count).isEqualTo(1);
     }
 
 }

@@ -24,6 +24,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
 
+    private final ApiServlet servlet = new ApiServlet(new TestController());
+
     @Before
     public void createServerAndClient() throws Exception {
         Server server = new Server();
@@ -32,7 +34,7 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
         handler.addEventListener(new javax.servlet.ServletContextListener() {
             @Override
             public void contextInitialized(ServletContextEvent event) {
-                event.getServletContext().addServlet("testApi", new ApiServlet(new TestController())).addMapping("/api/*");
+                event.getServletContext().addServlet("testApi", servlet).addMapping("/api/*");
             }
         });
         handler.setContextPath("/test");
@@ -119,5 +121,13 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
         assertThatThrownBy(() -> client.divide(10, 0, false))
                 .isInstanceOf(HttpClientException.class)
                 .hasMessageContaining("Server Error");
+    }
+
+    private long count = 0;
+    @Test
+    public void shouldCountExecutions() {
+        servlet.setTimerRegistry(name -> duration -> count++);
+        client.first();
+        assertThat(count).isEqualTo(1);
     }
 }

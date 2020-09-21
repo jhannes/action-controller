@@ -104,7 +104,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
         unboundParameters.removeAll(boundPathParameters);
 
         if (!unboundParameters.isEmpty()) {
-            logger.warn("Unused path parameters for {}: {}", getMethodName(action), unboundParameters);
+            logger.warn("Unused path parameters for {}: {}", getMethodName(), unboundParameters);
         }
         if (!extraParameters.isEmpty()) {
             throw new ApiActionParameterUnknownMappingException(
@@ -361,10 +361,15 @@ public class ApiControllerMethodAction implements ApiControllerAction {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{" + httpMethod + " " + pattern + " => " + getMethodName(action) + "}";
+        return getClass().getSimpleName() + "{" + httpMethod + " " + pattern + " => " + getMethodName() + "}";
     }
 
-    private static Object getMethodName(Method action) {
+    @Override
+    public String getMethodName() {
+        return getMethodName(action);
+    }
+
+    private static String getMethodName(Method action) {
         String parameters = Stream.of(action.getParameterTypes())
                 .map(Class::getSimpleName)
                 .collect(Collectors.joining(","));

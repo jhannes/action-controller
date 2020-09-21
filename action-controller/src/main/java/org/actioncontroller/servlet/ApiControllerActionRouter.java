@@ -18,6 +18,7 @@ import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -37,7 +38,10 @@ public class ApiControllerActionRouter {
     public void invokeAction(ApiHttpExchange httpExchange, UserContext userContext) throws IOException {
         Optional<ApiControllerAction> action = findAction(httpExchange);
         if (action.isPresent()) {
+            long startTime = System.currentTimeMillis();
             action.get().invoke(userContext, httpExchange);
+            long executionTime = System.currentTimeMillis() - startTime;
+            userContext.getTimerRegistry().getTimer(action.get()).update(Duration.ofMillis(executionTime));
         }
     }
 

@@ -61,4 +61,6 @@ public interface ApiControllerAction {
      * Returns true if the actions respond to the same routes
      */
     boolean matches(ApiControllerAction action);
+
+    String getMethodName();
 }

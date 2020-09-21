@@ -131,7 +131,8 @@ public class ConfigMap extends AbstractMap<String, String> {
     }
 
     private boolean hasEnvironmentPrefix(String prefix) {
-        return System.getenv().keySet().stream().anyMatch(key -> key.toUpperCase().startsWith(prefix.replace('.', '_').toUpperCase() + "_"));
+        return System.getenv().entrySet().stream()
+                .anyMatch(entry -> entry.getKey().toUpperCase().startsWith(prefix.replace('.', '_').toUpperCase() + "_") && !entry.getValue().isEmpty());
     }
 
     protected String getInnerKey(Object key) {

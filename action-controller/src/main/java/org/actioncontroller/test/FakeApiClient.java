@@ -40,6 +40,7 @@ public class FakeApiClient implements ApiClient {
     private FakeHttpSession session;
     private Map<String, Cookie> clientCookies = new HashMap<>();
     private List<String> clientCertificateDNs = new ArrayList<>();
+    private Principal remoteUser;
 
     public FakeApiClient(URL contextRoot, String servletPath, Servlet servlet) {
         this.contextRoot = contextRoot;
@@ -48,7 +49,7 @@ public class FakeApiClient implements ApiClient {
     }
 
     public ApiClientExchange createExchange() {
-        return new FakeApiClientExchange(contextRoot, servletPath);
+        return new FakeApiClientExchange(contextRoot, servletPath, remoteUser);
     }
 
     @Override
@@ -73,13 +74,17 @@ public class FakeApiClient implements ApiClient {
         return c.getMaxAge() == -1 || c.getMaxAge() > 0;
     }
 
+    public void authenticate(Principal remoteUser) {
+        this.remoteUser = remoteUser;
+    }
+
     public class FakeApiClientExchange implements ApiClientExchange {
         private final String apiUrl;
         private FakeServletRequest request;
 
         private FakeServletResponse response = new FakeServletResponse();
 
-        private FakeApiClientExchange(URL contextRoot, String servletPath) {
+        private FakeApiClientExchange(URL contextRoot, String servletPath, Principal remoteUser) {
             List<Cookie> requestCookies = clientCookies.values().stream()
                     .filter(FakeApiClient::isUnexpired)
                     .collect(Collectors.toList());
@@ -88,6 +93,7 @@ public class FakeApiClient implements ApiClient {
             request.setSession(session);
             request.setCookies(requestCookies);
             this.apiUrl = contextRoot + servletPath;
+            setRemoteUser(remoteUser);
         }
 
         @Override

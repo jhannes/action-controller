@@ -1,35 +1,14 @@
 package org.actioncontroller;
 
-import org.actioncontroller.client.HttpURLConnectionApiClient;
-import org.actioncontroller.servlet.ApiServlet;
-import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.HttpClientException;
-import org.eclipse.jetty.security.DefaultUserIdentity;
-import org.eclipse.jetty.security.UserAuthentication;
 import org.eclipse.jetty.server.Authentication;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.UserIdentity;
-import org.eclipse.jetty.server.session.SessionHandler;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.extend.junit.ExpectedLogEventsRule;
 import org.slf4j.event.Level;
 
-import javax.security.auth.Subject;
-import javax.servlet.DispatcherType;
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import java.io.IOException;
 import java.security.Principal;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -37,11 +16,10 @@ import java.util.function.Consumer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class AbstractApiClientSessionTest {
+public abstract class AbstractApiClientSessionTest {
 
     protected LoginController client;
     protected String baseUrl;
-    private Authentication authentication;
 
     public static class LoginSession {
         List<String> favorites = new ArrayList<>();
@@ -49,11 +27,9 @@ public class AbstractApiClientSessionTest {
 
     public static class TestPrincipal implements Principal {
         private final String name;
-        private final boolean isAdmin;
 
-        public TestPrincipal(String name, boolean isAdmin) {
+        public TestPrincipal(String name) {
             this.name = name;
-            this.isAdmin = isAdmin;
         }
 
         @Override
@@ -62,7 +38,19 @@ public class AbstractApiClientSessionTest {
         }
 
         public boolean isAdmin() {
-            return isAdmin;
+            return false;
+        }
+    }
+
+    public static class AdminPrincipal extends TestPrincipal {
+
+        public AdminPrincipal(String name) {
+            super(name);
+        }
+
+        @Override
+        public boolean isAdmin() {
+            return true;
         }
     }
 
@@ -118,47 +106,28 @@ public class AbstractApiClientSessionTest {
             return remoteUser.orElse("<not logged in>");
         }
 
-        @GET("/principal")
-        @ContentBody
-        public String remotePrincipal(@RequestParam.Principal TestPrincipal principal) {
-            return principal.getName() + " admin=" + principal.isAdmin();
-        }
-
         @GET("/principal/optional")
         @ContentBody
         public String optionalPrincipal(@RequestParam.Principal Optional<TestPrincipal> principal) {
             return principal.map(p -> p.getName() + " admin=" + p.isAdmin()).orElse("<none>");
+        }
+
+        @GET("/admin/optional")
+        @ContentBody
+        public String optionalAdmin(@RequestParam.Principal Optional<AdminPrincipal> principal) {
+            return principal.map(TestPrincipal::getName).orElse("<none>");
+        }
+
+        @GET("/admin/required")
+        @ContentBody
+        public String requiredAdmin(@RequestParam.Principal AdminPrincipal principal) {
+            return principal.getName();
         }
     }
 
     @Rule
     public ExpectedLogEventsRule expectedLogEvents = new ExpectedLogEventsRule(Level.WARN);
 
-    @Before
-    public void createServerAndClient() throws Exception {
-        Server server = new Server(0);
-        ServletContextHandler handler = new ServletContextHandler();
-        handler.setSessionHandler(new SessionHandler());
-        handler.addEventListener(new javax.servlet.ServletContextListener() {
-            @Override
-            public void contextInitialized(ServletContextEvent event) {
-                event.getServletContext().addFilter("user", new Filter() {
-                    @Override
-                    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-                        ((Request)request).setAuthentication(authentication);
-                        chain.doFilter(request, response);
-                    }
-                }).addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, "/*");
-                event.getServletContext().addServlet("testApi", new ApiServlet(new LoginController())).addMapping("/api/*");
-            }
-        });
-        handler.setContextPath("/test");
-        server.setHandler(handler);
-        server.start();
-
-        baseUrl = server.getURI() + "/api";
-        client = ApiClientClassProxy.create(LoginController.class, new HttpURLConnectionApiClient(baseUrl));
-    }
 
     @Test
     public void shouldUseSession() {
@@ -187,35 +156,42 @@ public class AbstractApiClientSessionTest {
     }
 
     @Test
-    public void shouldGetRemoteUsername() {
-        Principal principal = () -> "Test Name";
-        Subject subject = new Subject();
-        subject.getPrincipals().add(principal);
-        UserIdentity userIdentity = new DefaultUserIdentity(subject, principal, new String[0]);
-        authentication = new UserAuthentication("test", userIdentity);
-
-        assertThat(client.remoteUser("Test Name")).isEqualTo("Test Name");
-    }
-
-    @Test
-    public void shouldGetClientPrincipal() {
-        Subject subject = new Subject();
-        TestPrincipal testPrincipal = new TestPrincipal("Other Name", true);
-        subject.getPrincipals().add(testPrincipal);
-        UserIdentity userIdentity = new DefaultUserIdentity(subject, testPrincipal, new String[0]);
-        authentication = new UserAuthentication("test", userIdentity);
-
-        assertThat(client.remotePrincipal(testPrincipal)).isEqualTo("Other Name admin=true");
+    public void shouldAllowMissingUser() {
+        assertThat(client.optionalUser(null)).isEqualTo("<not logged in>");
     }
 
     @Test
     public void shouldAllowMissingPrincipal() {
-        assertThat(client.optionalPrincipal(Optional.empty())).isEqualTo("<none>");
+        assertThat(client.optionalAdmin(null)).isEqualTo("<none>");
     }
 
     @Test
-    public void shouldAllowMissingUser() {
-        assertThat(client.optionalUser(Optional.empty())).isEqualTo("<not logged in>");
+    public void shouldGetRemoteUsername() {
+        doAuthenticate(() -> "Test Name");
+        assertThat(client.remoteUser(null)).isEqualTo("Test Name");
     }
+
+    @Test
+    public void shouldAllowAuthorizedOptionalUser() {
+        doAuthenticate(new AdminPrincipal("Admin"));
+        assertThat(client.optionalAdmin(null)).isEqualTo("Admin");
+    }
+
+    @Test
+    public void shouldAllowUnauthorizedOptionalUser() {
+        doAuthenticate(new TestPrincipal("Other Name"));
+        assertThat(client.optionalAdmin(null)).isEqualTo("<none>");
+    }
+
+    @Test
+    public void shouldRejectUnauthorizedUser() {
+        doAuthenticate(new TestPrincipal("Other Name"));
+        assertThatThrownBy(() -> client.requiredAdmin(null))
+                .isInstanceOf(HttpClientException.class)
+                .extracting("statusCode")
+                .isEqualTo(403);
+    }
+
+    public abstract void doAuthenticate(Principal principal);
 
 }

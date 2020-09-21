@@ -8,6 +8,8 @@ import org.actioncontroller.meta.HttpParameterMapperFactory;
 import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.servlet.ServletHttpExchange;
 import org.actioncontroller.test.FakeApiClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -90,7 +92,7 @@ public @interface RequestParam {
         @Override
         public HttpClientParameterMapper clientParameterMapper(RemoteUser annotation, Parameter parameter) {
             return ApiClientExchange.withOptional(parameter, (exchange, object) -> {
-                if (exchange instanceof FakeApiClient.FakeApiClientExchange) {
+                if (exchange instanceof FakeApiClient.FakeApiClientExchange && object != null) {
                     ((FakeApiClient.FakeApiClientExchange)exchange).setRemoteUser(object);
                 }
             });
@@ -98,6 +100,8 @@ public @interface RequestParam {
     }
 
     class PrincipalParameterMapperFactory implements HttpParameterMapperFactory<Principal> {
+        private static final Logger logger = LoggerFactory.getLogger(PrincipalParameterMapperFactory.class);
+
         @Override
         public HttpParameterMapper create(Principal annotation, Parameter parameter, ApiControllerContext context) {
             if (parameter.getType() == Optional.class) {
@@ -109,16 +113,20 @@ public @interface RequestParam {
                     } else if (targetType.isAssignableFrom(principal.getClass())) {
                         return Optional.of(principal);
                     } else {
-                        throw new HttpUnauthorizedException("Login required");
+                        logger.info("Can't assign {} to {}", principal, parameter.getType());
+                        return Optional.empty();
                     }
                 };
             } else {
                 return exchange -> {
                     java.security.Principal principal = exchange.getUserPrincipal();
-                    if (principal != null && parameter.getType().isAssignableFrom(principal.getClass())) {
+                    if (principal == null) {
+                        throw new HttpUnauthorizedException();
+                    } else if (parameter.getType().isAssignableFrom(principal.getClass())) {
                         return principal;
                     } else {
-                        throw new HttpUnauthorizedException("Login required");
+                        logger.info("Can't assign {} to {}", principal, parameter.getType());
+                        throw new HttpForbiddenException();
                     }
                 };
             }
@@ -127,7 +135,7 @@ public @interface RequestParam {
         @Override
         public HttpClientParameterMapper clientParameterMapper(Principal annotation, Parameter parameter) {
             return ApiClientExchange.withOptional(parameter, (exchange, object) -> {
-                if (exchange instanceof FakeApiClient.FakeApiClientExchange) {
+                if (exchange instanceof FakeApiClient.FakeApiClientExchange && object != null) {
                     ((FakeApiClient.FakeApiClientExchange)exchange).setRemoteUser(object);
                 }
             });

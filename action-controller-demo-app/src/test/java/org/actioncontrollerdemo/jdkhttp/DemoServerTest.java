@@ -78,7 +78,7 @@ public class DemoServerTest {
         userApi.postLogin("john doe", Optional.empty(), new AtomicReference<String>()::set);
         assertThatThrownBy(() -> userApi.getAdminPage(null))
                 .isInstanceOf(HttpClientException.class)
-                .hasMessageContaining("Unauthorized");
+                .hasMessageContaining("Forbidden");
     }
 
     @Test

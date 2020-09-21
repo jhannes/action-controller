@@ -6,8 +6,11 @@ import org.actioncontroller.servlet.ApiServlet;
 import org.junit.Before;
 
 import java.net.URL;
+import java.security.Principal;
 
 public class ApiClientFakeSessionTest extends AbstractApiClientSessionTest {
+
+    private FakeApiClient apiClient;
 
     @Before
     public void createServerAndClient() throws Exception {
@@ -15,7 +18,12 @@ public class ApiClientFakeSessionTest extends AbstractApiClientSessionTest {
         ApiServlet servlet = new ApiServlet(new LoginController());
         servlet.init(null);
         final URL contextRoot = new URL("http://example.com/test");
-        client = ApiClientClassProxy.create(LoginController.class,
-                new FakeApiClient(contextRoot, "/api", servlet));
+        apiClient = new FakeApiClient(contextRoot, "/api", servlet);
+        client = ApiClientClassProxy.create(LoginController.class, apiClient);
+    }
+
+    @Override
+    public void doAuthenticate(Principal principal) {
+        apiClient.authenticate(principal);
     }
 }

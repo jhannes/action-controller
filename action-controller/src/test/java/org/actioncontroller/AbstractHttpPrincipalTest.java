@@ -63,7 +63,7 @@ public abstract class AbstractHttpPrincipalTest {
     }
 
     @Test
-    public void shouldRejectUnauthorizedUser() {
+    public void shouldRejectUnauthenticatedUser() {
         assertThatThrownBy(() -> client.requiredUser(null))
                 .isInstanceOf(HttpClientException.class)
                 .extracting("statusCode")

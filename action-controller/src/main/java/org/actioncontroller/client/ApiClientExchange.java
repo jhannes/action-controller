@@ -87,7 +87,7 @@ public interface ApiClientExchange {
         if (parameter.getType() == Optional.class) {
             return (exchange, arg) -> {
                 Optional<?> opt = (Optional<?>) arg;
-                if (opt.isPresent()) {
+                if (opt != null && opt.isPresent()) {
                     mapper.apply(exchange, opt.get());
                 }
             };

@@ -221,7 +221,9 @@ public class ServletHttpExchange implements ApiHttpExchange {
         }
         cookie.setSecure(secure);
         cookie.setHttpOnly(isHttpOnly);
-        if (!path.isEmpty()) {
+        if (path.isEmpty()) {
+            cookie.setPath("/");
+        } else {
             cookie.setPath(path);
         }
         if (domain != null) {

@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.InetSocketAddress;
+import java.net.URL;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -58,7 +59,7 @@ public class ConfigObserver {
         return this;
     }
 
-    public <T> ConfigObserver onSingleConfigValue(String key, Function<String, T> transformer, T defaultValue, ConfigValueListener<T> listener) {
+    public <T> ConfigObserver onSingleConfigValue(String key, ConfigValueTransformer<T> transformer, T defaultValue, ConfigValueListener<T> listener) {
         return onConfigChange(new ConfigListener() {
             @Override
             public void onConfigChanged(Set<String> changedKeys, ConfigMap newConfiguration) throws Exception {
@@ -82,7 +83,11 @@ public class ConfigObserver {
     }
 
     public ConfigObserver onStringValue(String key, String defaultValue, ConfigValueListener<String> listener) {
-        return onSingleConfigValue(key, Function.identity(), defaultValue, listener);
+        return onSingleConfigValue(key, v -> v, defaultValue, listener);
+    }
+
+    public ConfigObserver onUrlValue(String key, URL defaultValue, ConfigValueListener<URL> listener) {
+        return onSingleConfigValue(key, URL::new, defaultValue, listener);
     }
 
     public ConfigObserver onIntValue(String key, int defaultValue, ConfigValueListener<Integer> listener) {

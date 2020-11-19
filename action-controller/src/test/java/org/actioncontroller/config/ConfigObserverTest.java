@@ -8,6 +8,8 @@ import org.slf4j.event.Level;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
@@ -140,6 +142,18 @@ public class ConfigObserverTest {
         assertThat(path.get()).isEqualTo(System.getenv("PATH"));
         writeConfigLine("path=test");
         assertThat(path.get()).isEqualTo("test");
+    }
+
+    @Test
+    public void shouldReadUrlValue() throws MalformedURLException {
+        AtomicReference<URL> url = new AtomicReference<>();
+        observer.onUrlValue("url", new URL("http://example.net"), url::set);
+        assertThat(url.get()).isEqualTo(new URL("http://example.net"));
+        writeConfigLine("url=https://example.org");
+        assertThat(url.get()).isEqualTo(new URL("https://example.org"));
+        expectedLogEvents.expectPattern(ConfigObserver.class, Level.ERROR, "Failed to notify listener while reloading {}");
+        writeConfigLine("url=this is not a url");
+        assertThat(url.get()).isEqualTo(new URL("https://example.org"));
     }
 
 

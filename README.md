@@ -196,6 +196,34 @@ public class MyServer {
 }
 ```
 
+## Api client
+
+```java
+interface MyApi {
+    
+    @GET("/v1/api/objects")
+    @JsonBody
+    List<SomePojo> listObjects(
+        @RequestParam("query") Optional<String> query,
+        @RequestParam("maxHits") Optional<Integer> maxHits
+    );
+
+    @GET("/v1/api/objects/:id")
+    @JsonBody
+    SomePojo getObject(@PathParam("id") long id);
+}
+
+public class ApiClientDemo {
+    public static void main(String[] args){
+        HttpURLConnectionApiClient client = new HttpURLConnectionApiClient("http://localhost:8080/api");
+        MyApi myApi = ApiClientProxy.create(MyApi.class, httpClient);
+        
+        // Will perform HTTP GET of http://localhost:8080/api/v1/api/objects/5001
+        SomePojo object = myApi.getObject(50001);
+    }
+}
+```
+
 ## ConfigObserver
 
 [ConfigObserver](https://jhannes.github.io/action-controller/apidocs/org/actioncontroller/config/ConfigObserver.html) is a revolutionary way to think of

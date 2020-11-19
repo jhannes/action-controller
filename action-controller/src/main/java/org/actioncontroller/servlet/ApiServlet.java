@@ -162,6 +162,10 @@ public class ApiServlet extends HttpServlet implements UserContext {
         return timerRegistery;
     }
 
+    /**
+     * This method lets you plug in metrics for measuring which actions are executed and how
+     * long they take. See {@link TimerRegistry}
+     */
     public void setTimerRegistry(TimerRegistry timerRegistry) {
         this.timerRegistery = timerRegistry;
     }

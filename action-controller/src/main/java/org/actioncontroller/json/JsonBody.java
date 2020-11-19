@@ -51,6 +51,7 @@ public @interface JsonBody {
 
     Naming nameFormat() default Naming.CAMEL_CASE;
 
+    boolean buffer() default true;
 
     class ReturnMapperFactory implements HttpReturnMapperFactory<JsonBody> {
 
@@ -67,7 +68,17 @@ public @interface JsonBody {
                     return annotation.nameFormat().transform(super.getName(getMethod));
                 }
             };
-            return (o, exchange) -> exchange.write("application/json", writer -> jsonGenerator.generateNode(o, java.util.Optional.of(returnType)).toJson(writer));
+            if (annotation.buffer()) {
+                return (o, exchange) -> exchange.write(
+                        "application/json",
+                        writer -> writer.write(jsonGenerator.generateNode(o, java.util.Optional.of(returnType)).toJson())
+                );
+            } else {
+                return (o, exchange) -> exchange.write(
+                        "application/json",
+                        writer -> jsonGenerator.generateNode(o, java.util.Optional.of(returnType)).toJson(writer)
+                );
+            }
         }
 
         @Override

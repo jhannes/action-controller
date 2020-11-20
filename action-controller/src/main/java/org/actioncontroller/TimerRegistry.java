@@ -10,7 +10,7 @@ import java.time.Duration;
  *
  * <pre>
  * MetricRegistry metricRegistry = new MetricRegistry()
- * TimerRegistry counterRegistry = action -> {
+ * TimerRegistry counterRegistry = action -&gt; {
  *      String name = ApiServlet.class.getSimpleName() + "/" + action.getMethodName();
  *      Timer histogram = metricRegistry.timer(name);
  *      return histogram::update;

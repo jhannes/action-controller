@@ -90,6 +90,7 @@ public class ApiControllerActionRouter {
                 throw new ActionControllerConfigurationException(action + " is in conflict with " + existingAction);
             }
         }
+        logger.info("Installing route {}", action);
         actions.add(action);
     }
 
@@ -127,10 +128,7 @@ public class ApiControllerActionRouter {
         ApiControllerCompositeException exceptions = new ApiControllerCompositeException(controller);
         for (Method method : controller.getClass().getMethods()) {
             try {
-                createNewInstance(controller, context, method).ifPresent(action -> {
-                    logger.info("Installing route {}", action);
-                    actions.add(action);
-                });
+                createNewInstance(controller, context, method).ifPresent(actions::add);
             } catch (ActionControllerConfigurationException e) {
                 logger.warn("Failed to setup {}", getMethodName(method), e);
                 exceptions.addActionException(e);

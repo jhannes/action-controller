@@ -1,7 +1,6 @@
 package org.actioncontroller;
 
 import org.actioncontroller.client.HttpClientException;
-import org.eclipse.jetty.server.Authentication;
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.extend.junit.ExpectedLogEventsRule;
@@ -108,19 +107,19 @@ public abstract class AbstractApiClientSessionTest {
 
         @GET("/principal/optional")
         @ContentBody
-        public String optionalPrincipal(@RequestParam.Principal Optional<TestPrincipal> principal) {
+        public String optionalPrincipal(@UserPrincipal Optional<TestPrincipal> principal) {
             return principal.map(p -> p.getName() + " admin=" + p.isAdmin()).orElse("<none>");
         }
 
         @GET("/admin/optional")
         @ContentBody
-        public String optionalAdmin(@RequestParam.Principal Optional<AdminPrincipal> principal) {
+        public String optionalAdmin(@UserPrincipal Optional<AdminPrincipal> principal) {
             return principal.map(TestPrincipal::getName).orElse("<none>");
         }
 
         @GET("/admin/required")
         @ContentBody
-        public String requiredAdmin(@RequestParam.Principal AdminPrincipal principal) {
+        public String requiredAdmin(@UserPrincipal AdminPrincipal principal) {
             return principal.getName();
         }
     }

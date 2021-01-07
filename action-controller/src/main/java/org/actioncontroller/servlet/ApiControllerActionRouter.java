@@ -130,10 +130,10 @@ public class ApiControllerActionRouter {
             try {
                 createNewInstance(controller, context, method).ifPresent(actions::add);
             } catch (ActionControllerConfigurationException e) {
-                logger.warn("Failed to setup {}", getMethodName(method), e);
+                logger.error("Failed to setup {}", getMethodName(method), e);
                 exceptions.addActionException(e);
             } catch (Exception e) {
-                logger.warn("Failed to setup {}", getMethodName(method), e);
+                logger.error("Failed to setup {}", getMethodName(method), e);
                 exceptions.addActionException(new ActionControllerConfigurationException("Failed to set up " + getMethodName(method), e));
             }
         }

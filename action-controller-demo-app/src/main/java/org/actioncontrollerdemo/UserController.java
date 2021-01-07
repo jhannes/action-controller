@@ -6,6 +6,7 @@ import org.actioncontroller.POST;
 import org.actioncontroller.RequestParam;
 import org.actioncontroller.SendRedirect;
 import org.actioncontroller.UnencryptedCookie;
+import org.actioncontroller.UserPrincipal;
 
 import java.security.Principal;
 import java.util.Optional;
@@ -16,7 +17,7 @@ public class UserController {
     @GET("/user/optional")
     @ContentBody
     public String getUsername(
-            @RequestParam.Principal Optional<Principal> principal
+            @UserPrincipal Optional<Principal> principal
     ) {
         return "Hello, " + principal.map(Principal::getName).orElse("stranger");
     }
@@ -24,7 +25,7 @@ public class UserController {
     @GET("/user/required")
     @ContentBody
     public String getRealUsername(
-            @RequestParam.Principal Principal principal
+            @UserPrincipal Principal principal
     ) {
         return "Hello - required, " + principal.getName();
     }
@@ -32,7 +33,7 @@ public class UserController {
     @GET("/user/admin")
     @ContentBody
     public String getAdminPage(
-            @RequestParam.Principal AdminPrincipal principal
+            @UserPrincipal AdminPrincipal principal
     ) {
         return "Hello - boss, " + principal.getName();
     }

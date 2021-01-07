@@ -51,15 +51,6 @@ public @interface RequestParam {
     @interface RemoteUser {
     }
 
-    /**
-     * NOT SUPPORTED ON JdkHttpExchange. Returns the remote principal for the request as set on the servlet container.
-     */
-    @Retention(RUNTIME)
-    @Target(PARAMETER)
-    @HttpParameterMapping(PrincipalParameterMapperFactory.class)
-    @interface Principal {
-    }
-
     class ClientIpParameterMapperFactory implements HttpParameterMapperFactory<ClientIp> {
 
         @Override
@@ -99,46 +90,4 @@ public @interface RequestParam {
         }
     }
 
-    class PrincipalParameterMapperFactory implements HttpParameterMapperFactory<Principal> {
-        private static final Logger logger = LoggerFactory.getLogger(PrincipalParameterMapperFactory.class);
-
-        @Override
-        public HttpParameterMapper create(Principal annotation, Parameter parameter, ApiControllerContext context) {
-            if (parameter.getType() == Optional.class) {
-                Class<?> targetType = TypesUtil.typeParameter(parameter.getParameterizedType());
-                return exchange -> {
-                    java.security.Principal principal = exchange.getUserPrincipal();
-                    if (principal == null) {
-                        return Optional.empty();
-                    } else if (targetType.isAssignableFrom(principal.getClass())) {
-                        return Optional.of(principal);
-                    } else {
-                        logger.info("Can't assign {} to {}", principal, parameter.getType());
-                        return Optional.empty();
-                    }
-                };
-            } else {
-                return exchange -> {
-                    java.security.Principal principal = exchange.getUserPrincipal();
-                    if (principal == null) {
-                        throw new HttpUnauthorizedException();
-                    } else if (parameter.getType().isAssignableFrom(principal.getClass())) {
-                        return principal;
-                    } else {
-                        logger.info("Can't assign {} to {}", principal, parameter.getType());
-                        throw new HttpForbiddenException();
-                    }
-                };
-            }
-        }
-
-        @Override
-        public HttpClientParameterMapper clientParameterMapper(Principal annotation, Parameter parameter) {
-            return ApiClientExchange.withOptional(parameter, (exchange, object) -> {
-                if (exchange instanceof FakeApiClient.FakeApiClientExchange && object != null) {
-                    ((FakeApiClient.FakeApiClientExchange)exchange).setRemoteUser(object);
-                }
-            });
-        }
-    }
 }

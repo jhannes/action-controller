@@ -32,7 +32,7 @@ public class ApiServletConfigurationErrorTest {
     @Test
     public void shouldReportAllActionErrors() {
         expectedLogEventsRule.expectPattern(ApiControllerAction.class, Level.WARN, "Unused path parameters for {}: {}");
-        expectedLogEventsRule.expectPattern(ApiControllerActionRouter.class, Level.WARN, "Failed to setup {}");
+        expectedLogEventsRule.expectPattern(ApiControllerActionRouter.class, Level.ERROR, "Failed to setup {}");
         ApiServlet apiServlet = new ApiServlet(List.of(
                 new ControllerWithErrors(), new OtherControllerWithErrors(), new ControllerWithMismatchedPathParams())
         );
@@ -45,10 +45,8 @@ public class ApiServletConfigurationErrorTest {
                 .hasMessageContaining(OtherControllerWithErrors.class.getName())
                 .hasMessageContaining("actionWithInvalidMappingAnnotation")
                 .hasMessageContaining(ControllerWithMismatchedPathParams.class.getName())
-                .hasMessageContaining("incorrect")
-        ;
+                .hasMessageContaining("incorrect");
 
-        expectedLogEventsRule.expectPattern(ApiControllerActionRouter.class, Level.WARN, "Failed to setup {}");
         expectedLogEventsRule.expect(ApiControllerAction.class, Level.WARN,
                 "Unused path parameters for ControllerWithMismatchedPathParams.actionWithParameterMismatch(String): [myTest]");
     }
@@ -116,7 +114,7 @@ public class ApiServletConfigurationErrorTest {
 
     @Test
     public void shouldReportErrorOnRedirectWithBothValueAndReturn() {
-        expectedLogEventsRule.expectPattern(ApiControllerActionRouter.class, Level.WARN, "Failed to setup {}");
+        expectedLogEventsRule.expectPattern(ApiControllerActionRouter.class, Level.ERROR, "Failed to setup {}");
         ApiServlet servlet = new ApiServlet(new ControllerWithInvalidRedirect());
         assertThatThrownBy(() -> servlet.init(null))
                 .isInstanceOf(ActionControllerConfigurationException.class)

@@ -2,6 +2,7 @@ package org.actioncontroller.json;
 
 import org.actioncontroller.HttpActionException;
 import org.actioncontroller.meta.ApiHttpExchange;
+import org.jsonbuddy.JsonNode;
 import org.jsonbuddy.JsonObject;
 
 import java.io.IOException;
@@ -11,17 +12,17 @@ import java.io.IOException;
  */
 public class JsonHttpActionException extends HttpActionException {
 
-    private JsonObject jsonObject;
+    private final JsonNode jsonObject;
 
-    public JsonHttpActionException(int errorCode, String message, JsonObject jsonObject) {
+    public JsonHttpActionException(int errorCode, String message, JsonNode json) {
         super(errorCode, message);
-        this.jsonObject = jsonObject;
+        this.jsonObject = json;
     }
 
     @Override
     public void sendError(ApiHttpExchange exchange) throws IOException {
         exchange.setStatus(getStatusCode());
-        exchange.write("application/json", writer -> jsonObject.toJson(writer));
+        exchange.write("application/json", jsonObject::toJson);
     }
 
 }

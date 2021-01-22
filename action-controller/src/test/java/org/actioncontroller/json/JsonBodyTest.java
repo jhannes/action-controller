@@ -1,18 +1,23 @@
 package org.actioncontroller.json;
 
+import org.actioncontroller.ContentBody;
 import org.actioncontroller.GET;
 import org.actioncontroller.HttpRequestException;
 import org.actioncontroller.POST;
+import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientClassProxy;
+import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.servlet.ApiServlet;
 import org.actioncontroller.test.FakeApiClient;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -22,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class JsonBodyTest {
 
     protected TestController client;
+    private ApiClient httpClient;
 
     public static class Person {
         private String firstName, lastName;
@@ -62,14 +68,30 @@ public class JsonBodyTest {
         public JsonBodyTest.Person throwError() {
             throw new HttpRequestException("Missing value foo");
         }
+        
+        @POST("/getName")
+        @ContentBody
+        public String getName(@JsonBody Person person) {
+            return person.getFirstName() + " " + person.getLastName();
+        }
+        
+        @POST("/optionalName")
+        @ContentBody
+        public String optionalName(@JsonBody Optional<Person> person) {
+            return person.map(this::getName).orElse("<missing>");
+        }
     }
 
     @Before
     public void setUp() throws Exception {
-        final ApiServlet servlet = new ApiServlet(new TestController());
+        this.httpClient = createHttpClient(new TestController());
+        this.client = ApiClientClassProxy.create(TestController.class, this.httpClient);
+    }
+
+    protected ApiClient createHttpClient(Object controller) throws Exception {
+        final ApiServlet servlet = new ApiServlet(controller);
         servlet.init(null);
-        FakeApiClient client = new FakeApiClient(new URL("http://example.com/test"), "/api", servlet);
-        this.client = ApiClientClassProxy.create(TestController.class, client);
+        return new FakeApiClient(new URL("http://example.com/test"), "/api", servlet);
     }
 
     @Test
@@ -91,5 +113,26 @@ public class JsonBodyTest {
         assertThatThrownBy(() -> client.throwError())
                 .isInstanceOf(HttpClientException.class)
                 .satisfies(e -> assertThat(((HttpClientException)e).getResponseBody()).contains("\"message\":\"Missing value foo\""));
+    }
+    
+    @Test
+    public void shouldAcceptMissingOptional() {
+        assertThat(client.optionalName(Optional.empty())).isEqualTo("<missing>");
+    }
+
+    @Test
+    public void shouldAcceptOptional() {
+        assertThat(client.optionalName(Optional.of(new Person("Jane", "Doe")))).isEqualTo("Jane Doe");
+    }
+
+    @Test
+    public void shouldReturn400OnMissingJson() throws IOException {
+        ApiClientExchange exchange = httpClient.createExchange();
+        exchange.setTarget("POST", "/getName");
+        exchange.write("application/json", writer -> writer.write("null"));
+        exchange.executeRequest();
+        assertThatThrownBy(exchange::checkForError)
+                .isInstanceOf(HttpClientException.class)
+                .satisfies(e -> assertThat(((HttpClientException)e).getResponseBody()).contains("Missing required request body"));
     }
 }

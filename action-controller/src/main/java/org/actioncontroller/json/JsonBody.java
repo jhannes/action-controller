@@ -1,7 +1,10 @@
 package org.actioncontroller.json;
 
 import org.actioncontroller.ApiControllerContext;
+import org.actioncontroller.HttpRequestException;
+import org.actioncontroller.TypesUtil;
 import org.actioncontroller.client.ApiClientExchange;
+import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpClientReturnMapper;
 import org.actioncontroller.meta.HttpParameterMapper;
@@ -10,6 +13,8 @@ import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpReturnMapper;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
+import org.jsonbuddy.JsonNode;
+import org.jsonbuddy.JsonNull;
 import org.jsonbuddy.parse.JsonParser;
 import org.jsonbuddy.pojo.JsonGenerator;
 import org.jsonbuddy.pojo.PojoMapper;
@@ -21,6 +26,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
+import java.util.Optional;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.PARAMETER;
@@ -108,11 +114,25 @@ public @interface JsonBody {
         @Override
         public HttpParameterMapper create(JsonBody annotation, Parameter parameter, ApiControllerContext context) {
             Type type = parameter.getParameterizedType();
-            return exchange -> pojoMapper.mapToPojo(JsonParser.parseNode(exchange.getReader()), type);
+            if (parameter.getType() == Optional.class) {
+                return exchange -> readPojo(exchange, TypesUtil.typeParameter(type));
+            }
+            return exchange -> readPojo(exchange, type).orElseThrow(() -> new HttpRequestException("Missing required request body"));
+        }
+
+        private Optional<Object> readPojo(ApiHttpExchange exchange, Type targetType) throws IOException {
+            return mapToPojo(JsonParser.parseNode(exchange.getReader()), targetType);
+        }
+
+        private Optional<Object> mapToPojo(JsonNode json, Type targetType) {
+            return json != null && !(json instanceof JsonNull) ? Optional.of(pojoMapper.mapToPojo(json, targetType)) : Optional.empty();
         }
 
         @Override
         public HttpClientParameterMapper clientParameterMapper(JsonBody annotation, Parameter parameter) {
+            if (parameter.getType() == Optional.class) {
+                return (exchange, o) -> exchange.write("application/json", writer -> JsonGenerator.generate(((Optional<?>) o).orElse(null)).toJson(writer));
+            }
             return (exchange, o) -> exchange.write("application/json", writer -> JsonGenerator.generate(o).toJson(writer));
         }
     }

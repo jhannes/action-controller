@@ -1,6 +1,9 @@
 package org.actioncontroller;
 
+import org.actioncontroller.client.ApiClient;
+import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.HttpClientException;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.security.Principal;
@@ -16,7 +19,6 @@ public abstract class AbstractHttpPrincipalTest {
         public UserPrincipal(String username) {
             this.username = username;
         }
-
 
         @Override
         public String getName() {
@@ -50,21 +52,31 @@ public abstract class AbstractHttpPrincipalTest {
         }
     }
 
-    protected AuthenticatedController client;
+    protected AuthenticatedController clientController;
+
+    @Before
+    public void createServerAndClient() throws Exception {
+        clientController = ApiClientClassProxy.create(
+                AuthenticatedController.class,
+                createApiClient(new AuthenticatedController())
+        );
+    }
+
+    protected abstract ApiClient createApiClient(Object controller) throws Exception;
 
     @Test
     public void shouldAcceptNoUserWhenPrincipalIsOptional() {
-        client.optionalUser(Optional.empty());
+        clientController.optionalUser(Optional.empty());
     }
 
     @Test
     public void shouldAcceptAdminPrincipal() {
-        client.optionalAdmin(Optional.of(new AdminPrincipal("admin")));
+        clientController.optionalAdmin(Optional.of(new AdminPrincipal("admin")));
     }
 
     @Test
     public void shouldRejectUnauthenticatedUser() {
-        assertThatThrownBy(() -> client.requiredUser(null))
+        assertThatThrownBy(() -> clientController.requiredUser(null))
                 .isInstanceOf(HttpClientException.class)
                 .extracting("statusCode")
                 .isEqualTo(401);

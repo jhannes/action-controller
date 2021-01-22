@@ -1,7 +1,6 @@
 package org.actioncontroller.servlet;
 
 import org.actioncontroller.AbstractApiClientSessionTest;
-import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.HttpURLConnectionApiClient;
 import org.eclipse.jetty.security.DefaultUserIdentity;
 import org.eclipse.jetty.security.UserAuthentication;
@@ -11,17 +10,10 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.UserIdentity;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.junit.Before;
 
 import javax.security.auth.Subject;
 import javax.servlet.DispatcherType;
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
 import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import java.io.IOException;
 import java.security.Principal;
 import java.util.EnumSet;
 
@@ -29,22 +21,19 @@ public class ApiServletSessionTest extends AbstractApiClientSessionTest {
 
     private Authentication authentication;
 
-    @Before
-    public void createServerAndClient() throws Exception {
+    @Override
+    protected HttpURLConnectionApiClient createClient(Object controller) throws Exception {
         Server server = new Server(0);
         ServletContextHandler handler = new ServletContextHandler();
         handler.setSessionHandler(new SessionHandler());
         handler.addEventListener(new javax.servlet.ServletContextListener() {
             @Override
             public void contextInitialized(ServletContextEvent event) {
-                event.getServletContext().addFilter("user", new Filter() {
-                    @Override
-                    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-                        ((Request)request).setAuthentication(authentication);
-                        chain.doFilter(request, response);
-                    }
+                event.getServletContext().addFilter("user", (request, response, chain) -> {
+                    ((Request)request).setAuthentication(authentication);
+                    chain.doFilter(request, response);
                 }).addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, "/*");
-                event.getServletContext().addServlet("testApi", new ApiServlet(new LoginController())).addMapping("/api/*");
+                event.getServletContext().addServlet("testApi", new ApiServlet(controller)).addMapping("/api/*");
             }
         });
         handler.setContextPath("/test");
@@ -52,7 +41,7 @@ public class ApiServletSessionTest extends AbstractApiClientSessionTest {
         server.start();
 
         baseUrl = server.getURI() + "/api";
-        client = ApiClientClassProxy.create(LoginController.class, new HttpURLConnectionApiClient(baseUrl));
+        return new HttpURLConnectionApiClient(baseUrl);
     }
 
     @Override

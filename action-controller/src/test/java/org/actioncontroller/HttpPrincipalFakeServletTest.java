@@ -1,20 +1,18 @@
 package org.actioncontroller;
 
-import org.actioncontroller.client.ApiClientClassProxy;
+import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.servlet.ApiServlet;
 import org.actioncontroller.test.FakeApiClient;
-import org.junit.Before;
 
 import java.net.URL;
 
 public class HttpPrincipalFakeServletTest extends AbstractHttpPrincipalTest {
 
-    @Before
-    public void createServerAndClient() throws Exception {
-        ApiServlet servlet = new ApiServlet(new AuthenticatedController());
+    @Override
+    protected ApiClient createApiClient(Object controller) throws Exception {
+        ApiServlet servlet = new ApiServlet(controller);
         servlet.init(null);
-        final URL contextRoot = new URL("http://example.com/test");
-        FakeApiClient apiClient = new FakeApiClient(contextRoot, "/api", servlet);
-        client = ApiClientClassProxy.create(AuthenticatedController.class, apiClient);
+        return new FakeApiClient(new URL("http://example.com/test"), "/api", servlet);
     }
+
 }

@@ -1,6 +1,9 @@
 package org.actioncontroller;
 
+import org.actioncontroller.client.ApiClient;
+import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.HttpClientException;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.extend.junit.ExpectedLogEventsRule;
@@ -15,9 +18,10 @@ import java.util.function.Consumer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@SuppressWarnings("OptionalAssignedToNull")
 public abstract class AbstractApiClientSessionTest {
 
-    protected LoginController client;
+    protected LoginController controllerClient;
     protected String baseUrl;
 
     public static class LoginSession {
@@ -127,70 +131,77 @@ public abstract class AbstractApiClientSessionTest {
     @Rule
     public ExpectedLogEventsRule expectedLogEvents = new ExpectedLogEventsRule(Level.WARN);
 
+    @Before
+    public void createServerAndClient() throws Exception {
+        ApiClient apiClient = createClient(new LoginController());
+        this.controllerClient = ApiClientClassProxy.create(LoginController.class, apiClient);
+    }
 
+    protected abstract ApiClient createClient(Object controller) throws Exception;
+
+    public abstract void doAuthenticate(Principal principal);
+    
     @Test
     public void shouldUseSession() {
-        client.addFavorite("first", null);
-        client.addFavorite("second", null);
-        assertThat(client.getFavorites(null)).isEqualTo("first, second");
+        controllerClient.addFavorite("first", null);
+        controllerClient.addFavorite("second", null);
+        assertThat(controllerClient.getFavorites(null)).isEqualTo("first, second");
     }
 
     @Test
     public void shouldLogin() {
-        String redirectUri = client.login("alice", null);
+        String redirectUri = controllerClient.login("alice", null);
         assertThat(redirectUri).isEqualTo(baseUrl + "/userinfo");
-        assertThat(client.userinfo(null)).isEqualTo("alice");
+        assertThat(controllerClient.userinfo(null)).isEqualTo("alice");
     }
 
     @Test
     public void shouldLogout() {
-        client.login("alice", null);
-        client.addFavorite("first", null);
-        String logoutRedirect = client.logout(null);
+        controllerClient.login("alice", null);
+        controllerClient.addFavorite("first", null);
+        String logoutRedirect = controllerClient.logout(null);
         assertThat(logoutRedirect).isEqualTo(baseUrl + "/favorites");
-        assertThat(client.getFavorites(null)).isEqualTo("<no session>");
+        assertThat(controllerClient.getFavorites(null)).isEqualTo("<no session>");
 
-        assertThatThrownBy(() -> client.userinfo(null))
+        assertThatThrownBy(() -> controllerClient.userinfo(null))
                 .isEqualTo(new HttpClientException(401, "Unauthorized", "Missing required session parameter username", null));
     }
 
     @Test
     public void shouldAllowMissingUser() {
-        assertThat(client.optionalUser(null)).isEqualTo("<not logged in>");
+        assertThat(controllerClient.optionalUser(null)).isEqualTo("<not logged in>");
     }
 
     @Test
     public void shouldAllowMissingPrincipal() {
-        assertThat(client.optionalAdmin(null)).isEqualTo("<none>");
+        assertThat(controllerClient.optionalAdmin(null)).isEqualTo("<none>");
     }
 
     @Test
     public void shouldGetRemoteUsername() {
         doAuthenticate(() -> "Test Name");
-        assertThat(client.remoteUser(null)).isEqualTo("Test Name");
+        assertThat(controllerClient.remoteUser(null)).isEqualTo("Test Name");
     }
 
     @Test
     public void shouldAllowAuthorizedOptionalUser() {
         doAuthenticate(new AdminPrincipal("Admin"));
-        assertThat(client.optionalAdmin(null)).isEqualTo("Admin");
+        assertThat(controllerClient.optionalAdmin(null)).isEqualTo("Admin");
     }
 
     @Test
     public void shouldAllowUnauthorizedOptionalUser() {
         doAuthenticate(new TestPrincipal("Other Name"));
-        assertThat(client.optionalAdmin(null)).isEqualTo("<none>");
+        assertThat(controllerClient.optionalAdmin(null)).isEqualTo("<none>");
     }
 
     @Test
     public void shouldRejectUnauthorizedUser() {
         doAuthenticate(new TestPrincipal("Other Name"));
-        assertThatThrownBy(() -> client.requiredAdmin(null))
+        assertThatThrownBy(() -> controllerClient.requiredAdmin(null))
                 .isInstanceOf(HttpClientException.class)
                 .extracting("statusCode")
                 .isEqualTo(403);
     }
-
-    public abstract void doAuthenticate(Principal principal);
 
 }

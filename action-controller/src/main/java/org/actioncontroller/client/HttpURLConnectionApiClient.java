@@ -48,18 +48,23 @@ public class HttpURLConnectionApiClient implements ApiClient {
     private static final Logger logger = LoggerFactory.getLogger(HttpURLConnectionApiClient.class);
 
     private static final Charset CHARSET = StandardCharsets.ISO_8859_1;
-    private URL baseUrl;
-    private Map<String, HttpCookie> clientCookies = new HashMap<>();
+    private final URL baseUrl;
+    private final Map<String, HttpCookie> clientCookies = new HashMap<>();
     private KeyStore trustStore;
     private KeyStore keyStore;
     private byte[] requestBody;
 
     public HttpURLConnectionApiClient(String baseUrl) {
-        this.baseUrl = IOUtil.asURL(baseUrl);
+        this(IOUtil.asURL(baseUrl));
     }
 
     public HttpURLConnectionApiClient(URL baseUrl) {
         this.baseUrl = baseUrl;
+    }
+
+    @Override
+    public URL getBaseUrl() {
+        return baseUrl;
     }
 
     @Override
@@ -130,10 +135,10 @@ public class HttpURLConnectionApiClient implements ApiClient {
     protected class ClientExchange implements ApiClientExchange {
         private String method;
         private String pathInfo;
-        private Map<String, String> requestHeaders = new HashMap<>();
-        private Map<String, String> requestParameters = new HashMap<>();
+        private final Map<String, String> requestHeaders = new HashMap<>();
+        private final Map<String, String> requestParameters = new HashMap<>();
         private HttpURLConnection connection;
-        private List<HttpCookie> requestCookies = clientCookies.values().stream()
+        private final List<HttpCookie> requestCookies = clientCookies.values().stream()
                 .filter(HttpURLConnectionApiClient::isUnexpired)
                 .collect(Collectors.toList());
         private List<HttpCookie> responseCookies = new ArrayList<>();
@@ -399,8 +404,8 @@ public class HttpURLConnectionApiClient implements ApiClient {
     }
 
     public static String asString(InputStream inputStream) throws IOException {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        inputStream.transferTo(outputStream);
-        return new String(outputStream.toByteArray());
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        inputStream.transferTo(buffer);
+        return buffer.toString();
     }
 }

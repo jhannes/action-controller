@@ -1,7 +1,6 @@
 package org.actioncontroller;
 
 import org.actioncontroller.client.ApiClient;
-import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.client.HttpURLConnectionApiClient;
 import org.actioncontroller.servlet.ApiServlet;
@@ -11,7 +10,6 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
-import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.event.Level;
 import sun.security.x509.AlgorithmId;
@@ -35,7 +33,6 @@ import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
@@ -59,20 +56,24 @@ public class ApiClientProxyHttpsServletTest extends AbstractApiClientProxyTest {
                 "/test/api/someNiceMath",
                 new ArithmeticException("/ by zero")
         );
-        assertThatThrownBy(() -> client.divide(10, 0, false))
+        assertThatThrownBy(() -> controllerClient.divide(10, 0, false))
                 .isInstanceOf(HttpClientException.class)
                 .hasMessageContaining("Server Error");
     }
 
-    @Before
-    public void createServerAndClient() throws Exception {
+    @Override
+    protected ApiClient createClient(TestController controller) throws Exception {
+        String hostname = "localhost";
+        KeyPair serverKeyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+        X509Certificate serverCertificate = generateServerCertificate(serverKeyPair, hostname);
+
         Server server = new Server();
         ServletContextHandler handler = new ServletContextHandler();
         handler.setSessionHandler(new SessionHandler());
         handler.addEventListener(new javax.servlet.ServletContextListener() {
             @Override
             public void contextInitialized(ServletContextEvent event) {
-                event.getServletContext().addServlet("testApi", new ApiServlet(new TestController())).addMapping("/api/*");
+                event.getServletContext().addServlet("testApi", new ApiServlet(controller)).addMapping("/api/*");
             }
         });
         handler.setContextPath("/test");
@@ -84,25 +85,12 @@ public class ApiClientProxyHttpsServletTest extends AbstractApiClientProxyTest {
         ServerConnector connector = new ServerConnector(server, sslConnectionFactory);
         connector.setHost(hostname);
         server.addConnector(connector);
-
         server.start();
 
-        baseUrl = server.getURI().toString();
-        HttpURLConnectionApiClient apiClient = new HttpURLConnectionApiClient(baseUrl + "/api");
+        HttpURLConnectionApiClient apiClient = new HttpURLConnectionApiClient(server.getURI().toString() + "/api");
         apiClient.setTrustedCertificate(serverCertificate);
-        this.client = ApiClientClassProxy.create(TestController.class, apiClient);
+        return apiClient;
     }
-
-    @Before
-    public void createKeys() throws NoSuchAlgorithmException {
-        serverKeyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
-        serverCertificate = generateServerCertificate(serverKeyPair, hostname);
-    }
-
-    protected X509Certificate serverCertificate;
-    protected KeyPair serverKeyPair;
-    protected String hostname = "localhost";
-    protected ApiClient apiClient;
 
     private X509Certificate generateClientCertificate(PublicKey publicKey, String commonName, PrivateKey signingKey, String issuerDn) {
         try {

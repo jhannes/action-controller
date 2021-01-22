@@ -1,9 +1,8 @@
 package org.actioncontroller.test;
 
 import org.actioncontroller.AbstractApiClientProxyTest;
-import org.actioncontroller.client.ApiClientClassProxy;
+import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.servlet.ApiServlet;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.net.URL;
@@ -12,14 +11,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ApiClientProxyFakeServletTest extends AbstractApiClientProxyTest {
 
-    @Before
-    public void createServerAndClient() throws Exception {
-        baseUrl = "http://example.com/test";
-        final TestController controller = new TestController();
-        final URL contextRoot = new URL(baseUrl);
+    @Override
+    protected ApiClient createClient(TestController controller) throws Exception {
         final ApiServlet servlet = new ApiServlet(controller);
         servlet.init(null);
-        client = ApiClientClassProxy.create(TestController.class, new FakeApiClient(contextRoot, "/api", servlet));
+        return new FakeApiClient(new URL("http://example.com/test"), "/api", servlet);
     }
 
     @Override
@@ -33,7 +29,7 @@ public class ApiClientProxyFakeServletTest extends AbstractApiClientProxyTest {
                 new ArithmeticException("/ by zero")
         );
          */
-        assertThatThrownBy(() -> client.divide(10, 0, false))
+        assertThatThrownBy(() -> controllerClient.divide(10, 0, false))
                 .isInstanceOf(ArithmeticException.class)
                 .hasMessageContaining("/ by zero");
     }

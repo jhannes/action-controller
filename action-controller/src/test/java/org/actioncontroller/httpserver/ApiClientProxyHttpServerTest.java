@@ -3,11 +3,11 @@ package org.actioncontroller.httpserver;
 import com.sun.net.httpserver.HttpServer;
 import org.actioncontroller.AbstractApiClientProxyTest;
 import org.actioncontroller.SocketHttpClient;
+import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.client.HttpURLConnectionApiClient;
 import org.actioncontroller.servlet.ApiControllerActionRouter;
-import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.event.Level;
 
@@ -24,22 +24,23 @@ public class ApiClientProxyHttpServerTest extends AbstractApiClientProxyTest {
 
     private final ApiHandler handler = new ApiHandler(new TestController());
 
-    @Before
-    public void createServerAndClient() throws Exception {
+    @Override
+    protected ApiClient createClient(TestController controller) throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/", handler);
         server.start();
+        return new HttpURLConnectionApiClient("http://localhost:" + server.getAddress().getPort());
+    }
 
-        baseUrl = "http://localhost:" + server.getAddress().getPort();
-        client = ApiClientClassProxy.create(TestController.class,
-                new HttpURLConnectionApiClient(baseUrl));
+    @Test
+    public void shouldConvertUrl() {
+        assertThat(controllerClient.getPath(null).toString()).isEqualTo(apiClient.getBaseUrl().toString());
     }
 
     @Test
     public void gives404OnUnmappedController() {
         expectedLogEvents.expect(ApiControllerActionRouter.class, Level.INFO, "No route for GET [/not-mapped]");
-        UnmappedController unmappedController = ApiClientClassProxy.create(UnmappedController.class,
-                        new HttpURLConnectionApiClient(baseUrl));
+        UnmappedController unmappedController = ApiClientClassProxy.create(UnmappedController.class, apiClient);
         assertThatThrownBy(unmappedController::notHere)
                 .isInstanceOf(HttpClientException.class)
                 .satisfies(e -> assertThat(((HttpClientException)e).getStatusCode()).isEqualTo(404));
@@ -47,7 +48,7 @@ public class ApiClientProxyHttpServerTest extends AbstractApiClientProxyTest {
 
     @Test
     public void shouldCalculateUrlWithoutHost() throws IOException {
-        URL url = new URL(baseUrl + "/loginSession/endsession");
+        URL url = new URL(apiClient.getBaseUrl() + "/loginSession/endsession");
 
         Socket socket = new Socket("localhost", url.getPort());
         socket.getOutputStream().write(("GET /loginSession/endsession HTTP/1.0\r\n" +
@@ -69,7 +70,7 @@ public class ApiClientProxyHttpServerTest extends AbstractApiClientProxyTest {
                 "While handling JdkHttpExchange{GET [/someNiceMath]}",
                 new ArithmeticException("/ by zero")
         );
-        assertThatThrownBy(() -> client.divide(10, 0, false))
+        assertThatThrownBy(() -> controllerClient.divide(10, 0, false))
                 .isInstanceOf(HttpClientException.class)
                 .hasMessageContaining("Server Error");
     }
@@ -78,7 +79,7 @@ public class ApiClientProxyHttpServerTest extends AbstractApiClientProxyTest {
     @Test
     public void shouldCountExecutions() {
         handler.setTimerRegistry(name -> duration -> count++);
-        client.first();
+        controllerClient.first();
         assertThat(count).isEqualTo(1);
     }
 

@@ -1,6 +1,7 @@
 package org.actioncontroller.client;
 
 import java.io.IOException;
+import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -13,4 +14,6 @@ public interface ApiClient {
     void addClientKey(PrivateKey privateKey, X509Certificate certificate) throws GeneralSecurityException, IOException;
 
     String getClientCookie(String key);
+
+    URL getBaseUrl();
 }

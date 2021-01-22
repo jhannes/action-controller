@@ -34,11 +34,11 @@ import java.util.stream.Collectors;
  * Don't use this class in production code. It was just made on a dare
  */
 public class SocketHttpClient implements ApiClient {
-    private final String baseUrl;
+    private final URL baseUrl;
     private static final Charset CHARSET = StandardCharsets.ISO_8859_1;
     private final Map<String, HttpCookie> clientCookies = new HashMap<>();
 
-    public SocketHttpClient(String baseUrl) {
+    public SocketHttpClient(URL baseUrl) {
         this.baseUrl = baseUrl;
     }
 
@@ -67,6 +67,11 @@ public class SocketHttpClient implements ApiClient {
             line.append((char) c);
         }
         return line.toString();
+    }
+
+    @Override
+    public URL getBaseUrl() {
+        return baseUrl;
     }
 
     @Override
@@ -169,7 +174,7 @@ public class SocketHttpClient implements ApiClient {
 
         @Override
         public String getApiURL() {
-            return baseUrl;
+            return baseUrl.toString();
         }
 
         @Override

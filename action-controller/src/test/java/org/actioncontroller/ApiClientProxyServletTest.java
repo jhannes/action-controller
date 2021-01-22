@@ -1,5 +1,6 @@
 package org.actioncontroller;
 
+import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.client.HttpURLConnectionApiClient;
@@ -10,7 +11,6 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.event.Level;
 
@@ -26,8 +26,8 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
 
     private final ApiServlet servlet = new ApiServlet(new TestController());
 
-    @Before
-    public void createServerAndClient() throws Exception {
+    @Override
+    protected ApiClient createClient(TestController controller) throws Exception {
         Server server = new Server();
         ServletContextHandler handler = new ServletContextHandler();
         handler.setSessionHandler(new SessionHandler());
@@ -45,16 +45,13 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
         server.addConnector(connector);
         server.start();
 
-        baseUrl = server.getURI().toString();
-        client = ApiClientClassProxy.create(TestController.class,
-                new HttpURLConnectionApiClient(baseUrl + "/api"));
+        return new HttpURLConnectionApiClient(server.getURI().toString() + "/api");
     }
-
+    
     @Test
     public void gives404OnUnmappedController() {
         expectedLogEvents.expect(ApiControllerActionRouter.class, Level.INFO, "No route for GET /test/api[/not-mapped]");
-        UnmappedController unmappedController = ApiClientClassProxy.create(UnmappedController.class,
-                new HttpURLConnectionApiClient(baseUrl + "/api"));
+        UnmappedController unmappedController = ApiClientClassProxy.create(UnmappedController.class, apiClient);
         assertThatThrownBy(unmappedController::notHere)
                 .isInstanceOf(HttpClientException.class)
                 .satisfies(e -> assertThat(((HttpClientException)e).getStatusCode()).isEqualTo(404));
@@ -62,7 +59,7 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
 
     @Test
     public void shouldCalculateUrlWithoutHost() throws IOException {
-        URL url = new URL(baseUrl + "/api/loginSession/endsession");
+        URL url = new URL(apiClient.getBaseUrl() + "/api/loginSession/endsession");
 
         Socket socket = new Socket("localhost", url.getPort());
         socket.getOutputStream().write(("GET /test/api/loginSession/endsession HTTP/1.0\r\n" +
@@ -77,7 +74,7 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
 
     @Test
     public void shouldCalculateUrlWithDifferentHost() throws IOException {
-        URL url = new URL(baseUrl + "/api/loginSession/endsession");
+        URL url = new URL(apiClient.getBaseUrl() + "/api/loginSession/endsession");
 
         Socket socket = new Socket("localhost", url.getPort());
         socket.getOutputStream().write(("GET /test/api/loginSession/endsession HTTP/1.0\r\n" +
@@ -93,7 +90,7 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
 
     @Test
     public void shouldCalculateUrlWithProxyHost() throws IOException {
-        URL url = new URL(baseUrl + "/api/loginSession/endsession");
+        URL url = new URL(apiClient.getBaseUrl() + "/api/loginSession/endsession");
 
         Socket socket = new Socket("localhost", url.getPort());
         socket.getOutputStream().write(("GET /test/api/loginSession/endsession HTTP/1.0\r\n" +
@@ -118,7 +115,7 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
                 "/test/api/someNiceMath",
                 new ArithmeticException("/ by zero")
         );
-        assertThatThrownBy(() -> client.divide(10, 0, false))
+        assertThatThrownBy(() -> controllerClient.divide(10, 0, false))
                 .isInstanceOf(HttpClientException.class)
                 .hasMessageContaining("Server Error");
     }
@@ -127,7 +124,7 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
     @Test
     public void shouldCountExecutions() {
         servlet.setTimerRegistry(name -> duration -> count++);
-        client.first();
+        controllerClient.first();
         assertThat(count).isEqualTo(1);
     }
 }

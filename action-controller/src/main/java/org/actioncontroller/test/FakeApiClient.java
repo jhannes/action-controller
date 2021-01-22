@@ -9,6 +9,7 @@ import org.actioncontroller.meta.WriterConsumer;
 import org.fakeservlet.FakeHttpSession;
 import org.fakeservlet.FakeServletRequest;
 import org.fakeservlet.FakeServletResponse;
+import sun.security.util.IOUtils;
 
 import javax.servlet.Servlet;
 import javax.servlet.ServletException;
@@ -17,6 +18,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
@@ -36,20 +38,27 @@ public class FakeApiClient implements ApiClient {
     public static final Charset CHARSET = StandardCharsets.ISO_8859_1;
     private final URL contextRoot;
     private final String servletPath;
-    private Servlet servlet;
+    private final Servlet servlet;
     private FakeHttpSession session;
-    private Map<String, Cookie> clientCookies = new HashMap<>();
-    private List<String> clientCertificateDNs = new ArrayList<>();
+    private final Map<String, Cookie> clientCookies = new HashMap<>();
+    private final List<String> clientCertificateDNs = new ArrayList<>();
     private Principal remoteUser;
+    private final URL baseUrl;
 
-    public FakeApiClient(URL contextRoot, String servletPath, Servlet servlet) {
+    public FakeApiClient(URL contextRoot, String servletPath, Servlet servlet) throws MalformedURLException {
         this.contextRoot = contextRoot;
         this.servletPath = servletPath;
         this.servlet = servlet;
+        this.baseUrl = IOUtil.asURL(contextRoot + servletPath);
     }
 
     public ApiClientExchange createExchange() {
         return new FakeApiClientExchange(contextRoot, servletPath, remoteUser);
+    }
+
+    @Override
+    public URL getBaseUrl() {
+        return baseUrl;
     }
 
     @Override
@@ -80,9 +89,9 @@ public class FakeApiClient implements ApiClient {
 
     public class FakeApiClientExchange implements ApiClientExchange {
         private final String apiUrl;
-        private FakeServletRequest request;
+        private final FakeServletRequest request;
 
-        private FakeServletResponse response = new FakeServletResponse();
+        private final FakeServletResponse response = new FakeServletResponse();
 
         private FakeApiClientExchange(URL contextRoot, String servletPath, Principal remoteUser) {
             List<Cookie> requestCookies = clientCookies.values().stream()

@@ -8,6 +8,7 @@ import java.net.InetSocketAddress;
 import java.net.URL;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -22,7 +23,9 @@ import java.util.stream.Stream;
 /**
  * Used to monitor a set of configuration files and notify {@link ConfigListener}s
  * on initialization and change. Given a directory and an application name,
- * appropriate resources and files are monitored with a {@link ConfigDirectoryLoader}
+ * appropriate resources and files are monitored with a {@link ConfigDirectoryLoader}.
+ * If the system property `profile` or `profiles` is set, additionally scans for all
+ * files on the format <code>&lt;applicationName&gt;-&lt;profile&gt;.properties</code>
  */
 public class ConfigObserver {
     private static final Logger logger = LoggerFactory.getLogger(ConfigObserver.class);
@@ -31,12 +34,18 @@ public class ConfigObserver {
 
     private final ConfigLoader configLoader;
 
+    private static List<String> getProfiles() {
+        return Optional.ofNullable(System.getProperty("profile", System.getProperty("profiles")))
+                .map(s -> Arrays.asList(s.split(",")))
+                .orElse(new ArrayList<>());
+    }
+
     public ConfigObserver(String applicationName) {
         this(new File("."), applicationName, new ArrayList<>());
     }
 
     public ConfigObserver(File configDirectory, String applicationName) {
-        this(configDirectory, applicationName, new ArrayList<>());
+        this(configDirectory, applicationName, getProfiles());
     }
 
     public ConfigObserver(File configDirectory, String applicationName, List<String> profiles) {

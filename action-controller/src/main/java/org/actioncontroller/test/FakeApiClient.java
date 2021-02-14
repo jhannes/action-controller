@@ -9,7 +9,6 @@ import org.actioncontroller.meta.WriterConsumer;
 import org.fakeservlet.FakeHttpSession;
 import org.fakeservlet.FakeServletRequest;
 import org.fakeservlet.FakeServletResponse;
-import sun.security.util.IOUtils;
 
 import javax.servlet.Servlet;
 import javax.servlet.ServletException;

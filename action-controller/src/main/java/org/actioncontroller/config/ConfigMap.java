@@ -1,7 +1,5 @@
 package org.actioncontroller.config;
 
-import org.assertj.core.annotations.NonNull;
-
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -107,7 +105,6 @@ public class ConfigMap extends AbstractMap<String, String> {
     }
 
     @Override
-    @NonNull
     public Set<Entry<String, String>> entrySet() {
         Map<String, String> entries = new HashMap<>();
         innerMap.forEach((key, value) -> {

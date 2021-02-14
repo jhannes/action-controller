@@ -8,11 +8,11 @@ import org.actioncontroller.UserContext;
 import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.servlet.ActionControllerConfigurationCompositeException;
 import org.actioncontroller.ApiControllerActionRouter;
-import org.assertj.core.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 public class ApiHandler implements UserContext, HttpHandler {
     private static final Logger logger = LoggerFactory.getLogger(ApiHandler.class);

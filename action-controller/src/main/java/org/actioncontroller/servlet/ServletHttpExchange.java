@@ -311,7 +311,6 @@ public class ServletHttpExchange implements ApiHttpExchange {
         } catch (ServletException e) {
             throw ExceptionUtil.softenException(e);
         }
-
     }
 
     @Override

@@ -1,6 +1,7 @@
 package org.actioncontroller.servlet;
 
 import org.actioncontroller.ApiControllerAction;
+import org.actioncontroller.ApiControllerActionRouter;
 import org.actioncontroller.ApiControllerContext;
 import org.actioncontroller.ContentBody;
 import org.actioncontroller.GET;
@@ -171,7 +172,7 @@ public class ApiServletTest {
     @Test
     public void shouldGive404OnUnknownAction() throws IOException {
         FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/api", "/missing");
-        expectedLogEvents.expect(ApiControllerActionRouter.class, Level.INFO, "No route for GET " + contextRoot.getPath() + "/api[/missing]");
+        expectedLogEvents.expectPattern(ApiControllerActionRouter.class, Level.INFO, "No route for {}. Routes {}");
         servlet.service(request, response);
         assertThat(response.getStatus()).isEqualTo(404);
     }

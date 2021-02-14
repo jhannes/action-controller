@@ -1,7 +1,7 @@
 package org.actioncontroller.json;
 
 import org.actioncontroller.POST;
-import org.actioncontroller.servlet.ApiControllerActionRouter;
+import org.actioncontroller.ApiControllerActionRouter;
 import org.actioncontroller.servlet.ApiServlet;
 import org.jsonbuddy.JsonObject;
 import org.junit.Rule;

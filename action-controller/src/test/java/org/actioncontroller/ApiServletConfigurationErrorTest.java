@@ -6,7 +6,6 @@ import org.actioncontroller.meta.HttpParameterMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
 import org.actioncontroller.meta.HttpReturnMapper;
-import org.actioncontroller.servlet.ApiControllerActionRouter;
 import org.actioncontroller.servlet.ApiServlet;
 import org.actioncontroller.servlet.ActionControllerConfigurationException;
 import org.junit.Rule;
@@ -68,7 +67,7 @@ public class ApiServletConfigurationErrorTest {
         assertThatThrownBy(() -> new ApiServlet(controller).init(null))
                 .isInstanceOf(ActionControllerConfigurationException.class)
                 .hasMessageContaining("is in conflict with")
-                .hasMessageContaining("/files/index.html")
+                .hasMessageContaining("/files/{filename}")
                 .hasMessageContaining("/files/{filename}")
                 .hasMessageContaining(controller.getClass().getSimpleName());
     }
@@ -217,8 +216,8 @@ public class ApiServletConfigurationErrorTest {
         @POST("/files/{filename}")
         public void doAction(@PathParam("filename") String filename) {}
 
-        @POST("/files/index.html")
-        public void doOtherAction() {}
+        @POST("/files/{file}")
+        public void doOtherAction(@PathParam("file") String filename) {}
     }
 
     private static class ControllerWithSameQuery {

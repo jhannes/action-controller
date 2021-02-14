@@ -4,7 +4,6 @@ import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.client.HttpURLConnectionApiClient;
-import org.actioncontroller.servlet.ApiControllerActionRouter;
 import org.actioncontroller.servlet.ApiServlet;
 import org.eclipse.jetty.server.HttpChannel;
 import org.eclipse.jetty.server.Server;
@@ -50,7 +49,10 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
     
     @Test
     public void gives404OnUnmappedController() {
-        expectedLogEvents.expect(ApiControllerActionRouter.class, Level.INFO, "No route for GET /test/api[/not-mapped]");
+        expectedLogEvents.expectMatch(m -> m
+                .logger(ApiControllerActionRouter.class)
+                .level(Level.INFO)
+                .pattern("No route for {}. Routes {}"));
         UnmappedController unmappedController = ApiClientClassProxy.create(UnmappedController.class, apiClient);
         assertThatThrownBy(unmappedController::notHere)
                 .isInstanceOf(HttpClientException.class)

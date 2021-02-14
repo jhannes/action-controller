@@ -71,6 +71,8 @@ public class ApiControllerMethodAction implements ApiControllerAction {
                 pathParams[i] = matcher.group(2) != null ? matcher.group(2) : matcher.group(3);
                 if (matcher.group(5) != null && !matcher.group(5).isEmpty()) {
                     paramRegexp[i] = Pattern.compile("^(.+)\\." + matcher.group(5) + "$");
+                } else {
+                    paramRegexp[i] = Pattern.compile("^(.*)$");
                 }
             }
         }
@@ -161,9 +163,18 @@ public class ApiControllerMethodAction implements ApiControllerAction {
     }
 
     @Override
-    public boolean matches(ApiHttpExchange exchange) {
-        return this.httpMethod.equals(exchange.getHttpMethod()) && matches(exchange.getPathInfo()) &&
-                requiredParameter.map(exchange::hasParameter).orElse(true);
+    public boolean matchesRequiredParameters(ApiHttpExchange exchange) {
+        return requiredParameter.map(exchange::hasParameter).orElse(true);
+    }
+
+    @Override
+    public String[] getPatternParts() {
+        return patternParts;
+    }
+
+    @Override
+    public Pattern[] getParamRegexp() {
+        return paramRegexp;
     }
 
     @Override
@@ -204,10 +215,13 @@ public class ApiControllerMethodAction implements ApiControllerAction {
             Matcher otherMatcher = PATH_PARAM_PATTERN.matcher(otherPatternParts[i]);
 
             if (matcher.matches() || otherMatcher.matches()) {
-                if (matcher.matches() && otherMatcher.matches() && !Objects.equals(otherMatcher.group(5), matcher.group(5))) {
+                if (!matcher.matches() || !otherMatcher.matches()) {
+                    // Variables don't match constants
                     return false;
                 }
-                continue;
+                String extension = matcher.group(5);
+                String otherExtension = otherMatcher.group(5);
+                return Objects.equals(otherExtension, extension);
             }
             if (!patternParts[i].equals(otherPatternParts[i])) {
                 return false;
@@ -218,20 +232,16 @@ public class ApiControllerMethodAction implements ApiControllerAction {
 
     @Override
     public void invoke(UserContext userContext, ApiHttpExchange exchange) throws IOException {
-        try {
-            verifyUserAccess(exchange, userContext);
-            calculatePathParams(exchange);
-            HttpParameterMapper[] parameterMappers = createParameterMappers(getAction());
-            Object[] arguments = createArguments(getAction(), exchange, parameterMappers);
-            logger.debug("Invoking {}", this);
-            Object result = invoke(getController(), getAction(), arguments);
-            for (int i = 0; i < parameterMappers.length; i++) {
-                parameterMappers[i].onComplete(exchange, arguments[i]);
-            }
-            convertReturnValue(result, exchange);
-        } catch (HttpActionException e) {
-            e.sendError(exchange);
+        verifyUserAccess(exchange, userContext);
+        calculatePathParams(exchange);
+        HttpParameterMapper[] parameterMappers = createParameterMappers(getAction());
+        Object[] arguments = createArguments(getAction(), exchange, parameterMappers);
+        logger.debug("Invoking {}", this);
+        Object result = invoke(getController(), getAction(), arguments);
+        for (int i = 0; i < parameterMappers.length; i++) {
+            parameterMappers[i].onComplete(exchange, arguments[i]);
         }
+        convertReturnValue(result, exchange);
     }
 
     protected void calculatePathParams(ApiHttpExchange exchange) {

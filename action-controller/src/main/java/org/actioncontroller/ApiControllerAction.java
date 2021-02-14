@@ -4,6 +4,7 @@ import org.actioncontroller.meta.ApiHttpExchange;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.regex.Pattern;
 
 /**
  * The core of the framework. {@link org.actioncontroller.servlet.ApiServlet} and
@@ -12,9 +13,14 @@ import java.lang.reflect.Method;
  */
 public interface ApiControllerAction {
     /**
-     * Returns whether this action is appropriate to handle the given {@link ApiHttpExchange}
+     * Returns an array with each element of the path specification
      */
-    boolean matches(ApiHttpExchange exchange);
+    String[] getPatternParts();
+
+    /**
+     * Returns an sparse array with the element of the path specification that are parameterized
+     */
+    Pattern[] getParamRegexp();
 
     /**
      * Returns whether this action is appropriate to handle the given path
@@ -47,6 +53,13 @@ public interface ApiControllerAction {
      * Returns the request HTTP Method used to match this action
      */
     String getHttpMethod();
+
+    /**
+     * Returns true if the exchange has all the required query parameters
+     * specified in this action, or if there are no required query parameters in
+     * the action
+     */
+    boolean matchesRequiredParameters(ApiHttpExchange exchange);
 
     /**
      * Returns true if the action requires a request parameter, such as

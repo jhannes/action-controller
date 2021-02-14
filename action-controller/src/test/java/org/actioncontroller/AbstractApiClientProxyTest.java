@@ -11,7 +11,6 @@ import org.logevents.extend.junit.ExpectedLogEventsRule;
 import org.slf4j.event.Level;
 
 import java.lang.annotation.RetentionPolicy;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;

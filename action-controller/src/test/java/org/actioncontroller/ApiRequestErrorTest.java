@@ -51,7 +51,7 @@ public class ApiRequestErrorTest {
         FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/actions", null);
 
         expectedLogEvents.expectMatch(e -> e
-                .logger(ApiControllerActionRouter.class)
+                .logger(RouteMap.class)
                 .pattern("No route for {}. Routes {}"));
         servlet.service(request, resp);
 

@@ -62,6 +62,17 @@ public class ApiServletConfigurationErrorTest {
     }
 
     @Test
+    public void shouldReportRoutesWithPathConflicts() {
+        ControllerWithOverlappingPath controller = new ControllerWithOverlappingPath();
+        assertThatThrownBy(() -> new ApiServlet(controller).init(null))
+                .isInstanceOf(ActionControllerConfigurationException.class)
+                .hasMessageContaining("is in conflict with")
+                .hasMessageContaining("doActionA")
+                .hasMessageContaining("doActionB")
+                .hasMessageContaining(controller.getClass().getSimpleName());
+    }
+
+    @Test
     public void shouldReportRoutesWithConflicts() {
         ControllerWithOverlappingPaths controller = new ControllerWithOverlappingPaths();
         assertThatThrownBy(() -> new ApiServlet(controller).init(null))
@@ -202,6 +213,14 @@ public class ApiServletConfigurationErrorTest {
 
         @POST("/files/{otherName}")
         public void doOtherAction(@PathParam("otherName") String otherName) {}
+    }
+
+    private static class ControllerWithOverlappingPath {
+        @POST("/")
+        public void doActionA() {}
+
+        @POST("/")
+        public void doActionB() {}
     }
 
     private static class ControllerWithOverlappingPathExpressions {

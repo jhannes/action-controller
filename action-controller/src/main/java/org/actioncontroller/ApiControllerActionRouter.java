@@ -18,11 +18,8 @@ import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -33,100 +30,7 @@ import static org.actioncontroller.meta.ApiControllerActionFactory.createNewInst
  */
 public class ApiControllerActionRouter {
     private static final Logger logger = LoggerFactory.getLogger(ApiControllerActionRouter.class);
-    
-    private static class RouteMap {
-        private final Map<String, RouteMap> subRoutes = new HashMap<>();
-        private final Map<String, Set<ApiControllerAction>> actions = new HashMap<>();
-        private final Map<Pattern, RouteMap> patternSubRoutes = new HashMap<>();
-        private final Map<Pattern, ApiControllerAction> patternActions = new HashMap<>();
 
-        public ApiControllerAction findAction(String[] pathParts, int index, ApiHttpExchange exchange) {
-            if (pathParts.length == 0) {
-                return findLeafAction(exchange, "");
-            } else if (index == pathParts.length-1) {
-                return findLeafAction(exchange, pathParts[index]);
-            } else if (subRoutes.containsKey(pathParts[index])) {
-                return subRoutes.get(pathParts[index]).findAction(pathParts, index+1, exchange);
-            } else {
-                for (Map.Entry<Pattern, RouteMap> entry : patternSubRoutes.entrySet()) {
-                    if (entry.getKey().matcher(pathParts[index]).matches()) {
-                        return entry.getValue().findAction(pathParts, index+1, exchange);
-                    }
-                }
-                logger.info("No route for {}. Routes {}",  exchange.getHttpMethod() + " " + exchange.getApiURL().getPath() + "[" + exchange.getPathInfo() + "]", actions);
-                throw new HttpNotFoundException("No route for " + exchange.getHttpMethod() + ": " + exchange.getApiURL() + exchange.getPathInfo());
-            }
-        }
-        
-        private ApiControllerAction findLeafAction(ApiHttpExchange exchange, String pathPart) {
-            if (actions.containsKey(pathPart)) {
-                Set<ApiControllerAction> actions = this.actions.get(pathPart)
-                        .stream().filter(a -> a.matchesRequiredParameters(exchange))
-                        .collect(Collectors.toSet());
-                if (actions.size() > 1) {
-                    Set<ApiControllerAction> filteredCandidates = actions.stream().filter(ApiControllerAction::requiresParameter).collect(Collectors.toSet());
-                    if (filteredCandidates.size() == 1) {
-                        actions = filteredCandidates;
-                    }
-                }
-                if (actions.size() > 1) {
-                    logger.info("Multiple routes for {}. Routes {}",  exchange.getHttpMethod() + " " + exchange.getApiURL().getPath() + "[" + exchange.getPathInfo() + "]", actions);
-                    throw new HttpRequestException("More than one matching");
-                } else if (actions.isEmpty()) {
-                    logger.info("No route for {}. Routes {}",  exchange.getHttpMethod() + " " + exchange.getApiURL().getPath() + "[" + exchange.getPathInfo() + "]", actions);
-                    throw new HttpNotFoundException("No route for " + exchange.getHttpMethod() + ": " + exchange.getApiURL() + exchange.getPathInfo());
-                }
-                return actions.iterator().next();
-            } else {
-                for (Map.Entry<Pattern, ApiControllerAction> entry : patternActions.entrySet()) {
-                    if (entry.getKey().matcher(pathPart).matches()) {
-                        return entry.getValue();
-                    }
-                }
-                logger.info("No route for {}. Routes {}",  exchange.getHttpMethod() + " " + exchange.getApiURL().getPath() + "[" + exchange.getPathInfo() + "]", actions);
-                throw new HttpNotFoundException("No route for " + exchange.getHttpMethod() + ": " + exchange.getApiURL() + exchange.getPathInfo());
-            }
-        }        
-        
-        public void add(ApiControllerAction action, int index) {
-            String[] pathParts = action.getPatternParts();
-
-            if (pathParts.length == 0) {
-                actions.computeIfAbsent("", key -> new HashSet<>())
-                        .add(action);
-            } else if (index == pathParts.length - 1) {
-                if (action.getParamRegexp()[index] != null) {
-                    for (Map.Entry<Pattern, ApiControllerAction> existingEntry : patternActions.entrySet()) {
-                        if (existingEntry.getKey().pattern().equals(action.getParamRegexp()[index].pattern())) {
-                            throw new ActionControllerConfigurationException(action + " is in conflict with " + existingEntry.getValue());
-                        }
-                    }
-                    patternActions.put(action.getParamRegexp()[index], action);
-                } else {
-                    Set<ApiControllerAction> existingActions = actions.computeIfAbsent(pathParts[index], key -> new HashSet<>());
-                    for (ApiControllerAction existingAction : existingActions) {
-                        if (existingAction.matches(action)) {
-                            throw new ActionControllerConfigurationException(action + " is in conflict with " + existingAction);
-                        }
-                    }
-                    existingActions.add(action);
-                }
-            } else {
-                if (action.getParamRegexp()[index] != null) {
-                    patternSubRoutes.computeIfAbsent(action.getParamRegexp()[index], key -> new RouteMap())
-                            .add(action, index+1);
-                } else {
-                    subRoutes.computeIfAbsent(pathParts[index], key -> new RouteMap())
-                            .add(action, index+1);
-                }
-            }
-        }
-
-        public boolean isEmpty() {
-            return subRoutes.isEmpty() && patternSubRoutes.isEmpty() && actions.isEmpty() && patternActions.isEmpty();
-        }
-    }
-    
     private final Map<String, RouteMap> rootRoutes = new HashMap<>();
     private final List<ApiControllerAction> actions = new ArrayList<>();
 

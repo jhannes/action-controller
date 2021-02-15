@@ -48,16 +48,16 @@ public class ApiControllerActionRouterTest {
             return "getWithPathParam " + param;
         }
         
-        @GET("/path/{param}/constant")
+        @GET("/path/{param}/constant/otherConstant")
         @ContentBody
         public String getParamInTheMiddle(@PathParam("param") String param) {
             return "getParamInTheMiddle(" + param + ")";
         }
 
-        @GET("/path/constant/{param}")
+        @GET("/path/constant/{param}/{otherParam}")
         @ContentBody
-        public String getParamAtEnd(@PathParam("param") String param) {
-            return "getParamAtEnd(" + param + ")";
+        public String getParamAtEnd(@PathParam("param") String param, @PathParam("otherParam") String otherParam) {
+            return "getParamAtEnd(" + param + "," + otherParam + ")";
         }
     }
 
@@ -97,12 +97,12 @@ public class ApiControllerActionRouterTest {
     
     @Test
     public void shouldPreferEarlierConstant() {
-        assertThat(controllerClient.getParamAtEnd("foo")).isEqualTo("getParamAtEnd(foo)");
+        assertThat(controllerClient.getParamAtEnd("foo", "bar")).isEqualTo("getParamAtEnd(foo,bar)");
         assertThat(controllerClient.getParamInTheMiddle("foo")).isEqualTo("getParamInTheMiddle(foo)");
-        assertThat(controllerClient.getParamAtEnd("constant")).isEqualTo("getParamAtEnd(constant)");
-        
+        assertThat(controllerClient.getParamAtEnd("constant", "otherConstant")).isEqualTo("getParamAtEnd(constant,otherConstant)");
+
         assertThat(controllerClient.getParamInTheMiddle("constant"))
                 .as("should route to getParamAtEnd since the middle variable matches an early constant")
-                .isEqualTo("getParamAtEnd(constant)");
+                .isEqualTo("getParamAtEnd(constant,otherConstant)");
     }
 }

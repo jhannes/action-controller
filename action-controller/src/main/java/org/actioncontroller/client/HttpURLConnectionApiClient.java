@@ -272,10 +272,15 @@ public class HttpURLConnectionApiClient implements ApiClient {
                     (System.currentTimeMillis() - startTime)
             );
 
-            String setCookieField = connection.getHeaderField("Set-Cookie");
-            if (setCookieField != null) {
-                responseCookies = HttpCookie.parse(setCookieField);
-                responseCookies.forEach(c -> clientCookies.put(c.getName(), c));
+            Map<String, List<String>> headerFields = connection.getHeaderFields();
+            for (Map.Entry<String, List<String>> responseHeader : headerFields.entrySet()) {
+                if ("set-cookie".equalsIgnoreCase(responseHeader.getKey())) {
+                    responseCookies = new ArrayList<>();
+                    for (String setCookieField : responseHeader.getValue()) {
+                        responseCookies.addAll(HttpCookie.parse(setCookieField));
+                    }
+                    responseCookies.forEach(c -> clientCookies.put(c.getName(), c));
+                }
             }
         }
 

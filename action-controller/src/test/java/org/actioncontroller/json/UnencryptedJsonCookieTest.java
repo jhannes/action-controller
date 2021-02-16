@@ -11,6 +11,8 @@ import org.jsonbuddy.JsonObject;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.servlet.ServletException;
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -118,10 +120,14 @@ public class UnencryptedJsonCookieTest {
 
     @Before
     public void setUp() throws Exception {
-        final ApiServlet servlet = new ApiServlet(new Controller());
-        servlet.init(null);
-        client = new FakeApiClient(new URL("http://example.com/test"), "/api", servlet);
+        client = createClient(new Controller());
         this.apiClient = ApiClientClassProxy.create(Controller.class, client);
+    }
+
+    protected ApiClient createClient(Controller controller) throws ServletException, IOException {
+        ApiServlet servlet = new ApiServlet(controller);
+        servlet.init(null);
+        return new FakeApiClient(new URL("http://example.com/test"), "/api", servlet);
     }
 
 }

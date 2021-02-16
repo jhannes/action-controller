@@ -12,7 +12,7 @@ import org.actioncontroller.POST;
 import org.actioncontroller.PathParam;
 import org.actioncontroller.RequestParam;
 import org.actioncontroller.RequireUserRole;
-import org.actioncontroller.RouteMap;
+import org.actioncontroller.ApiControllerRouteMap;
 import org.actioncontroller.SessionParameter;
 import org.actioncontroller.jmx.ApiControllerActionMXBeanAdaptor;
 import org.actioncontroller.json.JsonBody;
@@ -173,7 +173,7 @@ public class ApiServletTest {
     @Test
     public void shouldGive404OnUnknownAction() throws IOException {
         FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/api", "/missing");
-        expectedLogEvents.expectPattern(RouteMap.class, Level.INFO, "No route for {}. Routes {}");
+        expectedLogEvents.expectPattern(ApiControllerRouteMap.class, Level.INFO, "No route for {}. Routes {}");
         servlet.service(request, response);
         assertThat(response.getStatus()).isEqualTo(404);
     }

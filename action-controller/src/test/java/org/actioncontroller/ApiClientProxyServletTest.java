@@ -50,7 +50,7 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
     @Test
     public void gives404OnUnmappedController() {
         expectedLogEvents.expectMatch(m -> m
-                .logger(RouteMap.class)
+                .logger(ApiControllerRouteMap.class)
                 .level(Level.INFO)
                 .pattern("No route for {}. Routes {}"));
         UnmappedController unmappedController = ApiClientClassProxy.create(UnmappedController.class, apiClient);

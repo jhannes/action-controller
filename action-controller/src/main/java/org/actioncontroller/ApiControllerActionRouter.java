@@ -31,14 +31,14 @@ import static org.actioncontroller.meta.ApiControllerActionFactory.createNewInst
 public class ApiControllerActionRouter {
     private static final Logger logger = LoggerFactory.getLogger(ApiControllerActionRouter.class);
 
-    private final Map<String, RouteMap> rootRoutes = new HashMap<>();
+    private final Map<String, ApiControllerRouteMap> rootRoutes = new HashMap<>();
     private final List<ApiControllerAction> actions = new ArrayList<>();
 
     public ApiControllerActionRouter() {
-        rootRoutes.put("GET", new RouteMap());
-        rootRoutes.put("POST", new RouteMap());
-        rootRoutes.put("PUT", new RouteMap());
-        rootRoutes.put("DELETE", new RouteMap());
+        rootRoutes.put("GET", new ApiControllerRouteMap());
+        rootRoutes.put("POST", new ApiControllerRouteMap());
+        rootRoutes.put("PUT", new ApiControllerRouteMap());
+        rootRoutes.put("DELETE", new ApiControllerRouteMap());
     }
 
     public void invokeAction(ApiHttpExchange httpExchange, UserContext userContext) throws IOException {
@@ -59,7 +59,7 @@ public class ApiControllerActionRouter {
     }
 
     public boolean isEmpty() {
-        return rootRoutes.values().stream().allMatch(RouteMap::isEmpty);
+        return rootRoutes.values().stream().allMatch(ApiControllerRouteMap::isEmpty);
     }
 
 

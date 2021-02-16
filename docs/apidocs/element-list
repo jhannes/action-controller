@@ -7,4 +7,3 @@ org.actioncontroller.json
 org.actioncontroller.meta
 org.actioncontroller.servlet
 org.actioncontroller.test
-org.fakeservlet

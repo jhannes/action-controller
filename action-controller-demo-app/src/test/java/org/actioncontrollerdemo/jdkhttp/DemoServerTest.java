@@ -1,5 +1,6 @@
 package org.actioncontrollerdemo.jdkhttp;
 
+import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.client.HttpURLConnectionApiClient;
@@ -27,8 +28,8 @@ public class DemoServerTest {
 
     @Before
     public void setUp() throws Exception {
-        server = new DemoServer(0);
-        server.start();
+        server = new DemoServer();
+        server.setServerPort(0);
         client = new HttpURLConnectionApiClient(server.getURL() + "/demo/api");
     }
 
@@ -86,6 +87,15 @@ public class DemoServerTest {
         UserController userApi = ApiClientClassProxy.create(UserController.class, client);
         userApi.postLogin("admin", Optional.empty(), new AtomicReference<String>()::set);
         assertThat(userApi.getAdminPage(null)).isEqualTo("Hello - boss, admin");
+    }
+    
+    @Test
+    public void shouldChangePort() throws IOException {
+        String initialUrl = server.getURL();
+        server.setServerPort(0);
+        assertThat(initialUrl).isNotEqualTo(server.getURL());
+        HttpURLConnection connection = (HttpURLConnection) new URL(server.getURL()).openConnection();
+        assertThat(connection.getResponseCode()).isEqualTo(200);
     }
 
 

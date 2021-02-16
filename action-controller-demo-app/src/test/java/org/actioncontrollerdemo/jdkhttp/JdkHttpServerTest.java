@@ -11,8 +11,8 @@ public class JdkHttpServerTest {
     @Test
     @Ignore
     public void shouldDisplayHomepageInBrowser() throws IOException {
-        DemoServer server = new DemoServer(0);
-        server.start();
+        DemoServer server = new DemoServer();
+        server.setServerPort(0);
 
         ChromeDriver driver = new ChromeDriver();
         System.out.println(server.getURL());

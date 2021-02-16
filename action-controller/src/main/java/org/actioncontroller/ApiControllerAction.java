@@ -23,11 +23,6 @@ public interface ApiControllerAction {
     Pattern[] getParamRegexp();
 
     /**
-     * Returns whether this action is appropriate to handle the given path
-     */
-    boolean matches(String pathInfo);
-
-    /**
      * Invokes this action on the given {@link ApiHttpExchange} by converting the
      * exchange to method invocation arguments, invoking the method and converting
      * the return value.

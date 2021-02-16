@@ -178,25 +178,6 @@ public class ApiControllerMethodAction implements ApiControllerAction {
     }
 
     @Override
-    public boolean matches(String pathInfo) {
-        if (pathInfo == null || pathInfo.isEmpty()) {
-            return patternParts.length == 1 && patternParts[0].isEmpty();
-        }
-        String[] actualParts = pathInfo.split("/");
-        if (patternParts.length != actualParts.length) return false;
-
-        for (int i = 0; i < patternParts.length; i++) {
-            if (pathParams[i] == null && !patternParts[i].equals(actualParts[i])) {
-                return false;
-            } else if (paramRegexp[i] != null && !paramRegexp[i].matcher(actualParts[i]).matches()) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    @Override
     public boolean matches(ApiControllerAction otherAction) {
         if (!getHttpMethod().equals(otherAction.getHttpMethod())) {
             return false;

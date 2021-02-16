@@ -5,5 +5,4 @@ public interface ApiControllerActionMXBean {
 
     String getHttpMethod();
 
-    boolean testPath(String path);
 }

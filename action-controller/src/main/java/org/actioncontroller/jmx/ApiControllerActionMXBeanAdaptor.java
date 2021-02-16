@@ -19,8 +19,4 @@ public class ApiControllerActionMXBeanAdaptor implements ApiControllerActionMXBe
         return action.getHttpMethod();
     }
 
-    @Override
-    public boolean testPath(String path) {
-        return action.matches(path);
-    }
 }

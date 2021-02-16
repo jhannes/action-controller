@@ -6,6 +6,7 @@ import org.actioncontrollerdemo.UserController;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Optional;
@@ -35,6 +36,15 @@ public class JettyDemoServerTest {
                 .isEqualTo(200);
         String body = HttpURLConnectionApiClient.asString(connection.getInputStream());
         assertThat(body).contains("<h1>Hello World</h1>");
+    }
+    
+    @Test
+    public void shouldReturn404OnUnknownFile() throws IOException {
+        URL url = new URL(server.getUrl() + "/demo/missing");
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        assertThat(connection.getResponseCode())
+                .as(connection.getResponseMessage())
+                .isEqualTo(404);
     }
 
     @Test

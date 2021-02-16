@@ -2,7 +2,7 @@ package org.actioncontroller.httpserver;
 
 import com.sun.net.httpserver.HttpServer;
 import org.actioncontroller.AbstractApiClientProxyTest;
-import org.actioncontroller.RouteMap;
+import org.actioncontroller.ApiControllerRouteMap;
 import org.actioncontroller.SocketHttpClient;
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientClassProxy;
@@ -39,7 +39,7 @@ public class ApiClientProxyHttpServerTest extends AbstractApiClientProxyTest {
 
     @Test
     public void gives404OnUnmappedController() {
-        expectedLogEvents.expectPattern(RouteMap.class, Level.INFO, "No route for {}. Routes {}");
+        expectedLogEvents.expectPattern(ApiControllerRouteMap.class, Level.INFO, "No route for {}. Routes {}");
         UnmappedController unmappedController = ApiClientClassProxy.create(UnmappedController.class, apiClient);
         assertThatThrownBy(unmappedController::notHere)
                 .isInstanceOf(HttpClientException.class)

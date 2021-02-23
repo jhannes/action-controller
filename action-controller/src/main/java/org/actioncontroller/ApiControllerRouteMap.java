@@ -55,17 +55,21 @@ public class ApiControllerRouteMap {
     private void addSubRoute(ApiControllerAction action, int index, String[] pathParts) {
         Pattern paramPattern = action.getParamRegexp()[index];
         if (paramPattern != null) {
-            addSubRoute(patternSubRoutes, paramPattern, action, index);
+            for (Map.Entry<Pattern, ApiControllerRouteMap> entry : patternSubRoutes.entrySet()) {
+                if (entry.getKey().pattern().equals(paramPattern.pattern())) {
+                    entry.getValue().add(action, index+1);
+                    return;
+                }
+            }
+            ApiControllerRouteMap routeMap = new ApiControllerRouteMap();
+            routeMap.add(action, index+1);
+            patternSubRoutes.put(paramPattern, routeMap);
         } else {
-            addSubRoute(subRoutes, pathParts[index], action, index);
+            subRoutes.computeIfAbsent(pathParts[index], k -> new ApiControllerRouteMap())
+                    .add(action, index + 1);
         }
     }
 
-    private static <T> void addSubRoute(Map<T, ApiControllerRouteMap> map, T key, ApiControllerAction action, int currentIndex) {
-        map.computeIfAbsent(key, k -> new ApiControllerRouteMap())
-                .add(action, currentIndex + 1);
-    }
-    
     private void addPathPatternAction(ApiControllerAction action, Pattern paramPattern) {
         for (Map.Entry<Pattern, ApiControllerAction> existingEntry : patternActions.entrySet()) {
             if (existingEntry.getKey().pattern().equals(paramPattern.pattern())) {

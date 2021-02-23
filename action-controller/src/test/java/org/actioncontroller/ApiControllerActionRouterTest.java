@@ -13,7 +13,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class ApiControllerActionRouterTest {
 
-    private ApiClient client;
     private TestController controllerClient;
 
     public static class TestController {
@@ -54,6 +53,12 @@ public class ApiControllerActionRouterTest {
             return "getParamInTheMiddle(" + param + ")";
         }
 
+        @GET("/path/{param}/otherConstant")
+        @ContentBody
+        public String getOtherConstant(@PathParam("param") String param) {
+            return "getOtherConstant(" + param + ")";
+        }
+
         @GET("/path/constant/{param}/{otherParam}")
         @ContentBody
         public String getParamAtEnd(@PathParam("param") String param, @PathParam("otherParam") String otherParam) {
@@ -70,7 +75,7 @@ public class ApiControllerActionRouterTest {
 
     @Before
     public void setUp() throws Exception {
-        client = createClient(new TestController());
+        ApiClient client = createClient(new TestController());
         controllerClient = ApiClientClassProxy.create(TestController.class, client);
     }
 
@@ -104,5 +109,11 @@ public class ApiControllerActionRouterTest {
         assertThat(controllerClient.getParamInTheMiddle("constant"))
                 .as("should route to getParamAtEnd since the middle variable matches an early constant")
                 .isEqualTo("getParamAtEnd(constant,otherConstant)");
+    }
+    
+    @Test
+    public void shouldPickCorrectSubconstantUnderPathVariable() {
+        assertThat(controllerClient.getParamInTheMiddle("foo")).isEqualTo("getParamInTheMiddle(foo)");
+        assertThat(controllerClient.getOtherConstant("foo")).isEqualTo("getOtherConstant(foo)");
     }
 }

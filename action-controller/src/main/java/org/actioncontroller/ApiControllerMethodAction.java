@@ -278,7 +278,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
             for (int i = 0; i < arguments.length; i++) {
                 arguments[i] = parameterMappers[i].apply(exchange);
                 if (!isCorrectType(arguments[i], method.getParameterTypes()[i])) {
-                    throw new HttpActionException(500, this + " parameter mapper " + i + " returned wrong type " + arguments[i].getClass() + " (expected " + method.getParameters()[i].getParameterizedType() + ")");
+                    throw new HttpServerErrorException(this + " parameter mapper " + i + " returned wrong type " + arguments[i].getClass() + " (expected " + method.getParameters()[i].getParameterizedType() + ")");
                 }
             }
             return arguments;
@@ -286,7 +286,6 @@ public class ApiControllerMethodAction implements ApiControllerAction {
             logger.debug("While processing {} arguments to {}: {}", exchange, this, e.toString());
             throw e;
         } catch (HttpActionException e) {
-            logger.warn("While processing {} arguments to {}", exchange, this, e);
             StackTraceElement[] stackTrace = e.getStackTrace();
             StackTraceElement[] replacedStackTrace = new StackTraceElement[stackTrace.length + 1];
             replacedStackTrace[0] = new StackTraceElement(method.getDeclaringClass().getName(), method.getName(),
@@ -294,6 +293,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
             System.arraycopy(stackTrace, 0, replacedStackTrace, 1, stackTrace.length);
             e.setStackTrace(replacedStackTrace);
 
+            logger.warn("While processing {} arguments to {}", exchange, this, e);
             throw e;
         } catch (IOException e) {
             throw e;
@@ -320,7 +320,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
             responseMapper.accept(result, exchange);
         } catch (RuntimeException e) {
             logger.error("While converting {} return value {}", this, result, e);
-            throw new HttpActionException(500, "Internal server error while mapping response");
+            throw new HttpServerErrorException(e);
         }
     }
 

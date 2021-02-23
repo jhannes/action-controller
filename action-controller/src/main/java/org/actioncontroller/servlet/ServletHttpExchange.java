@@ -3,6 +3,7 @@ package org.actioncontroller.servlet;
 import org.actioncontroller.ExceptionUtil;
 import org.actioncontroller.HttpActionException;
 import org.actioncontroller.HttpRequestException;
+import org.actioncontroller.HttpServerErrorException;
 import org.actioncontroller.IOUtil;
 import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.OutputStreamConsumer;
@@ -147,7 +148,7 @@ public class ServletHttpExchange implements ApiHttpExchange {
     public Object pathParam(String name, Parameter parameter) throws HttpActionException {
         String result = this.pathParams.get(name);
         if (result == null) {
-            throw new HttpActionException(500, "Path parameter :" + name + " not matched in " + pathParams.keySet());
+            throw new HttpServerErrorException("Path parameter :" + name + " not matched in " + pathParams.keySet());
         }
         return ApiHttpExchange.convertTo(result, name, parameter);
     }

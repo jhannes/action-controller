@@ -18,10 +18,6 @@ public class HttpClientException extends RuntimeException {
         this.url = url;
     }
 
-    public HttpClientException(int responseCode, String responseMessage) {
-        this(responseCode, responseMessage, null, null);
-    }
-
     public int getStatusCode() {
         return statusCode;
     }

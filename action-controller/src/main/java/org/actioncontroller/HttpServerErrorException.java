@@ -12,6 +12,10 @@ public class HttpServerErrorException extends HttpActionException {
         super(500, e);
     }
 
+    public HttpServerErrorException(String message) {
+        super(500, message);
+    }
+
     @Override
     public void sendError(ApiHttpExchange exchange) throws IOException {
         exchange.sendError(getStatusCode(), "Internal Server Error");

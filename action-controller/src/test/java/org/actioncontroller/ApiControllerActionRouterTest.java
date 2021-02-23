@@ -2,11 +2,13 @@ package org.actioncontroller;
 
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientClassProxy;
+import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.servlet.ApiServlet;
 import org.actioncontroller.test.FakeApiClient;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.net.URL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -14,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ApiControllerActionRouterTest {
 
     private TestController controllerClient;
+    private ApiClient client;
 
     public static class TestController {
         
@@ -35,6 +38,18 @@ public class ApiControllerActionRouterTest {
             return "get with param=" + param;
         }
 
+        @GET("/callback?code")
+        @ContentBody
+        public String callbackWithCodeParam(@RequestParam("code") String error) {
+            return "callbackWithErrorParam param=" + error;
+        }
+
+        @GET("/callback?error")
+        @ContentBody
+        public String callbackWithErrorParam(@RequestParam("error") String error) {
+            return "callbackWithErrorParam param=" + error;
+        }
+
         @GET("/path/default")
         @ContentBody
         public String getDefault() {
@@ -47,16 +62,16 @@ public class ApiControllerActionRouterTest {
             return "getWithPathParam " + param;
         }
         
-        @GET("/path/{param}/constant/otherConstant")
-        @ContentBody
-        public String getParamInTheMiddle(@PathParam("param") String param) {
-            return "getParamInTheMiddle(" + param + ")";
-        }
-
         @GET("/path/{param}/otherConstant")
         @ContentBody
         public String getOtherConstant(@PathParam("param") String param) {
             return "getOtherConstant(" + param + ")";
+        }
+
+        @GET("/path/{param}/constant/otherConstant")
+        @ContentBody
+        public String getParamInTheMiddle(@PathParam("param") String param) {
+            return "getParamInTheMiddle(" + param + ")";
         }
 
         @GET("/path/constant/{param}/{otherParam}")
@@ -75,7 +90,7 @@ public class ApiControllerActionRouterTest {
 
     @Before
     public void setUp() throws Exception {
-        ApiClient client = createClient(new TestController());
+        client = createClient(new TestController());
         controllerClient = ApiClientClassProxy.create(TestController.class, client);
     }
 
@@ -116,4 +131,21 @@ public class ApiControllerActionRouterTest {
         assertThat(controllerClient.getParamInTheMiddle("foo")).isEqualTo("getParamInTheMiddle(foo)");
         assertThat(controllerClient.getOtherConstant("foo")).isEqualTo("getOtherConstant(foo)");
     }
+    
+    @Test
+    public void shouldThrowOnNoMatchingParameterRoute() throws IOException {
+        ApiClientExchange exchange = client.createExchange();
+        exchange.setTarget("GET", "/callback");
+        exchange.executeRequest();
+        assertThat(exchange.getResponseCode()).isEqualTo(404);
+    }
+    
+    @Test
+    public void shouldThrowOnNoLeafRoute() throws IOException {
+        ApiClientExchange exchange = client.createExchange();
+        exchange.setTarget("GET", "/path/foo/noMatch");
+        exchange.executeRequest();
+        assertThat(exchange.getResponseCode()).isEqualTo(404);
+    }
+    
 }

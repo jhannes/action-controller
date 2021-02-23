@@ -2,6 +2,7 @@ package org.actioncontroller.meta;
 
 import org.actioncontroller.HttpActionException;
 import org.actioncontroller.HttpRequestException;
+import org.actioncontroller.HttpServerErrorException;
 import org.actioncontroller.IOUtil;
 import org.actioncontroller.TypesUtil;
 
@@ -195,7 +196,7 @@ public interface ApiHttpExchange {
         } else if (URL.class.isAssignableFrom((Class<?>)parameterType)) {
             return IOUtil.asURL(value);
         } else {
-            throw new HttpActionException(500, "Unhandled parameter type " + parameterType);
+            throw new HttpServerErrorException("Unhandled parameter type " + parameterType);
         }
     }
 

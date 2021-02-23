@@ -170,6 +170,10 @@ public class FakeApiClient implements ApiClient {
             response.getCookies().forEach(c -> clientCookies.put(c.getName(), c));
         }
 
+        public boolean isError() {
+            return getResponseCode() >= 400;
+        }
+
         @Override
         public int getResponseCode() {
             return response.getStatus();
@@ -177,7 +181,7 @@ public class FakeApiClient implements ApiClient {
 
         @Override
         public void checkForError() throws HttpClientException {
-            if (getResponseCode() >= 400) {
+            if (isError()) {
                 throw new HttpClientException(getResponseCode(), response.getStatusMessage(), getErrorResponse(), getRequestURL());
             }
         }

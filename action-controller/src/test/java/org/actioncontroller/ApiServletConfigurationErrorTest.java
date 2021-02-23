@@ -1,5 +1,8 @@
 package org.actioncontroller;
 
+import org.actioncontroller.client.ApiClientClassProxy;
+import org.actioncontroller.client.HttpClientException;
+import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapperFactory;
@@ -8,19 +11,24 @@ import org.actioncontroller.meta.HttpReturnMapping;
 import org.actioncontroller.meta.HttpReturnMapper;
 import org.actioncontroller.servlet.ApiServlet;
 import org.actioncontroller.servlet.ActionControllerConfigurationException;
+import org.actioncontroller.test.FakeApiClient;
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.extend.junit.ExpectedLogEventsRule;
 import org.slf4j.event.Level;
 
+import javax.servlet.ServletException;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.math.BigInteger;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.List;
 
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ApiServletConfigurationErrorTest {
@@ -130,6 +138,22 @@ public class ApiServletConfigurationErrorTest {
                 .isInstanceOf(ActionControllerConfigurationException.class)
                 .hasMessageContaining("with value(), return value must be void");
     }
+    
+    @Test
+    public void shouldAddControllerMethodToStackTraceOnServerError() throws ServletException, MalformedURLException {
+        ApiServlet servlet = new ApiServlet(new ControllerWithRuntimeError());
+        servlet.init(null);
+
+        ControllerWithRuntimeError clientController = ApiClientClassProxy.create(ControllerWithRuntimeError.class, new FakeApiClient(new URL("http://example.org"), "/", servlet));
+        expectedLogEventsRule.expectMatch(expect -> {
+            if (expect.getEvent().getLevel() == Level.WARN && expect.getEvent().getLoggerName().equals(ApiControllerAction.class.getName())) {
+                assertThat(expect.getEvent().getThrowable().getStackTrace()[0].getClassName()).isEqualTo(ControllerWithRuntimeError.class.getName());
+                assertThat(expect.getEvent().getThrowable().getStackTrace()[0].getMethodName()).isEqualTo("doIt");
+                expect.pattern("While processing {} arguments to {}");
+            }
+        });
+        assertThatThrownBy(() -> clientController.doIt("something")).isInstanceOf(HttpClientException.class);
+    }
 
 
     public static class ParameterMapperWithoutProperConstructor implements
@@ -159,6 +183,50 @@ public class ApiServletConfigurationErrorTest {
 
     }
 
+    private static class OtherControllerWithErrors {
+
+        @GET("/foo")
+        public String actionWithInvalidMappingAnnotation(
+                @CustomAnnotation String parameter
+        ) {
+            return parameter;
+        }
+
+        @GET("/bar")
+        @CustomAnnotation
+        public String actionWithInvalidReturnAnnotation() {
+            return "";
+        }
+
+    }
+
+    @Retention(RUNTIME)
+    @HttpParameterMapping(ThrowServerError.Mapper.class)
+    public @interface ThrowServerError {
+
+        class Mapper implements HttpParameterMapperFactory<ThrowServerError> {
+            @Override
+            public HttpParameterMapper create(ThrowServerError annotation, Parameter parameter, ApiControllerContext context) throws Exception {
+                return exchange -> {
+                    throw new HttpServerErrorException("Something went wrong");
+                };
+            }
+
+            @Override
+            public HttpClientParameterMapper clientParameterMapper(ThrowServerError annotation, Parameter parameter) {
+                return ((exchange, arg) -> {});
+            }
+        }
+    }
+
+    public static class ControllerWithRuntimeError {
+        @GET("/")
+        @SendRedirect("/")
+        public void doIt(@ThrowServerError String foo) {
+            
+        }
+    }
+
 
     private static class ControllerWithErrors {
 
@@ -182,22 +250,6 @@ public class ApiServletConfigurationErrorTest {
     }
 
 
-    private static class OtherControllerWithErrors {
-
-        @GET("/foo")
-        public String actionWithInvalidMappingAnnotation(
-                @CustomAnnotation String parameter
-        ) {
-            return parameter;
-        }
-
-        @GET("/bar")
-        @CustomAnnotation
-        public String actionWithInvalidReturnAnnotation() {
-            return "";
-        }
-
-    }
 
     private static class ControllerWithInvalidRedirect {
         @GET("/redirector")

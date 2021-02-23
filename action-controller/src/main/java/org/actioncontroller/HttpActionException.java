@@ -10,7 +10,7 @@ import java.io.IOException;
  */
 public class HttpActionException extends RuntimeException {
 
-    private int statusCode;
+    private final int statusCode;
 
     public HttpActionException(int statusCode, String message) {
         super(message);

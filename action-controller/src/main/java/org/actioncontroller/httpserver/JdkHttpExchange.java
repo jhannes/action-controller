@@ -5,6 +5,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpPrincipal;
 import com.sun.net.httpserver.HttpsExchange;
 import org.actioncontroller.HttpActionException;
+import org.actioncontroller.HttpServerErrorException;
 import org.actioncontroller.IOUtil;
 import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.OutputStreamConsumer;
@@ -200,7 +201,7 @@ public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
     public Object pathParam(String name, Parameter parameter) throws HttpActionException {
         String result = this.pathParams.get(name);
         if (result == null) {
-            throw new HttpActionException(500, "Path parameter :" + name + " not matched");
+            throw new HttpServerErrorException("Path parameter :" + name + " not matched");
         }
         return ApiHttpExchange.convertTo(result, name, parameter);
     }

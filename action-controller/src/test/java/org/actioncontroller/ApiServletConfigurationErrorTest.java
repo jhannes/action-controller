@@ -155,7 +155,6 @@ public class ApiServletConfigurationErrorTest {
         assertThatThrownBy(() -> clientController.doIt("something")).isInstanceOf(HttpClientException.class);
     }
 
-
     public static class ParameterMapperWithoutProperConstructor implements
             HttpParameterMapperFactory<Annotation>,
             HttpReturnMapperFactory<Annotation>

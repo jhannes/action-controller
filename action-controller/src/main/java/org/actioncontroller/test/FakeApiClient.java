@@ -6,13 +6,13 @@ import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.meta.OutputStreamConsumer;
 import org.actioncontroller.meta.WriterConsumer;
-import org.fakeservlet.FakeHttpSession;
 import org.fakeservlet.FakeServletRequest;
 import org.fakeservlet.FakeServletResponse;
 
 import javax.servlet.Servlet;
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpSession;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -38,7 +38,7 @@ public class FakeApiClient implements ApiClient {
     private final URL contextRoot;
     private final String servletPath;
     private final Servlet servlet;
-    private FakeHttpSession session;
+    private HttpSession session;
     private final Map<String, Cookie> clientCookies = new HashMap<>();
     private final List<String> clientCertificateDNs = new ArrayList<>();
     private Principal remoteUser;
@@ -90,7 +90,7 @@ public class FakeApiClient implements ApiClient {
         private final String apiUrl;
         private final FakeServletRequest request;
 
-        private final FakeServletResponse response = new FakeServletResponse();
+        private final FakeServletResponse response;
 
         private FakeApiClientExchange(URL contextRoot, String servletPath, Principal remoteUser) {
             List<Cookie> requestCookies = clientCookies.values().stream()
@@ -102,6 +102,7 @@ public class FakeApiClient implements ApiClient {
             request.setCookies(requestCookies);
             this.apiUrl = contextRoot + servletPath;
             setRemoteUser(remoteUser);
+            response = new FakeServletResponse(request);
         }
 
         @Override

@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class ApiRequestErrorTest {
 
-    private FakeServletResponse resp = new FakeServletResponse();
     private URL contextRoot;
 
     public static class Controller {
@@ -53,7 +52,7 @@ public class ApiRequestErrorTest {
         expectedLogEvents.expectMatch(e -> e
                 .logger(ApiControllerRouteMap.class)
                 .pattern("No route for {}. Routes {}"));
-        servlet.service(request, resp);
+        FakeServletResponse resp = request.service(servlet);
 
         assertThat(resp.getStatus()).isEqualTo(404);
     }
@@ -63,7 +62,7 @@ public class ApiRequestErrorTest {
         FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/actions", "/hello");
         request.setParameter("number", "hello");
 
-        servlet.service(request, resp);
+        FakeServletResponse resp = request.service(servlet);
 
         assertThat(resp.getStatus()).isEqualTo(400);
     }
@@ -76,7 +75,7 @@ public class ApiRequestErrorTest {
                 .logger(ApiControllerAction.class)
                 .pattern("While converting {} return value {}")
                 .exception(NullPointerException.class));
-        servlet.service(request, resp);
+        FakeServletResponse resp = request.service(servlet);
 
         assertThat(resp.getStatus()).isEqualTo(500);
     }

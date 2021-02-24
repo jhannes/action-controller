@@ -42,7 +42,7 @@ public class FakeServletRequestTest {
     }
 
     @Test
-    public void shouldReturnAttribueNames() {
+    public void shouldReturnAttributeNames() {
         request.setAttribute("one", new Object());
         request.setAttribute("another", "value1");
         assertThat(Collections.list(request.getAttributeNames()))

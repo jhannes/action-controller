@@ -5,10 +5,12 @@ import javax.servlet.DispatcherType;
 import javax.servlet.ReadListener;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
 import javax.servlet.ServletInputStream;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -16,6 +18,7 @@ import javax.servlet.http.HttpUpgradeHandler;
 import javax.servlet.http.Part;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -45,18 +48,19 @@ public class FakeServletRequest implements HttpServletRequest {
     private final String servletPath;
     private String pathInfo;
 
-    private Map<String, List<String>> headers = new HashMap<>();
-    private Map<String, String> parameters = new HashMap<>();
-    private FakeHttpSession httpSession;
-    private Map<String, Object> attributes = new HashMap<>();
+    private final Map<String, List<String>> headers = new HashMap<>();
+    private final Map<String, String> parameters = new HashMap<>();
+    private HttpSession httpSession;
+    private final Map<String, Object> attributes = new HashMap<>();
     private byte[] requestBody;
     private Principal userPrincipal;
+    private final String protocol = "HTTP/1.1";
 
     /**
      * DANGER! Unfinished class! Implement methods as you go!
      */
     public FakeServletRequest(String method, URL contextRoot, String servletPath, String pathInfo) {
-        this.method = method.toUpperCase();
+        setMethod(method);
         this.contextPath = contextRoot.getPath();
         this.servletPath = servletPath;
         this.pathInfo = pathInfo;
@@ -159,7 +163,7 @@ public class FakeServletRequest implements HttpServletRequest {
 
     @Override
     public String getRemoteUser() {
-        return userPrincipal != null ? userPrincipal.getName() : null;
+        return getUserPrincipal() != null ? getUserPrincipal().getName() : null;
     }
 
     @Override
@@ -179,17 +183,22 @@ public class FakeServletRequest implements HttpServletRequest {
 
     @Override
     public String getRequestURI() {
-        return getContextPath() + getServletPath() + getPathInfo();
+        return getContextPath() + getServletPath() + (getPathInfo() != null ? getPathInfo() : "");
     }
 
     @Override
     public StringBuffer getRequestURL() {
-        final StringBuffer url = new StringBuffer(128);
+        final StringBuffer url = getAuthority();
+        url.append(getRequestURI());
+        return url;
+    }
+
+    public StringBuffer getAuthority() {
+        StringBuffer url = new StringBuffer(128);
         url.append(getScheme()).append("://").append(getRemoteHost());
         if (port > 0 && port != defaultPort(scheme)) {
             url.append(':').append(port);
         }
-        url.append(getRequestURI());
         return url;
     }
 
@@ -199,7 +208,7 @@ public class FakeServletRequest implements HttpServletRequest {
     }
 
     @Override
-    public FakeHttpSession getSession(boolean create) {
+    public HttpSession getSession(boolean create) {
         if (httpSession == null && create) {
             httpSession = new FakeHttpSession();
         }
@@ -366,8 +375,7 @@ public class FakeServletRequest implements HttpServletRequest {
 
     @Override
     public String getProtocol() {
-        // TODO
-        throw unimplemented();
+        return protocol;
     }
 
     @Override
@@ -397,7 +405,7 @@ public class FakeServletRequest implements HttpServletRequest {
 
     @Override
     public String getRemoteHost() {
-        return host;
+        return getServerName();
     }
 
     @Override
@@ -498,7 +506,7 @@ public class FakeServletRequest implements HttpServletRequest {
         parameters.put(key, value);
     }
 
-    public void setSession(FakeHttpSession httpSession) {
+    public void setSession(HttpSession httpSession) {
         this.httpSession = httpSession;
     }
 
@@ -515,10 +523,16 @@ public class FakeServletRequest implements HttpServletRequest {
     }
 
     public void setRequestBody(String requestBody) {
-        this.requestBody = requestBody.getBytes();
+        setRequestBody(requestBody.getBytes());
     }
 
     public void setUserPrincipal(Principal userPrincipal) {
         this.userPrincipal = userPrincipal;
+    }
+
+    public FakeServletResponse service(HttpServlet servlet) throws ServletException, IOException {
+        FakeServletResponse response = new FakeServletResponse(this);
+        servlet.service(this, response);
+        return response;
     }
 }

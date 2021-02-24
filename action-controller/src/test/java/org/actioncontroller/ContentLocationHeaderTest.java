@@ -39,12 +39,12 @@ public class ContentLocationHeaderTest {
         }
     }
 
-    private URL contextRoot = new URL("http://my.example.com:8080/my/context");
+    private final URL contextRoot = new URL("http://my.example.com:8080/my/context");
+
+    private final ApiServlet servlet = new ApiServlet(new Controller());
 
     public ContentLocationHeaderTest() throws MalformedURLException {
     }
-
-    private ApiServlet servlet = new ApiServlet(new Controller());
 
     @Before
     public void setup() throws ServletException {
@@ -53,10 +53,8 @@ public class ContentLocationHeaderTest {
 
     @Test
     public void shouldCombineParameterWithReturn() throws IOException, ServletException {
-        FakeServletResponse resp = new FakeServletResponse();
-        servlet.service(
-                new FakeServletRequest("POST", contextRoot, "/actions", "/one"),
-                resp);
+        FakeServletRequest req = new FakeServletRequest("POST", contextRoot, "/actions", "/one");
+        FakeServletResponse resp = req.service(servlet);
 
         resp.assertNoError();
         assertThat(resp.getHeader("Content-location"))
@@ -65,10 +63,8 @@ public class ContentLocationHeaderTest {
 
     @Test
     public void shouldReturnUrl() throws IOException, ServletException {
-        FakeServletResponse resp = new FakeServletResponse();
-        servlet.service(
-                new FakeServletRequest("POST", contextRoot, "/actions", "/two/1234"),
-                resp);
+        FakeServletRequest req = new FakeServletRequest("POST", contextRoot, "/actions", "/two/1234");
+        FakeServletResponse resp = req.service(servlet);
 
         resp.assertNoError();
         assertThat(resp.getHeader("Content-location"))
@@ -78,10 +74,9 @@ public class ContentLocationHeaderTest {
     @Test
     public void shouldFormatContentLocationPath() throws IOException, ServletException {
         UUID id = UUID.randomUUID();
-        FakeServletResponse resp = new FakeServletResponse();
         FakeServletRequest request = new FakeServletRequest("POST", contextRoot, "/actions", "/three");
         request.setParameter("id", id.toString());
-        servlet.service(request, resp);
+        FakeServletResponse resp = request.service(servlet);
 
         resp.assertNoError();
         assertThat(resp.getHeader("Content-location"))

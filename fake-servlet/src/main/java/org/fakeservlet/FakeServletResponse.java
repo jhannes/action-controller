@@ -3,6 +3,7 @@ package org.fakeservlet;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
@@ -19,12 +20,17 @@ import static org.assertj.core.api.Assertions.assertThat;
  * DANGER! Unfinished class! Implement methods as you go!
  */
 public class FakeServletResponse implements HttpServletResponse {
+    private final FakeServletRequest request;
     private int statusCode = 200;
     private String statusMessage;
-    private Map<String, String> headers = new HashMap<>();
     private String contentType;
-    private List<Cookie> cookies = new ArrayList<>();
+    private final Map<String, String> headers = new HashMap<>();
+    private final List<Cookie> cookies = new ArrayList<>();
     private String characterEncoding;
+
+    public FakeServletResponse(FakeServletRequest request) {
+        this.request = request;
+    }
 
     @Override
     public void addCookie(Cookie cookie) {
@@ -63,7 +69,8 @@ public class FakeServletResponse implements HttpServletResponse {
     // TODO
     @Override
     public String encodeUrl(String s) {
-        throw unimplemented();
+        // TODO: Should include some session id stuff if needed
+        return s;
     }
 
     // TODO
@@ -74,8 +81,7 @@ public class FakeServletResponse implements HttpServletResponse {
 
     @Override
     public void sendError(int sc, String msg) {
-        this.statusCode = sc;
-        this.statusMessage = msg;
+        setStatus(sc, msg);
     }
 
     @Override
@@ -86,8 +92,15 @@ public class FakeServletResponse implements HttpServletResponse {
     @Override
     public void sendRedirect(String location) {
         statusCode = 302;
-        // TODO: should run through encodeRedirectURL
-        setHeader("Location", location);
+        
+        // if location contains scheme, just return it
+        // if location starts with / use request root url, append encodeRedirectUrl(location)
+        // otherwise use request.getRequestURI() backtrack to "/" if needed and encodeRedirectUrl(location)
+        if (location.startsWith("/")) {
+            location = request.getAuthority() + request.getContextPath() + location;
+        }
+        
+        setHeader("Location", encodeRedirectURL(location));
     }
 
     @Override
@@ -112,8 +125,8 @@ public class FakeServletResponse implements HttpServletResponse {
     }
 
     @Override
-    public void setIntHeader(String s, int i) {
-        throw unimplemented();
+    public void setIntHeader(String name, int value) {
+        setHeader(name, String.valueOf(value));
     }
 
     @Override
@@ -164,8 +177,8 @@ public class FakeServletResponse implements HttpServletResponse {
         return contentType;
     }
 
-    private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-    private ServletOutputStream servletOutputStream = new ServletOutputStream() {
+    private final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    private final ServletOutputStream servletOutputStream = new ServletOutputStream() {
         @Override
         public boolean isReady() {
             return true;
@@ -187,7 +200,7 @@ public class FakeServletResponse implements HttpServletResponse {
         return servletOutputStream;
     }
 
-    private PrintWriter writer = new PrintWriter(servletOutputStream);
+    private final PrintWriter writer = new PrintWriter(servletOutputStream);
 
     @Override
     public PrintWriter getWriter() {
@@ -231,7 +244,7 @@ public class FakeServletResponse implements HttpServletResponse {
     // TODO
     @Override
     public void flushBuffer() {
-        throw unimplemented();
+        writer.flush();
     }
 
     @Override
@@ -268,7 +281,12 @@ public class FakeServletResponse implements HttpServletResponse {
     }
 
     public byte[] getBody() {
+        flushBuffer();
         return outputStream.toByteArray();
+    }
+    
+    public String getBodyString() {
+        return new String(getBody());
     }
 
 }

@@ -11,7 +11,7 @@ import java.util.Vector;
 
 public class FakeHttpSession implements HttpSession {
 
-    private HashMap<String, Object> sessionData = new HashMap<>();
+    private final HashMap<String, Object> sessionData = new HashMap<>();
 
     @Override
     public long getCreationTime() {

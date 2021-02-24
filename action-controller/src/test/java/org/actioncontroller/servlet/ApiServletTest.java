@@ -63,7 +63,6 @@ public class ApiServletTest {
     public Optional<Boolean> admin;
     public int amount;
     private URL contextRoot;
-    private FakeServletResponse response = new FakeServletResponse();
 
     public class ExampleController {
         @GET("")
@@ -149,15 +148,15 @@ public class ApiServletTest {
     }
 
     @Test
-    public void shouldCallMethodWithArgumentsAndConvertReturn() throws IOException {
+    public void shouldCallMethodWithArgumentsAndConvertReturn() throws IOException, ServletException {
         String name = UUID.randomUUID().toString();
         FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/api", null);
         request.setParameter("name", name);
 
-        servlet.service(request, response);
+        FakeServletResponse response = request.service(servlet);
 
         assertThat(response.getStatus()).isEqualTo(200);
-        assertThat(JsonObject.parse(new String(response.getBody())).requiredString("name")).isEqualTo(name);
+        assertThat(JsonObject.parse(response.getBodyString()).requiredString("name")).isEqualTo(name);
         assertThat(response.getContentType()).isEqualTo("application/json");
     }
 
@@ -171,10 +170,10 @@ public class ApiServletTest {
     }
 
     @Test
-    public void shouldGive404OnUnknownAction() throws IOException {
+    public void shouldGive404OnUnknownAction() throws IOException, ServletException {
         FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/api", "/missing");
         expectedLogEvents.expectPattern(ApiControllerRouteMap.class, Level.INFO, "No route for {}. Routes {}");
-        servlet.service(request, response);
+        FakeServletResponse response = request.service(servlet);
         assertThat(response.getStatus()).isEqualTo(404);
     }
 
@@ -216,25 +215,25 @@ public class ApiServletTest {
     }
 
     @Test
-    public void shouldGive400OnMalformedJson() throws IOException {
+    public void shouldGive400OnMalformedJson() throws IOException, ServletException {
         FakeServletRequest request = new FakeServletRequest("POST", contextRoot, "/api", "/postMethod");
 
         request.setRequestBody("This is not JSON!");
 
         expectedLogEvents.expect(ApiControllerAction.class, Level.WARN,
                 "While processing ServletHttpExchange[POST " + contextRoot + "/api/postMethod] arguments for ApiControllerMethodAction{POST /postMethod => ExampleController.postAction(JsonObject)}");
-        servlet.service(request, response);
+        FakeServletResponse response = request.service(servlet);
 
         assertThat(response.getStatus()).isEqualTo(400);
         assertThat(response.getStatusMessage()).contains("org.jsonbuddy.parse.JsonParseException: Unexpected character 'T'");
     }
 
     @Test
-    public void shouldCallWithOptionalParameter() throws IOException {
+    public void shouldCallWithOptionalParameter() throws IOException, ServletException {
         FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/api", "/hello");
 
         assertThat(admin).isNull();
-        servlet.service(request, response);
+        FakeServletResponse response = request.service(servlet);
         assertThat(admin).isEmpty();
 
         request.setParameter("admin", "true");
@@ -254,18 +253,18 @@ public class ApiServletTest {
     }
 
     @Test
-    public void shouldGive400OnParameterConversion() throws IOException {
+    public void shouldGive400OnParameterConversion() throws IOException, ServletException {
         FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/api", "/goodbye");
         request.setParameter("amount", "one");
 
-        servlet.service(request, response);
+        FakeServletResponse response = request.service(servlet);
 
         assertThat(response.getStatus()).isEqualTo(400);
         assertThat(response.getStatusMessage()).isEqualTo("Could not convert amount=one to int");
     }
 
     @Test
-    public void shouldGive400OnInvalidUuidConversion() throws IOException {
+    public void shouldGive400OnInvalidUuidConversion() throws IOException, ServletException {
         FakeServletRequest request = new FakeServletRequest("POST", contextRoot, "/api", "/withUuid");
         request.setParameter("uuid", "Not an uuid");
 
@@ -273,14 +272,14 @@ public class ApiServletTest {
                 "While processing ServletHttpExchange[POST " + contextRoot + "/api/withUuid?uuid=Not+an+uuid]" +
                 " arguments to ApiControllerMethodAction{POST /withUuid => ControllerWithTypedParameters.methodWithUuid(UUID)}: " +
                 new HttpRequestException("Could not convert uuid=Not an uuid to java.util.UUID"));
-        servlet.service(request, response);
+        FakeServletResponse response = request.service(servlet);
 
         assertThat(response.getStatus()).isEqualTo(400);
         assertThat(response.getStatusMessage()).contains("Could not convert uuid=Not an uuid to java.util.UUID");
     }
 
     @Test
-    public void shouldGive400OnInvalidLongConversion() throws IOException {
+    public void shouldGive400OnInvalidLongConversion() throws IOException, ServletException {
         FakeServletRequest request = new FakeServletRequest("POST", contextRoot, "/api", "/withLong");
         request.setParameter("longValue", "one hundred");
 
@@ -288,7 +287,7 @@ public class ApiServletTest {
                 "While processing ServletHttpExchange[POST " + contextRoot + "/api/withLong?longValue=one+hundred] arguments to " +
                 "ApiControllerMethodAction{POST /withLong => ControllerWithTypedParameters.methodWithLong(long)}: " +
                 new HttpRequestException("Could not convert longValue=one hundred to long"));
-        servlet.service(request, response);
+        FakeServletResponse response = request.service(servlet);
 
         assertThat(response.getStatus()).isEqualTo(400);
         assertThat(response.getStatusMessage()).contains("Could not convert longValue=one hundred to long");
@@ -298,7 +297,7 @@ public class ApiServletTest {
     public ExpectedLogEventsRule expectedLogEvents = new ExpectedLogEventsRule(Level.WARN);
 
     @Test
-    public void shouldGive400OnInvalidEnumConversion() throws IOException {
+    public void shouldGive400OnInvalidEnumConversion() throws IOException, ServletException {
         FakeServletRequest request = new FakeServletRequest("POST", contextRoot, "/api", "/withEnum");
         request.setParameter("enumValue", "unknown");
 
@@ -306,26 +305,26 @@ public class ApiServletTest {
                 "While processing ServletHttpExchange[POST " + contextRoot + "/api/withEnum?enumValue=unknown] arguments to " +
                 "ApiControllerMethodAction{POST /withEnum => ControllerWithTypedParameters.methodWithEnum(ElementType)}: " +
                 new HttpRequestException("Could not convert enumValue=unknown to java.lang.annotation.ElementType"));
-        servlet.service(request, response);
+        FakeServletResponse response = request.service(servlet);
 
         assertThat(response.getStatus()).isEqualTo(400);
         assertThat(response.getStatusMessage()).contains("Could not convert enumValue=unknown to java.lang.annotation.ElementType");
     }
 
     @Test
-    public void shouldRequireNonOptionalParameter() throws IOException {
+    public void shouldRequireNonOptionalParameter() throws IOException, ServletException {
         FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/api", "/goodbye");
         expectedLogEvents.expect(ApiControllerAction.class, Level.DEBUG,
                 "While processing ServletHttpExchange[GET " + contextRoot + "/api/goodbye] arguments to " +
                 "ApiControllerMethodAction{GET /goodbye => ControllerWithTypedParameters.methodWithRequiredInt(int)}: " +
                 new HttpRequestException("Missing required parameter amount"));
-        servlet.service(request, response);
+        FakeServletResponse response = request.service(servlet);
         assertThat(response.getStatus()).isEqualTo(400);
         assertThat(response.getStatusMessage()).isEqualTo("Missing required parameter amount");
     }
 
     @Test
-    public void shouldReportParameterConversionFailure() throws IOException {
+    public void shouldReportParameterConversionFailure() throws IOException, ServletException {
         FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/api", "/goodbye");
         request.setParameter("amount", "one");
 
@@ -333,7 +332,7 @@ public class ApiServletTest {
                 .level(Level.DEBUG).logger(ApiControllerAction.class)
                 .pattern("While processing {} arguments to {}: {}")
         );
-        servlet.service(request, response);
+        FakeServletResponse response = request.service(servlet);
         assertThat(response.getStatus()).isEqualTo(400);
         assertThat(response.getStatusMessage()).isEqualTo("Could not convert amount=one to int");
     }

@@ -6,6 +6,7 @@ import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.client.HttpURLConnectionApiClient;
 import org.actioncontrollerdemo.TestController;
 import org.actioncontrollerdemo.UserController;
+import org.jsonbuddy.JsonObject;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -16,6 +17,7 @@ import java.io.StringWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,6 +60,18 @@ public class DemoServerTest {
         TestController testController = ApiClientClassProxy.create(TestController.class, client);
         assertThat(testController.sayHello(Optional.of("Test")))
                 .isEqualTo("Hello Test");
+        assertThat(testController.getJson())
+                .isEqualTo(new JsonObject().put("product", "Blåbærsyltetøy"));
+    }
+    
+    @Test
+    public void shouldCallUpdater() {
+        AtomicBoolean called = new AtomicBoolean(false);
+        server.setUpdater(() -> called.set(true));
+
+        TestController testController = ApiClientClassProxy.create(TestController.class, client);
+        testController.update();
+        assertThat(called).isTrue();
     }
 
     @Test
@@ -80,6 +94,14 @@ public class DemoServerTest {
         assertThatThrownBy(() -> userApi.getAdminPage(null))
                 .isInstanceOf(HttpClientException.class)
                 .hasMessageContaining("Forbidden");
+    }
+    
+    @Test
+    public void shouldShowLoginForm() {
+        UserController userApi = ApiClientClassProxy.create(UserController.class, client);
+        String response = userApi.getLogin(Optional.of("http://example.com"));
+        assertThat(response)
+                .contains("<input type='hidden' name='redirectAfterLogin' value='http://example.com' />");
     }
 
     @Test

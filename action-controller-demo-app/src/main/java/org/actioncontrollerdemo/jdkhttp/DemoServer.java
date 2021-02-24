@@ -14,14 +14,19 @@ public class DemoServer {
     private HttpServer httpServer;
     
     private final WebjarContent handler = new WebjarContent("swagger-ui", "/demo/swagger");
+    private Runnable updater = () -> System.out.println("Hello");
     private final ApiHandler apiHandler = new ApiHandler(new Object[]{
-            new TestController(() -> System.out.println("Hello")),
+            new TestController(() -> updater.run()),
             new UserController()
     });
     private final StaticContent staticContent = new StaticContent(getClass().getResource("/webapp-actioncontrollerdemo"), "/demo");
     private final RedirectHandler redirectHandler = new RedirectHandler("/demo");
 
     public DemoServer() throws MalformedURLException {
+    }
+
+    public void setUpdater(Runnable updater) {
+        this.updater = updater;
     }
 
     public void setServerPort(InetSocketAddress inetSocketAddress) throws IOException {

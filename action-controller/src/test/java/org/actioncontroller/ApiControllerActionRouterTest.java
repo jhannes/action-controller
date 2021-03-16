@@ -3,12 +3,19 @@ package org.actioncontroller;
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.ApiClientExchange;
+import org.actioncontroller.meta.ApiControllerActionFactory;
+import org.actioncontroller.meta.HttpRouterMapping;
 import org.actioncontroller.servlet.ApiServlet;
 import org.actioncontroller.test.FakeApiClient;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.reflect.Method;
 import java.net.URL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -17,6 +24,22 @@ public class ApiControllerActionRouterTest {
 
     private TestController controllerClient;
     private ApiClient client;
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @HttpRouterMapping(BOTTOM.RouterMapperFactory.class)
+    public @interface BOTTOM {
+
+        String value();
+
+        class RouterMapperFactory implements ApiControllerActionFactory<BOTTOM> {
+            @Override
+            public ApiControllerMethodAction create(BOTTOM annotation, Object controller, Method action, ApiControllerContext context) {
+                return new ApiControllerMethodAction("BOTTOM", annotation.value(), controller, action, context);
+            }
+        }
+    }
+    
 
     public static class TestController {
         
@@ -78,6 +101,12 @@ public class ApiControllerActionRouterTest {
         @ContentBody
         public String getParamAtEnd(@PathParam("param") String param, @PathParam("otherParam") String otherParam) {
             return "getParamAtEnd(" + param + "," + otherParam + ")";
+        }
+        
+        @BOTTOM("/path")
+        @ContentBody
+        public String getBottom() {
+            return "bottom";
         }
     }
 
@@ -148,4 +177,20 @@ public class ApiControllerActionRouterTest {
         assertThat(exchange.getResponseCode()).isEqualTo(404);
     }
     
+    @Test
+    public void shouldReturn404OnUnknownHttpMethod() throws IOException {
+        ApiClientExchange exchange = client.createExchange();
+        exchange.setTarget("GEEET", "/path/foo/noMatch");
+        exchange.executeRequest();
+        assertThat(exchange.getResponseCode()).isEqualTo(404);
+    }
+    
+    @Test
+    public void shouldSupportCustomHttpMethods() throws IOException {
+        ApiClientExchange exchange = client.createExchange();
+        exchange.setTarget("BOTTOM", "/path");
+        exchange.executeRequest();
+        assertThat(exchange.getResponseCode()).isEqualTo(200);
+        assertThat(exchange.getResponseBody()).isEqualTo("bottom");
+    }
 }

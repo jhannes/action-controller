@@ -34,13 +34,6 @@ public class ApiControllerActionRouter {
     private final Map<String, ApiControllerRouteMap> rootRoutes = new HashMap<>();
     private final List<ApiControllerAction> actions = new ArrayList<>();
 
-    public ApiControllerActionRouter() {
-        rootRoutes.put("GET", new ApiControllerRouteMap());
-        rootRoutes.put("POST", new ApiControllerRouteMap());
-        rootRoutes.put("PUT", new ApiControllerRouteMap());
-        rootRoutes.put("DELETE", new ApiControllerRouteMap());
-    }
-
     public void invokeAction(ApiHttpExchange httpExchange, UserContext userContext) throws IOException {
         try {
             ApiControllerAction action = findAction(httpExchange);
@@ -53,9 +46,13 @@ public class ApiControllerActionRouter {
         }
     }
 
-    public ApiControllerAction findAction(ApiHttpExchange httpExchange) {
-        return rootRoutes.get(httpExchange.getHttpMethod())
-                .findAction(httpExchange.getPathInfo().split("/"), 0, httpExchange);
+    public ApiControllerAction findAction(ApiHttpExchange exchange) {
+        ApiControllerRouteMap routeMap = rootRoutes.get(exchange.getHttpMethod());
+        if (routeMap == null) {
+            logger.info("Unhandled method {}. Routes {}",  "[" + exchange.getHttpMethod() + "] " + exchange.getApiURL(), rootRoutes.keySet());
+            throw new HttpNotFoundException("No route for " + exchange.getHttpMethod() + ": " + exchange.getApiURL() + exchange.getPathInfo());
+        }
+        return routeMap.findAction(exchange.getPathInfo().split("/"), 0, exchange);
     }
 
     public boolean isEmpty() {
@@ -72,7 +69,8 @@ public class ApiControllerActionRouter {
     public void add(ApiControllerAction action) {
         logger.info("Installing route {}", action);
         actions.add(action);
-        rootRoutes.get(action.getHttpMethod()).add(action, 0);
+        rootRoutes.computeIfAbsent(action.getHttpMethod(), method -> new ApiControllerRouteMap())
+                .add(action, 0);
     }
 
     public void registerMBeans(MBeanServer mBeanServer) {

@@ -4,7 +4,6 @@ import org.actioncontroller.HttpActionException;
 import org.actioncontroller.HttpRequestException;
 import org.actioncontroller.HttpServerErrorException;
 import org.actioncontroller.IOUtil;
-import org.actioncontroller.TypesUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,10 +14,10 @@ import java.net.URI;
 import java.net.URL;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /**
@@ -80,13 +79,12 @@ public interface ApiHttpExchange {
     /**
      * Returns the specified query string of the requested url for a get request or x-www-form-urlencoded body
      * parameter for a POST or PUT request. For example if the client requests
-     * GET <code>https://example.com:7443/app/api/hello/world?greeting=Hello+There</code>
-     * <code>getParameter("greeting", ...)</code> returns <code>Hello There</code>.
+     * GET <code>https://example.com:7443/app/api/hello/world?greeting=Hello+There&greeting=Hi</code>
+     * <code>getParameter("greeting")</code> returns <code>["Hello There", "Hi"]</code>.
      *
      * @param name The query parameter name.
-     * @param parameter The method parameter that this will be mapped to. Will be used to convert the value using {@link #convertTo}
      */
-    Object getParameter(String name, Parameter parameter);
+    List<String> getParameters(String name);
 
     String getParameter(String name);
 
@@ -117,7 +115,7 @@ public interface ApiHttpExchange {
     /**
      * @throws HttpActionException throws 500 if the name was not matched with a path parameter
      */
-    Object pathParam(String name, Parameter parameter) throws HttpActionException;
+    String pathParam(String name) throws HttpActionException;
 
     void setPathParameters(Map<String, String> pathParameters);
 
@@ -160,7 +158,7 @@ public interface ApiHttpExchange {
     void setSessionAttribute(String name, Object value, boolean invalidate);
 
     Optional getSessionAttribute(String name, boolean createIfMissing);
-
+    
     default Optional getSessionAttribute(String name) {
         return getSessionAttribute(name, false);
     }
@@ -174,8 +172,16 @@ public interface ApiHttpExchange {
         return getSessionAttribute(name, false);
     }
 
-    @SuppressWarnings("unchecked")
-    static Object convertParameterType(String value, Type parameterType) {
+    /**
+     * Converts the parameter value to the type specified by the parameter. Supports String, int, (long), (short), (byte),
+     * double, (float), UUID, (Instant), (LocalDate) and enums, as well as Optionals of the same.
+     * @param value The string value read from the http value
+     * @return The value converted to a type compatible with parameter
+     * @throws HttpRequestException if the value is null and the parameter is not Optional
+     * @throws HttpRequestException if the value doesn't have a legal representation in the target type
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    static Object convertRequestValue(String value, Type parameterType) {
         if (value == null) {
             return null;
         }
@@ -189,6 +195,8 @@ public interface ApiHttpExchange {
             return UUID.fromString(value);
         } else if (parameterType == Long.class || parameterType == Long.TYPE) {
             return Long.parseLong(value);
+        } else if (!(parameterType instanceof Class)) {
+            throw new HttpServerErrorException("Unhandled parameter type " + parameterType);
         } else if (Enum.class.isAssignableFrom((Class<?>)parameterType)) {
             return Enum.valueOf((Class) parameterType, value);
         } else if (URI.class.isAssignableFrom((Class<?>)parameterType)) {
@@ -206,40 +214,6 @@ public interface ApiHttpExchange {
         } else {
             return exchange -> Optional.ofNullable(innerMapping.apply(exchange))
                     .orElseThrow(() -> new HttpRequestException("Missing required parameter value"));
-        }
-    }
-
-    /**
-     * Converts the parameter value to the type specified by the parameter. Supports String, int, (long), (short), (byte),
-     * double, (float), UUID, (Instant), (LocalDate) and enums, as well as Optionals of the same.
-     * @param value The string value read from the http value
-     * @param parameterName Used for exception messages
-     * @param parameter the Parameter object from the method that this value should be mapped to. Needed to deal with optionals
-     * @return The value converted to a type compatible with parameter
-     * @throws HttpRequestException if the value is null and the parameter is not Optional
-     * @throws HttpRequestException if the value doesn't have a legal representation in the target type
-     */
-    static Object convertTo(String value, String parameterName, Parameter parameter) {
-        boolean optional = parameter.getType() == Optional.class;
-        if (value == null) {
-            if (!optional) {
-                throw new HttpRequestException("Missing required parameter " + parameterName);
-            }
-            return Optional.empty();
-        } else if (optional) {
-            return Optional.of(convertParameterType(value, TypesUtil.typeParameter(parameter.getParameterizedType())));
-        } else {
-            return convertParameterType(value, parameter.getType());
-        }
-    }
-
-    static Type getTargetType(Parameter parameter) {
-        if (parameter.getType() == Consumer.class) {
-            return TypesUtil.typeParameter(parameter.getParameterizedType());
-        } else if (parameter.getType() == Optional.class) {
-            return TypesUtil.typeParameter(parameter.getParameterizedType());
-        } else {
-            return parameter.getType();
         }
     }
 

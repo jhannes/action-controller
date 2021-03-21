@@ -2,7 +2,6 @@ package org.actioncontroller.servlet;
 
 import org.actioncontroller.ExceptionUtil;
 import org.actioncontroller.HttpActionException;
-import org.actioncontroller.HttpRequestException;
 import org.actioncontroller.HttpServerErrorException;
 import org.actioncontroller.IOUtil;
 import org.actioncontroller.meta.ApiHttpExchange;
@@ -19,7 +18,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Reader;
-import java.lang.reflect.Parameter;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -27,7 +25,9 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -145,12 +145,12 @@ public class ServletHttpExchange implements ApiHttpExchange {
     }
 
     @Override
-    public Object pathParam(String name, Parameter parameter) throws HttpActionException {
+    public String pathParam(String name) throws HttpActionException {
         String result = this.pathParams.get(name);
         if (result == null) {
             throw new HttpServerErrorException("Path parameter :" + name + " not matched in " + pathParams.keySet());
         }
-        return ApiHttpExchange.convertTo(result, name, parameter);
+        return result;
     }
 
     @Override
@@ -159,13 +159,9 @@ public class ServletHttpExchange implements ApiHttpExchange {
     }
 
     @Override
-    public Object getParameter(String name, Parameter parameter) {
-        String value = ServletHttpExchange.this.getParameter(name);
-        try {
-            return ApiHttpExchange.convertTo(value, name, parameter);
-        } catch (IllegalArgumentException e) {
-            throw new HttpRequestException("Could not convert " + name + "=" + value + " to " + parameter.getType().getTypeName());
-        }
+    public List<String> getParameters(String name) {
+        String[] values = req.getParameterValues(name);
+        return values != null ? Arrays.asList(values) : null;
     }
 
     @Override

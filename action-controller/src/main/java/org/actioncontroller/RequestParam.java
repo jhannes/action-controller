@@ -8,14 +8,15 @@ import org.actioncontroller.meta.HttpParameterMapperFactory;
 import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.servlet.ServletHttpExchange;
 import org.actioncontroller.test.FakeApiClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import static java.lang.annotation.ElementType.PARAMETER;
@@ -63,8 +64,34 @@ public @interface RequestParam {
         @Override
         public HttpParameterMapper create(RequestParam annotation, Parameter parameter, ApiControllerContext context) {
             String name = annotation.value();
-            return (exchange) -> exchange.getParameter(name, parameter);
+            return (exchange) -> convertTo(exchange.getParameters(name), name, parameter.getParameterizedType());
         }
+
+        static Object convertTo(List<String> value, String parameterName, Type type) {
+            try {
+                boolean optional = TypesUtil.getRawType(type) == Optional.class;
+                if (value == null || value.isEmpty()) {
+                    if (!optional) {
+                        throw new HttpRequestException("Missing required parameter " + parameterName);
+                    }
+                    return Optional.empty();
+                } else if (optional) {
+                    return Optional.of(convertTo(value, parameterName, TypesUtil.typeParameter(type)));
+                } else if (TypesUtil.isCollectionType(type)) {
+                    List<Object> result = new ArrayList<>();
+                    for (String s : value) {
+                        result.add(ApiHttpExchange.convertRequestValue(s, TypesUtil.typeParameter(type)));
+                    }
+                    return result;
+                } else {
+                    return ApiHttpExchange.convertRequestValue(value.get(0), type);
+                }
+            } catch (IllegalArgumentException e) {
+                throw new HttpRequestException("Could not convert " + parameterName + "=" + value + " to " + type.getTypeName());
+            }
+        }
+
+
 
         @Override
         public HttpClientParameterMapper clientParameterMapper(RequestParam annotation, Parameter parameter) {

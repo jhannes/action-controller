@@ -34,6 +34,7 @@ import java.security.PrivateKey;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -136,7 +137,7 @@ public class HttpURLConnectionApiClient implements ApiClient {
         private String method;
         private String pathInfo;
         private final Map<String, String> requestHeaders = new HashMap<>();
-        private final Map<String, String> requestParameters = new HashMap<>();
+        private final Map<String, List<String>> requestParameters = new HashMap<>();
         private HttpURLConnection connection;
         private final List<HttpCookie> requestCookies = clientCookies.values().stream()
                 .filter(HttpURLConnectionApiClient::isUnexpired)
@@ -203,7 +204,16 @@ public class HttpURLConnectionApiClient implements ApiClient {
 
         @Override
         public void setRequestParameter(String name, Object value) {
-            possiblyOptionalToString(value, s -> requestParameters.put(name, s));
+            if (value instanceof Optional) {
+                ((Optional<?>) value).ifPresent(v -> setRequestParameter(name, v));
+            } else if (value instanceof Collection) {
+                for (Object o : ((Collection<?>) value)) {
+                    setRequestParameter(name, o);
+                }
+            } else {
+                requestParameters.computeIfAbsent(name, n -> new ArrayList<>())
+                        .add(value.toString());
+            }
         }
 
         @Override
@@ -301,7 +311,7 @@ public class HttpURLConnectionApiClient implements ApiClient {
             if (!requestParameters.isEmpty()) {
                 return requestParameters
                         .entrySet().stream()
-                        .map(entry -> urlEncode(entry.getKey()) + "=" + urlEncode(entry.getValue()))
+                        .map(entry -> entry.getValue().stream().map(v -> urlEncode(entry.getKey()) + "=" + urlEncode(v)).collect(Collectors.joining("&")))
                         .collect(Collectors.joining("&"));
             }
             return null;

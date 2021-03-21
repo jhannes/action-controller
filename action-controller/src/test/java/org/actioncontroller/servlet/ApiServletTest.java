@@ -3,6 +3,7 @@ package org.actioncontroller.servlet;
 import org.actioncontroller.ApiControllerAction;
 import org.actioncontroller.ApiControllerActionRouter;
 import org.actioncontroller.ApiControllerContext;
+import org.actioncontroller.ApiControllerRouteMap;
 import org.actioncontroller.ContentBody;
 import org.actioncontroller.GET;
 import org.actioncontroller.HttpActionException;
@@ -12,57 +13,46 @@ import org.actioncontroller.POST;
 import org.actioncontroller.PathParam;
 import org.actioncontroller.RequestParam;
 import org.actioncontroller.RequireUserRole;
-import org.actioncontroller.ApiControllerRouteMap;
 import org.actioncontroller.SessionParameter;
 import org.actioncontroller.jmx.ApiControllerActionMXBeanAdaptor;
 import org.actioncontroller.json.JsonBody;
 import org.actioncontroller.meta.ApiHttpExchange;
+import org.fakeservlet.FakeServletContainer;
 import org.fakeservlet.FakeServletRequest;
 import org.fakeservlet.FakeServletResponse;
 import org.jsonbuddy.JsonObject;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.extend.junit.ExpectedLogEventsRule;
-import org.mockito.Mockito;
 import org.slf4j.event.Level;
 
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.annotation.ElementType;
 import java.lang.management.ManagementFactory;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class ApiServletTest {
 
-    private ApiServlet servlet = new ApiServlet();
-    private HttpServletRequest requestMock = Mockito.mock(HttpServletRequest.class);
-    private HttpServletResponse responseMock = Mockito.mock(HttpServletResponse.class);
-    private StringWriter responseBody = new StringWriter();
+    private final ApiServlet servlet = new ApiServlet();
+    private final StringWriter responseBody = new StringWriter();
     public JsonObject postedBody;
     public Optional<Boolean> admin;
     public int amount;
-    private URL contextRoot;
+    private final FakeServletContainer container = new FakeServletContainer("http://example.com/root", "/servlet");
 
     public class ExampleController {
         @GET("")
@@ -150,8 +140,8 @@ public class ApiServletTest {
     @Test
     public void shouldCallMethodWithArgumentsAndConvertReturn() throws IOException, ServletException {
         String name = UUID.randomUUID().toString();
-        FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/api", null);
-        request.setParameter("name", name);
+        FakeServletRequest request = container.newRequest("GET", null);
+        request.addParameter("name", name);
 
         FakeServletResponse response = request.service(servlet);
 
@@ -161,67 +151,57 @@ public class ApiServletTest {
     }
 
     @Test
-    public void shouldOutputErrorToResponse() throws IOException {
-        when(requestMock.getMethod()).thenReturn("GET");
-        when(requestMock.getPathInfo()).thenReturn("/error");
+    public void shouldOutputErrorToResponse() throws IOException, ServletException {
+        FakeServletRequest request = container.newRequest("GET", "/error");
 
-        servlet.service(requestMock, responseMock);
-        verify(responseMock).sendError(401, "You are not authorized");
+        FakeServletResponse response = request.service(servlet);
+        assertThat(response.getStatus()).isEqualTo(401);
+        assertThat(response.getStatusMessage()).isEqualTo("You are not authorized");
     }
 
     @Test
     public void shouldGive404OnUnknownAction() throws IOException, ServletException {
-        FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/api", "/missing");
+        FakeServletRequest request = container.newRequest("GET", "/missing");
         expectedLogEvents.expectPattern(ApiControllerRouteMap.class, Level.INFO, "No route for {}. Routes {}");
         FakeServletResponse response = request.service(servlet);
         assertThat(response.getStatus()).isEqualTo(404);
     }
 
     @Test
-    public void shouldDecodePathParams() throws IOException {
+    public void shouldDecodePathParams() throws IOException, ServletException {
         UUID userId = UUID.randomUUID();
-        when(requestMock.getMethod()).thenReturn("GET");
-        when(requestMock.getPathInfo()).thenReturn("/user/" + userId + "/message/abc");
-        servlet.service(requestMock, responseMock);
-        verify(responseMock).sendRedirect("https://messages.example.com/?user=" + userId + "&message=abc");
+        FakeServletRequest request = container.newRequest("GET", "/user/" + userId + "/message/abc");
+        FakeServletResponse response = request.service(servlet);
+        assertThat(response.getHeader("Location")).isEqualTo("https://messages.example.com/?user=" + userId + "&message=abc");
     }
 
     @Test
-    public void shouldSendRedirect() throws IOException {
-        when(requestMock.getScheme()).thenReturn("https");
-        when(requestMock.getServerName()).thenReturn("messages.example.com");
-        when(requestMock.getServerPort()).thenReturn(443);
-        when(requestMock.getContextPath()).thenReturn("");
-        when(requestMock.getServletPath()).thenReturn("");
-        when(requestMock.getMethod()).thenReturn("GET");
-        when(requestMock.getPathInfo()).thenReturn("/redirect");
-        servlet.service(requestMock, responseMock);
-        verify(responseMock).sendRedirect("/login");
+    public void shouldSendRedirect() throws IOException, ServletException {
+        FakeServletRequest request = container.newRequest("GET", "/redirect");
+        FakeServletResponse response = request.service(servlet);
+        assertThat(response.getStatus()).isEqualTo(302);
+        assertThat(response.getHeader("Location")).isEqualTo(container.getContextRoot() + "/login");
     }
 
     @Test
-    public void shouldPostJson() throws IOException {
-        when(requestMock.getMethod()).thenReturn("POST");
-        when(requestMock.getPathInfo()).thenReturn("/postMethod");
-
+    public void shouldPostJson() throws IOException, ServletException {
+        FakeServletRequest request = container.newRequest("POST", "/postMethod");
         JsonObject requestObject = new JsonObject()
                 .put("foo", "bar")
                 .put("list", Arrays.asList("a", "b", "c"));
-        when(requestMock.getReader())
-            .thenReturn(new BufferedReader(new StringReader(requestObject.toIndentedJson(" "))));
-        servlet.service(requestMock, responseMock);
-
+        request.setRequestBody(requestObject.toIndentedJson(" "));
+        FakeServletResponse response = request.service(servlet);
         assertThat(postedBody).isEqualTo(requestObject);
     }
 
     @Test
     public void shouldGive400OnMalformedJson() throws IOException, ServletException {
-        FakeServletRequest request = new FakeServletRequest("POST", contextRoot, "/api", "/postMethod");
+        FakeServletRequest request = container.newRequest("POST", "/postMethod");
 
         request.setRequestBody("This is not JSON!");
 
         expectedLogEvents.expect(ApiControllerAction.class, Level.WARN,
-                "While processing ServletHttpExchange[POST " + contextRoot + "/api/postMethod] arguments for ApiControllerMethodAction{POST /postMethod => ExampleController.postAction(JsonObject)}");
+                "While processing ServletHttpExchange[POST " + container.getServletPath() + "/postMethod] arguments for ApiControllerMethodAction{POST /postMethod => ExampleController.postAction(JsonObject)}");
         FakeServletResponse response = request.service(servlet);
 
         assertThat(response.getStatus()).isEqualTo(400);
@@ -230,67 +210,65 @@ public class ApiServletTest {
 
     @Test
     public void shouldCallWithOptionalParameter() throws IOException, ServletException {
-        FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/api", "/hello");
+        FakeServletRequest request = container.newRequest("GET", "/hello");
 
         assertThat(admin).isNull();
         FakeServletResponse response = request.service(servlet);
         assertThat(admin).isEmpty();
 
-        request.setParameter("admin", "true");
+        request.addParameter("admin", "true");
         servlet.service(request, response);
         assertThat(admin).hasValue(true);
     }
 
 
     @Test
-    public void shouldCallWithRequiredInt() throws IOException {
-        when(requestMock.getMethod()).thenReturn("GET");
-        when(requestMock.getPathInfo()).thenReturn("/goodbye");
-
-        when(requestMock.getParameter("amount")).thenReturn("123");
-        servlet.service(requestMock, responseMock);
+    public void shouldCallWithRequiredInt() throws IOException, ServletException {
+        FakeServletRequest request = container.newRequest("GET", "/goodbye");
+        request.addParameter("amount", "123");
+        request.service(servlet);
         assertThat(amount).isEqualTo(123);
     }
 
     @Test
     public void shouldGive400OnParameterConversion() throws IOException, ServletException {
-        FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/api", "/goodbye");
-        request.setParameter("amount", "one");
+        FakeServletRequest request = container.newRequest("GET", "/goodbye");
+        request.addParameter("amount", "one");
 
         FakeServletResponse response = request.service(servlet);
 
         assertThat(response.getStatus()).isEqualTo(400);
-        assertThat(response.getStatusMessage()).isEqualTo("Could not convert amount=one to int");
+        assertThat(response.getStatusMessage()).isEqualTo("Could not convert amount=[one] to int");
     }
 
     @Test
     public void shouldGive400OnInvalidUuidConversion() throws IOException, ServletException {
-        FakeServletRequest request = new FakeServletRequest("POST", contextRoot, "/api", "/withUuid");
-        request.setParameter("uuid", "Not an uuid");
+        FakeServletRequest request = container.newRequest("POST", "/withUuid");
+        request.addParameter("uuid", "Not an uuid");
 
         expectedLogEvents.expect(ApiControllerAction.class, Level.DEBUG,
-                "While processing ServletHttpExchange[POST " + contextRoot + "/api/withUuid?uuid=Not+an+uuid]" +
+                "While processing ServletHttpExchange[POST " + container.getServletPath() + "/withUuid?uuid=Not+an+uuid]" +
                 " arguments to ApiControllerMethodAction{POST /withUuid => ControllerWithTypedParameters.methodWithUuid(UUID)}: " +
-                new HttpRequestException("Could not convert uuid=Not an uuid to java.util.UUID"));
+                new HttpRequestException("Could not convert uuid=[Not an uuid] to java.util.UUID"));
         FakeServletResponse response = request.service(servlet);
 
         assertThat(response.getStatus()).isEqualTo(400);
-        assertThat(response.getStatusMessage()).contains("Could not convert uuid=Not an uuid to java.util.UUID");
+        assertThat(response.getStatusMessage()).contains("Could not convert uuid=[Not an uuid] to java.util.UUID");
     }
 
     @Test
     public void shouldGive400OnInvalidLongConversion() throws IOException, ServletException {
-        FakeServletRequest request = new FakeServletRequest("POST", contextRoot, "/api", "/withLong");
-        request.setParameter("longValue", "one hundred");
+        FakeServletRequest request = container.newRequest("POST", "/withLong");
+        request.addParameter("longValue", "one hundred");
 
         expectedLogEvents.expect(ApiControllerAction.class, Level.DEBUG,
-                "While processing ServletHttpExchange[POST " + contextRoot + "/api/withLong?longValue=one+hundred] arguments to " +
+                "While processing ServletHttpExchange[POST " + container.getServletPath() + "/withLong?longValue=one+hundred] arguments to " +
                 "ApiControllerMethodAction{POST /withLong => ControllerWithTypedParameters.methodWithLong(long)}: " +
-                new HttpRequestException("Could not convert longValue=one hundred to long"));
+                new HttpRequestException("Could not convert longValue=[one hundred] to long"));
         FakeServletResponse response = request.service(servlet);
 
         assertThat(response.getStatus()).isEqualTo(400);
-        assertThat(response.getStatusMessage()).contains("Could not convert longValue=one hundred to long");
+        assertThat(response.getStatusMessage()).contains("Could not convert longValue=[one hundred] to long");
     }
 
     @Rule
@@ -298,24 +276,24 @@ public class ApiServletTest {
 
     @Test
     public void shouldGive400OnInvalidEnumConversion() throws IOException, ServletException {
-        FakeServletRequest request = new FakeServletRequest("POST", contextRoot, "/api", "/withEnum");
-        request.setParameter("enumValue", "unknown");
+        FakeServletRequest request = container.newRequest("POST", "/withEnum");
+        request.addParameter("enumValue", "unknown");
 
         expectedLogEvents.expect(ApiControllerAction.class, Level.DEBUG,
-                "While processing ServletHttpExchange[POST " + contextRoot + "/api/withEnum?enumValue=unknown] arguments to " +
+                "While processing ServletHttpExchange[POST " + container.getServletPath() + "/withEnum?enumValue=unknown] arguments to " +
                 "ApiControllerMethodAction{POST /withEnum => ControllerWithTypedParameters.methodWithEnum(ElementType)}: " +
-                new HttpRequestException("Could not convert enumValue=unknown to java.lang.annotation.ElementType"));
+                new HttpRequestException("Could not convert enumValue=[unknown] to java.lang.annotation.ElementType"));
         FakeServletResponse response = request.service(servlet);
 
         assertThat(response.getStatus()).isEqualTo(400);
-        assertThat(response.getStatusMessage()).contains("Could not convert enumValue=unknown to java.lang.annotation.ElementType");
+        assertThat(response.getStatusMessage()).contains("Could not convert enumValue=[unknown] to java.lang.annotation.ElementType");
     }
 
     @Test
     public void shouldRequireNonOptionalParameter() throws IOException, ServletException {
-        FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/api", "/goodbye");
+        FakeServletRequest request = container.newRequest("GET", "/goodbye");
         expectedLogEvents.expect(ApiControllerAction.class, Level.DEBUG,
-                "While processing ServletHttpExchange[GET " + contextRoot + "/api/goodbye] arguments to " +
+                "While processing ServletHttpExchange[GET " + container.getServletPath() + "/goodbye] arguments to " +
                 "ApiControllerMethodAction{GET /goodbye => ControllerWithTypedParameters.methodWithRequiredInt(int)}: " +
                 new HttpRequestException("Missing required parameter amount"));
         FakeServletResponse response = request.service(servlet);
@@ -325,8 +303,8 @@ public class ApiServletTest {
 
     @Test
     public void shouldReportParameterConversionFailure() throws IOException, ServletException {
-        FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/api", "/goodbye");
-        request.setParameter("amount", "one");
+        FakeServletRequest request = container.newRequest("GET", "/goodbye");
+        request.addParameter("amount", "one");
 
         expectedLogEvents.expectMatch(expect -> expect
                 .level(Level.DEBUG).logger(ApiControllerAction.class)
@@ -334,68 +312,44 @@ public class ApiServletTest {
         );
         FakeServletResponse response = request.service(servlet);
         assertThat(response.getStatus()).isEqualTo(400);
-        assertThat(response.getStatusMessage()).isEqualTo("Could not convert amount=one to int");
+        assertThat(response.getStatusMessage()).isEqualTo("Could not convert amount=[one] to int");
     }
 
     @Test
-    public void shouldSetSessionParameters() throws IOException {
-        when(requestMock.getMethod()).thenReturn("POST");
-        when(requestMock.getPathInfo()).thenReturn("/setLoggedInUser");
-
-        HttpSession mockSession = Mockito.mock(HttpSession.class);
-        when(requestMock.getSession(Mockito.anyBoolean())).thenReturn(mockSession);
-
-        servlet.service(requestMock, responseMock);
-        verify(mockSession).setAttribute("username", "Alice Bobson");
+    public void shouldSetSessionParameters() throws IOException, ServletException {
+        FakeServletRequest request = container.newRequest("POST", "/setLoggedInUser");
+        FakeServletResponse response = request.service(servlet);
+        assertThat(request.getSession().getAttribute("username")).isEqualTo("Alice Bobson");
     }
 
     @Test
-    public void shouldRejectUnauthenticedUsersFromRestrictedOperation() throws IOException {
-        when(requestMock.getMethod()).thenReturn("GET");
-        when(requestMock.getPathInfo()).thenReturn("/restricted");
-        servlet.service(requestMock, responseMock);
+    public void shouldRejectUnauthenticedUsersFromRestrictedOperation() throws IOException, ServletException {
+        FakeServletRequest request = container.newRequest("GET", "/restricted");
 
-        verify(responseMock).setStatus(401);
-        verify(responseMock).setContentType("application/json");
-        verify(responseMock).getCharacterEncoding();
-        verify(responseMock).setCharacterEncoding(null);
-        verify(responseMock).getWriter();
-        assertThat(JsonObject.parse(responseBody.toString()).requiredString("message"))
+        FakeServletResponse response = request.service(servlet);
+        assertThat(response.getStatus()).isEqualTo(401);
+        assertThat(response.getContentType()).isEqualTo("application/json");
+        assertThat(JsonObject.parse(response.getBodyString()).requiredString("message"))
                 .isEqualTo("Login required");
     }
 
     @Test
-    public void shouldAllowUserWithCorrectRole() throws IOException {
-        when(requestMock.getRemoteUser()).thenReturn("good user");
-        when(requestMock.isUserInRole("admin")).thenReturn(true);
-
-        when(requestMock.getMethod()).thenReturn("GET");
-        when(requestMock.getPathInfo()).thenReturn("/restricted");
-        servlet.service(requestMock, responseMock);
-
-        verify(responseMock).setContentType("application/json");
-        verify(responseMock).getCharacterEncoding();
-        verify(responseMock).setCharacterEncoding(null);
-        verify(responseMock).getWriter();
-        assertThat(JsonObject.parse(responseBody.toString()).requiredString("message"))
+    public void shouldAllowUserWithCorrectRole() throws IOException, ServletException {
+        FakeServletRequest request = container.newRequest("GET", "/restricted");
+        request.setUser("good user", Collections.singletonList("admin"));
+        FakeServletResponse response = request.service(servlet);
+        assertThat(response.getContentType()).isEqualTo("application/json");
+        assertThat(JsonObject.parse(response.getBodyString()).requiredString("message"))
                 .isEqualTo("you're in!");
     }
 
     @Test
-    public void shouldRejectUserWithoutCorrectRole() throws IOException {
-        when(requestMock.getRemoteUser()).thenReturn("silly user");
-        when(requestMock.isUserInRole("guest")).thenReturn(false);
-        when(requestMock.getMethod()).thenReturn("GET");
-        when(requestMock.getPathInfo()).thenReturn("/restricted");
-        servlet.service(requestMock, responseMock);
-
-        verify(responseMock).setStatus(403);
-        verify(responseMock).setContentType("application/json");
-        verify(responseMock).getCharacterEncoding();
-        verify(responseMock).setCharacterEncoding(null);
-        verify(responseMock).getWriter();
-        verifyNoMoreInteractions();
-        assertThat(JsonObject.parse(responseBody.toString()).requiredString("message"))
+    public void shouldRejectUserWithoutCorrectRole() throws IOException, ServletException {
+        FakeServletRequest request = container.newRequest("GET", "/restricted");
+        request.setUser("silly user", Collections.emptyList());
+        FakeServletResponse response = request.service(servlet);
+        assertThat(response.getContentType()).isEqualTo("application/json");
+        assertThat(JsonObject.parse(response.getBodyString()).requiredString("message"))
                 .isEqualTo("Insufficient permissions");
     }
 
@@ -419,16 +373,8 @@ public class ApiServletTest {
 
 
     @Before
-    public void setupRequest() throws IOException, ServletException {
+    public void setupRequest() throws ServletException {
         servlet.registerControllers(new ExampleController(), new ControllerWithTypedParameters());
         servlet.init(null);
-
-        when(responseMock.getWriter()).thenReturn(new PrintWriter(responseBody));
-        contextRoot = new URL("http://example.com/root");
-    }
-
-    @After
-    public void verifyNoMoreInteractions() {
-        Mockito.verifyNoMoreInteractions(responseMock);
     }
 }

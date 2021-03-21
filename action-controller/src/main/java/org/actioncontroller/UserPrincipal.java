@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.Type;
 import java.util.Optional;
 
 import static java.lang.annotation.ElementType.PARAMETER;
@@ -31,12 +32,12 @@ public @interface UserPrincipal {
         @Override
         public HttpParameterMapper create(UserPrincipal annotation, Parameter parameter, ApiControllerContext context) {
             if (parameter.getType() == Optional.class) {
-                Class<?> targetType = TypesUtil.typeParameter(parameter.getParameterizedType());
+                Type targetType = TypesUtil.typeParameter(parameter.getParameterizedType());
                 return exchange -> {
                     java.security.Principal principal = exchange.getUserPrincipal();
                     if (principal == null) {
                         return Optional.empty();
-                    } else if (targetType.isAssignableFrom(principal.getClass())) {
+                    } else if (TypesUtil.isInstanceOf(targetType, principal.getClass())) {
                         return Optional.of(principal);
                     } else {
                         logger.info("Can't assign {} to {}", principal, parameter.getType());

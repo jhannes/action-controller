@@ -54,7 +54,7 @@ public interface HttpParameterMapperFactory<ANNOTATION extends Annotation> exten
      */
     static HttpParameterMapper createMapper(
             Type parameterType,
-            BiFunction<ApiHttpExchange, Class<?>, Optional<Object>> getter,
+            BiFunction<ApiHttpExchange, Type, Optional<Object>> getter,
             BiConsumer<ApiHttpExchange, Object> setter,
             Supplier<Object> defaultValue
     ) {
@@ -63,7 +63,7 @@ public interface HttpParameterMapperFactory<ANNOTATION extends Annotation> exten
         if (type == Consumer.class) {
             return exchange -> (Consumer<?>) o -> setter.accept(exchange, o);
         } else if (type == AtomicReference.class) {
-            Class<?> typeParameter = TypesUtil.typeParameter(parameterType);
+            Type typeParameter = TypesUtil.typeParameter(parameterType);
             return new HttpParameterMapper() {
                 @Override
                 public Object apply(ApiHttpExchange exchange) {
@@ -76,7 +76,7 @@ public interface HttpParameterMapperFactory<ANNOTATION extends Annotation> exten
                 }
             };
         } else if (optional) {
-            Class<?> typeParameter = TypesUtil.typeParameter(parameterType);
+            Type typeParameter = TypesUtil.typeParameter(parameterType);
             return exchange -> getter.apply(exchange, typeParameter);
         } else {
             return exchange -> getter.apply(exchange, type).orElseGet(defaultValue);
@@ -97,11 +97,11 @@ public interface HttpParameterMapperFactory<ANNOTATION extends Annotation> exten
     static HttpClientParameterMapper createClientMapper(
             Type parameterType,
             BiConsumer<ApiClientExchange, Object> exchangeWriter,
-            BiFunction<ApiClientExchange, Class<?>, Optional<Object>> exchangeReader
+            BiFunction<ApiClientExchange, Type, Optional<Object>> exchangeReader
     ) {
         Class<?> type = TypesUtil.getRawType(parameterType);
         if (type == Consumer.class) {
-            Class<?> typeParameter = TypesUtil.typeParameter(parameterType);
+            Type typeParameter = TypesUtil.typeParameter(parameterType);
             return (exchange, arg) -> {
                 if (arg != null) {
                     exchangeReader.apply(exchange, typeParameter)
@@ -109,7 +109,7 @@ public interface HttpParameterMapperFactory<ANNOTATION extends Annotation> exten
                 }
             };
         } else if (type == AtomicReference.class) {
-            Class<?> typeParameter = TypesUtil.typeParameter(parameterType);
+            Type typeParameter = TypesUtil.typeParameter(parameterType);
             return (exchange, arg) -> {
                 if (arg != null) {
                     exchangeWriter.accept(exchange, ((AtomicReference<?>) arg).get());

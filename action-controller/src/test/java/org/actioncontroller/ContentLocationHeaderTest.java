@@ -75,7 +75,7 @@ public class ContentLocationHeaderTest {
     public void shouldFormatContentLocationPath() throws IOException, ServletException {
         UUID id = UUID.randomUUID();
         FakeServletRequest request = new FakeServletRequest("POST", contextRoot, "/actions", "/three");
-        request.setParameter("id", id.toString());
+        request.addParameter("id", id.toString());
         FakeServletResponse resp = request.service(servlet);
 
         resp.assertNoError();

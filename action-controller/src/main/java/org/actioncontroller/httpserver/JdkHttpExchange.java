@@ -20,7 +20,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Reader;
-import java.lang.reflect.Parameter;
 import java.net.HttpCookie;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -198,12 +197,12 @@ public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
     }
 
     @Override
-    public Object pathParam(String name, Parameter parameter) throws HttpActionException {
+    public String pathParam(String name) throws HttpActionException {
         String result = this.pathParams.get(name);
         if (result == null) {
             throw new HttpServerErrorException("Path parameter :" + name + " not matched");
         }
-        return ApiHttpExchange.convertTo(result, name, parameter);
+        return result;
     }
 
     @Override
@@ -238,8 +237,8 @@ public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
     }
 
     @Override
-    public Object getParameter(String name, Parameter parameter) {
-        return ApiHttpExchange.convertTo(getParameter(name), name, parameter);
+    public List<String> getParameters(String name) {
+        return this.parameters.get(name);
     }
 
     @Override

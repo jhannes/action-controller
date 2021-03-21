@@ -56,7 +56,7 @@ public @interface ContentBody {
             return new HttpClientReturnMapper() {
                 @Override
                 public Object getReturnValue(ApiClientExchange exchange) throws IOException {
-                    return ApiHttpExchange.convertParameterType(exchange.getResponseBody(), returnType);
+                    return ApiHttpExchange.convertRequestValue(exchange.getResponseBody(), returnType);
                 }
 
                 @Override

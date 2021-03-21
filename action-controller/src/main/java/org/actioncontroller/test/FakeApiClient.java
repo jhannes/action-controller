@@ -26,6 +26,7 @@ import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -139,7 +140,15 @@ public class FakeApiClient implements ApiClient {
 
         @Override
         public void setRequestParameter(String name, Object value) {
-            possiblyOptionalToString(value, s -> request.setParameter(name, s));
+            if (value instanceof Optional) {
+                ((Optional<?>) value).ifPresent(v -> setRequestParameter(name, v));
+            } else if (value instanceof Collection) {
+                for (Object o : ((Collection<?>) value)) {
+                    setRequestParameter(name, o);
+                }
+            } else {
+                request.addParameter(name, value.toString());
+            }
         }
 
         @Override

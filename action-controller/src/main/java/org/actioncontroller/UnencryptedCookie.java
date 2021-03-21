@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
 import java.lang.reflect.Parameter;
 import java.util.Objects;
 
-import static org.actioncontroller.meta.ApiHttpExchange.convertParameterType;
+import static org.actioncontroller.meta.ApiHttpExchange.convertRequestValue;
 
 /**
  * Maps the parameter to the specified HTTP request cookie, URL decoding and converting the type if necessary.
@@ -51,7 +51,7 @@ public @interface UnencryptedCookie {
             String name = annotation.value();
             return HttpParameterMapperFactory.createMapper(
                     parameter.getParameterizedType(),
-                    (exchange, type) -> exchange.getCookie(name).map(value -> convertParameterType(value, type)),
+                    (exchange, type) -> exchange.getCookie(name).map(value -> convertRequestValue(value, type)),
                     (exchange, o) -> exchange.setCookie(name, Objects.toString(o, null), annotation.secure(), annotation.isHttpOnly()),
                     () -> { throw new HttpRequestException("Missing cookie " + name); }
             );
@@ -66,7 +66,7 @@ public @interface UnencryptedCookie {
                         if (arg != null) exchange.addRequestCookie(name, arg);
                     },
                     (exchange, targetType) -> exchange.getResponseCookie(name)
-                                        .map(string -> convertParameterType(string, targetType))
+                                        .map(string -> convertRequestValue(string, targetType))
             );
         }
     }

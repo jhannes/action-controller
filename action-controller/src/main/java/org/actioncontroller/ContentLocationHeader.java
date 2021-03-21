@@ -63,7 +63,7 @@ public @interface ContentLocationHeader {
                     if (!matcher.matches()) {
                         throw new IllegalArgumentException("Expected content-location <" + relativePath + "> to match <" + annotation.value() + ">");
                     }
-                    return ApiHttpExchange.convertParameterType(matcher.group(1), returnType);
+                    return ApiHttpExchange.convertRequestValue(matcher.group(1), returnType);
                 };
             }
         }

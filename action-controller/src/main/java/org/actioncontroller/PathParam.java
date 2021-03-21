@@ -1,5 +1,6 @@
 package org.actioncontroller;
 
+import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpParameterMapper;
@@ -28,7 +29,7 @@ public @interface PathParam {
         @Override
         public HttpParameterMapper create(PathParam annotation, Parameter parameter, ApiControllerContext context) {
             String name = annotation.value();
-            return (exchange) -> exchange.pathParam(name, parameter);
+            return (exchange) -> ApiHttpExchange.convertRequestValue(exchange.pathParam(name), parameter.getParameterizedType());
         }
 
         @Override

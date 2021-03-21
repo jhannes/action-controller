@@ -64,7 +64,7 @@ public class AnnotationConfigurationTest {
                 } else {
                     return exchange ->  exchange.getCookie(name)
                             .map(cookie -> decrypt(decryptCipher, cookie))
-                            .map(string -> ApiHttpExchange.convertTo(string, name, parameter))
+                            .map(string -> ApiHttpExchange.convertRequestValue(string, parameter.getParameterizedType()))
                             .orElseThrow();
                 }
             }
@@ -100,7 +100,7 @@ public class AnnotationConfigurationTest {
             private HttpClientParameterMapper consumer(Parameter parameter, Function<ApiClientExchange, Optional<String>> f) {
                 Type targetType = TypesUtil.typeParameter(parameter.getParameterizedType());
                 return (exchange, arg) -> f.apply(exchange)
-                        .ifPresent(string -> ((Consumer)arg).accept(ApiHttpExchange.convertParameterType(string, targetType)));
+                        .ifPresent(string -> ((Consumer)arg).accept(ApiHttpExchange.convertRequestValue(string, targetType)));
             }
         }
     }

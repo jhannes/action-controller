@@ -60,7 +60,7 @@ public class ApiRequestErrorTest {
     @Test
     public void shouldReportErrorOnParameterMismatch() throws IOException, ServletException {
         FakeServletRequest request = new FakeServletRequest("GET", contextRoot, "/actions", "/hello");
-        request.setParameter("number", "hello");
+        request.addParameter("number", "hello");
 
         FakeServletResponse resp = request.service(servlet);
 

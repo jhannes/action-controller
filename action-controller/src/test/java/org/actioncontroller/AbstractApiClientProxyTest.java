@@ -14,12 +14,16 @@ import java.lang.annotation.RetentionPolicy;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -129,6 +133,23 @@ public abstract class AbstractApiClientProxyTest {
         @HttpHeader("X-Result")
         public String downcase(@HttpHeader("X-Input") String value) {
             return value.toLowerCase();
+        }
+
+        @GET("/lowercaseAll")
+        @ContentBody
+        public String downcaseAll(@RequestParam("value") Optional<List<String>> value) {
+            return value.orElse(new ArrayList<>()).stream()
+                    .map(String::toLowerCase).collect(Collectors.joining(", "));
+        }
+
+        @GET("/sum")
+        @ContentBody
+        public int sum(@RequestParam("values") Optional<List<Integer>> value) {
+            int sum = 0;
+            for (Integer num : value.orElse(new ArrayList<>())) {
+                sum += num;
+            }
+            return sum;
         }
 
         @POST("/reverseBytes")
@@ -243,6 +264,18 @@ public abstract class AbstractApiClientProxyTest {
         controllerClient.sendRedirect(contentLocation::set);
         assertThat(contentLocation.get()).isEqualTo(new URI("https://github.com/jhannes"));
     }
+    
+    @Test
+    public void shouldSupportMultipleArguments() {
+        assertThat(controllerClient.downcaseAll(Optional.of(Arrays.asList("A", "B", "c"))))
+                .isEqualTo("a, b, c");
+    }
+
+    @Test
+    public void shouldConvertMultipleArguments() {
+        assertThat(controllerClient.sum(Optional.of(Arrays.asList(1, 2, 3, 4))))
+                .isEqualTo(10);
+    }
 
     @Test
     public void shouldConvertUrl() {
@@ -260,8 +293,7 @@ public abstract class AbstractApiClientProxyTest {
         assertThatThrownBy(() -> controllerClient.explicitError())
                 .isEqualTo(new HttpClientException(403, "Forbidden", "You're not allowed to do this", null))
                 .satisfies(e -> assertThat(((HttpClientException) e).getResponseBody()).contains("You're not allowed to do this"))
-                .satisfies(e -> assertThat(((HttpClientException) e).getUrl().toString()).endsWith("/explicitError"))
-        ;
+                .satisfies(e -> assertThat(((HttpClientException) e).getUrl().toString()).endsWith("/explicitError"));
     }
 
     @Test

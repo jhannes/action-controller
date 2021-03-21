@@ -18,7 +18,7 @@ import java.lang.reflect.Type;
 import java.util.Objects;
 import java.util.Optional;
 
-import static org.actioncontroller.meta.ApiHttpExchange.convertParameterType;
+import static org.actioncontroller.meta.ApiHttpExchange.convertRequestValue;
 
 /**
  * When used on a parameter, maps the HTTP Request header to the parameter, converting the type if necessary.
@@ -43,7 +43,7 @@ public @interface HttpHeader {
             String name = annotation.value();
             return HttpParameterMapperFactory.createMapper(
                     parameter.getParameterizedType(),
-                    (exchange, type) -> exchange.getHeader(name).map(header -> convertParameterType(header, type)),
+                    (exchange, type) -> exchange.getHeader(name).map(header -> convertRequestValue(header, type)),
                     (exchange, o) -> exchange.setResponseHeader(annotation.value(), Objects.toString(o, null)),
                     () -> { throw new HttpRequestException("Missing required header " + name); }
             );
@@ -60,7 +60,7 @@ public @interface HttpHeader {
                     parameter.getParameterizedType(),
                     (exchange, o) -> exchange.setHeader(annotation.value(), o),
                     (exchange, type) -> Optional.ofNullable(exchange.getResponseHeader(annotation.value()))
-                        .map(value -> convertParameterType(value, type))
+                        .map(value -> convertRequestValue(value, type))
             );
         }
 

@@ -54,7 +54,7 @@ public @interface SendRedirect {
                 if (exchange.getResponseCode() < 300) {
                     throw new IllegalArgumentException("Expected redirect, but was " + exchange.getResponseCode());
                 }
-                return ApiHttpExchange.convertParameterType(exchange.getResponseHeader("Location"), returnType);
+                return ApiHttpExchange.convertRequestValue(exchange.getResponseHeader("Location"), returnType);
             };
         }
     }

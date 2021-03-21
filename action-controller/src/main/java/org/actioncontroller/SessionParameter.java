@@ -51,7 +51,11 @@ public @interface SessionParameter {
         public HttpParameterMapper create(SessionParameter annotation, Parameter parameter, ApiControllerContext context) {
             String name = annotation.value();
             if (name.isEmpty()) {
-                name = ApiHttpExchange.getTargetType(parameter).getTypeName();
+                if (parameter.getType() == Consumer.class || parameter.getType() == Optional.class) {
+                    name = TypesUtil.typeParameter(parameter.getParameterizedType()).getTypeName();
+                } else {
+                    name = parameter.getType().getTypeName();
+                }
             }
 
             if (parameter.getType() == Consumer.class) {

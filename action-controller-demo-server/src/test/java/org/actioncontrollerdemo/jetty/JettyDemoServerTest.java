@@ -4,7 +4,10 @@ import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.HttpURLConnectionApiClient;
 import org.actioncontrollerdemo.UserController;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.logevents.extend.junit.ExpectedLogEventsRule;
+import org.slf4j.event.Level;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -18,10 +21,14 @@ public class JettyDemoServerTest {
 
     private JettyDemoServer server;
     private HttpURLConnectionApiClient client;
+    
+    @Rule
+    public ExpectedLogEventsRule expectedLogEvents = new ExpectedLogEventsRule(Level.WARN);
 
     @Before
     public void setUp() throws Exception {
         server = new JettyDemoServer();
+        expectedLogEvents.expectPattern(JettyDemoServer.class, Level.WARN, "Listening on {}");
         server.startConnector(0);
         client = new HttpURLConnectionApiClient("http://localhost:" + server.getPort() + "/demo/api");
     }

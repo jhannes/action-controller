@@ -13,7 +13,7 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-webapp</artifactId>
-            <version>9.4.34.v20201102</version>
+            <version>10.0.1</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -28,17 +28,17 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-jmx</artifactId>
-            <version>9.4.34.v20201102</version>
+            <version>10.0.1</version>
         </dependency>
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-core</artifactId>
-            <version>4.1.12.1</version>
+            <version>4.1.18</version>
         </dependency>
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-servlets</artifactId>
-            <version>4.1.12.1</version>
+            <version>4.1.18</version>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>

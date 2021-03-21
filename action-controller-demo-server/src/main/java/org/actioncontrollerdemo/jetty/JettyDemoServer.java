@@ -6,6 +6,7 @@ import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.HandlerList;
+import org.eclipse.jetty.server.handler.MovedContextHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,8 +27,8 @@ public class JettyDemoServer {
         server.addConnector(connector);
         localhostName = InetAddress.getLocalHost().getHostAddress();
         HandlerList handlers = new HandlerList();
-        handlers.addHandler(new RedirectHandler("/", "/demo"));
         handlers.addHandler(createServletContext("/demo"));
+        handlers.addHandler(new MovedContextHandler(null, "/", "/demo"));
         server.setHandler(handlers);
         MBeanContainer mbeanContainer = new MBeanContainer(ManagementFactory.getPlatformMBeanServer());
         server.addBean(mbeanContainer);

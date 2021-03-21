@@ -51,8 +51,8 @@ public class ServletTest {
     @Test
     public void shouldServiceRequest() throws IOException, ServletException {
         FakeServletRequest request = new FakeServletRequest("GET", contextRootUrl, "/servlet", "/hello/world");
-        request.setParameter("firstName", "Jane");
-        request.setParameter("lastName", "Doe");
+        request.addParameter("firstName", "Jane");
+        request.addParameter("lastName", "Doe");
 
         FakeServletResponse response = request.service(servlet);
 

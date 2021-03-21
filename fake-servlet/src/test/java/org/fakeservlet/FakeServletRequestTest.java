@@ -4,6 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -14,20 +15,21 @@ public class FakeServletRequestTest {
 
     @Before
     public void setUp() throws Exception {
-        request = new FakeServletRequest("GET", new URL("http://example.com/demo"), "/servlet", null);
+        FakeServletContainer container = new FakeServletContainer("http://example.com/demo", "/servlet");
+        request = container.newRequest("GET", null);
     }
 
     @Test
     public void shouldReturnParameterValues() {
-        request.setParameter("theName", "the value");
+        request.addParameter("theName", "the value");
         assertThat(request.getParameterValues("theName")).isEqualTo(new String[] { "the value" });
         assertThat(request.getParameterValues("missing")).isNull();
     }
 
     @Test
     public void shouldReturnParameterMap() {
-        request.setParameter("first", "value1");
-        request.setParameter("second", "value2");
+        request.addParameter("first", "value1");
+        request.addParameter("second", "value2");
         assertThat(request.getParameterMap())
             .containsEntry("first", new String[] { "value1" })
             .containsEntry("second", new String[] { "value2" });
@@ -35,8 +37,8 @@ public class FakeServletRequestTest {
 
     @Test
     public void shouldReturnParameterNames() {
-        request.setParameter("one", "value1");
-        request.setParameter("another", "value1");
+        request.addParameter("one", "value1");
+        request.addParameter("another", "value1");
         assertThat(Collections.list(request.getParameterNames()))
                 .containsExactlyInAnyOrder("one", "another");
     }
@@ -60,5 +62,19 @@ public class FakeServletRequestTest {
         assertThat(Collections.list(request.getHeaders("X-My-Header")))
                 .containsOnlyOnce("First value", "Second value");
         assertThat(request.getIntHeader("Content-Length")).isEqualTo(301130);
+    }
+    
+    @Test
+    public void shouldReturnUser() {
+        request.setUser("username", Arrays.asList("reader", "writer"));
+        assertThat(request.getRemoteUser()).isEqualTo("username");
+        assertThat(request.isUserInRole("writer")).isTrue();
+        assertThat(request.isUserInRole("admin")).isFalse();
+    }
+
+    @Test
+    public void shouldReturnForNoUser() {
+        assertThat(request.getRemoteUser()).isNull();
+        assertThat(request.isUserInRole("writer")).isFalse();
     }
 }

@@ -49,12 +49,13 @@ public class FakeServletRequest implements HttpServletRequest {
     private String pathInfo;
 
     private final Map<String, List<String>> headers = new HashMap<>();
-    private final Map<String, String> parameters = new HashMap<>();
+    private final Map<String, List<String>> parameters = new HashMap<>();
     private HttpSession httpSession;
     private final Map<String, Object> attributes = new HashMap<>();
     private byte[] requestBody;
     private Principal userPrincipal;
     private final String protocol = "HTTP/1.1";
+    private List<String> userRoles = new ArrayList<>();
 
     /**
      * DANGER! Unfinished class! Implement methods as you go!
@@ -152,7 +153,7 @@ public class FakeServletRequest implements HttpServletRequest {
             return null;
         } else {
             return parameters.entrySet().stream()
-                    .map(e -> urlEncode(e.getKey()) + "=" + urlEncode(e.getValue()))
+                    .map(entry -> entry.getValue().stream().map(v -> urlEncode(entry.getKey()) + "=" + urlEncode(v)).collect(Collectors.joining("&")))
                     .collect(Collectors.joining("&"));
         }
     }
@@ -168,7 +169,7 @@ public class FakeServletRequest implements HttpServletRequest {
 
     @Override
     public boolean isUserInRole(String s) {
-        throw unimplemented();
+        return userRoles.contains(s);
     }
 
     @Override
@@ -353,7 +354,7 @@ public class FakeServletRequest implements HttpServletRequest {
 
     @Override
     public String getParameter(String s) {
-        return parameters.get(s);
+        return parameters.containsKey(s) ? parameters.get(s).get(0) : null;
     }
 
     @Override
@@ -363,13 +364,13 @@ public class FakeServletRequest implements HttpServletRequest {
 
     @Override
     public String[] getParameterValues(String s) {
-        return getParameter(s) != null ? new String[] { getParameter(s) } : null;
+        return parameters.containsKey(s) ? parameters.get(s).toArray(new String[0]) : null;
     }
 
     @Override
     public Map<String, String[]> getParameterMap() {
         HashMap<String, String[]> map = new HashMap<>();
-        parameters.forEach((k,v) -> map.put(k, new String[] { v }));
+        parameters.forEach((k,v) -> map.put(k, getParameterValues(k)));
         return map;
     }
 
@@ -502,8 +503,8 @@ public class FakeServletRequest implements HttpServletRequest {
         throw unimplemented();
     }
 
-    public void setParameter(String key, String value) {
-        parameters.put(key, value);
+    public void addParameter(String key, String value) {
+        parameters.computeIfAbsent(key, n -> new ArrayList<>()).add(value);
     }
 
     public void setSession(HttpSession httpSession) {
@@ -534,5 +535,10 @@ public class FakeServletRequest implements HttpServletRequest {
         FakeServletResponse response = new FakeServletResponse(this);
         servlet.service(this, response);
         return response;
+    }
+
+    public void setUser(String username, List<String> userRoles) {
+        setUserPrincipal(() -> username);
+        this.userRoles = userRoles;
     }
 }

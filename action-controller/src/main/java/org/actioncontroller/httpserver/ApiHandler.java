@@ -6,7 +6,7 @@ import org.actioncontroller.ApiControllerContext;
 import org.actioncontroller.TimerRegistry;
 import org.actioncontroller.UserContext;
 import org.actioncontroller.meta.ApiHttpExchange;
-import org.actioncontroller.servlet.ActionControllerConfigurationCompositeException;
+import org.actioncontroller.ActionControllerConfigurationCompositeException;
 import org.actioncontroller.ApiControllerActionRouter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

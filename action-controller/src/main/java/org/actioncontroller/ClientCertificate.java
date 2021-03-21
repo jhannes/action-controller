@@ -6,7 +6,6 @@ import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapperFactory;
 import org.actioncontroller.meta.HttpParameterMapping;
-import org.actioncontroller.servlet.ActionControllerConfigurationException;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

@@ -2,8 +2,6 @@ package org.actioncontroller;
 
 import org.actioncontroller.jmx.ApiControllerActionMXBeanAdaptor;
 import org.actioncontroller.meta.ApiHttpExchange;
-import org.actioncontroller.servlet.ActionControllerConfigurationCompositeException;
-import org.actioncontroller.servlet.ActionControllerConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,4 +1,4 @@
-package org.actioncontroller.servlet;
+package org.actioncontroller;
 
 /**
  * Thrown when something goes wrong during setup of a controller or the corresponding mapping.

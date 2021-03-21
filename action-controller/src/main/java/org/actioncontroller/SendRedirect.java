@@ -5,7 +5,6 @@ import org.actioncontroller.meta.HttpClientReturnMapper;
 import org.actioncontroller.meta.HttpReturnMapper;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
-import org.actioncontroller.servlet.ActionControllerConfigurationException;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;

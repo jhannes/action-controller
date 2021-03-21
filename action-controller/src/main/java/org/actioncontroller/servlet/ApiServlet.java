@@ -1,5 +1,7 @@
 package org.actioncontroller.servlet;
 
+import org.actioncontroller.ActionControllerConfigurationCompositeException;
+import org.actioncontroller.ActionControllerConfigurationException;
 import org.actioncontroller.ApiControllerActionRouter;
 import org.actioncontroller.ApiControllerContext;
 import org.actioncontroller.TimerRegistry;

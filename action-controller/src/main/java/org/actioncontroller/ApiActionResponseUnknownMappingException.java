@@ -1,7 +1,5 @@
 package org.actioncontroller;
 
-import org.actioncontroller.servlet.ActionControllerConfigurationException;
-
 import java.lang.reflect.Method;
 
 /**

@@ -10,7 +10,6 @@ import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
 import org.actioncontroller.meta.HttpReturnMapper;
 import org.actioncontroller.servlet.ApiServlet;
-import org.actioncontroller.servlet.ActionControllerConfigurationException;
 import org.actioncontroller.test.FakeApiClient;
 import org.junit.Rule;
 import org.junit.Test;

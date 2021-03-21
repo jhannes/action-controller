@@ -7,7 +7,7 @@ import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapperFactory;
 import org.actioncontroller.meta.HttpParameterMapping;
-import org.actioncontroller.servlet.ActionControllerConfigurationException;
+import org.actioncontroller.ActionControllerConfigurationException;
 import org.jsonbuddy.JsonNode;
 import org.jsonbuddy.JsonObject;
 import org.jsonbuddy.pojo.JsonGenerator;

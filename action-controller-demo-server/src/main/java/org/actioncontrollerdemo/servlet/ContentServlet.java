@@ -1,5 +1,7 @@
 package org.actioncontrollerdemo.servlet;
 
+import org.actioncontroller.ExceptionUtil;
+
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -16,36 +18,33 @@ import java.util.List;
 
 public class ContentServlet extends HttpServlet {
 
-    private String resourceBase;
+    private final URL baseResource;
 
     public ContentServlet(String resourceBase) {
-        this.resourceBase = resourceBase;
+        // TODO: If resourceBase doesn't start with /, things go wrong
+        // TODO: If resourceBase doesn't end with /, parent directory is used
+        URL baseResourceTmp = getClass().getResource(resourceBase);
+        if (baseResourceTmp == null) {
+            throw new IllegalArgumentException("Could not find resource " + resourceBase);
+        }
+        if (baseResourceTmp.toString().contains("target/classes")) {
+            try {
+                URL sourceResources = new URL(baseResourceTmp.toString().replaceAll("target/classes", "src/main/resources"));
+                sourceResources.openStream();
+                baseResourceTmp = sourceResources;
+            } catch (FileNotFoundException ignored) {
+            } catch (IOException e) {
+                throw ExceptionUtil.softenException(e);
+            }
+        }
+        baseResource = baseResourceTmp;
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        URL baseResource = getClass().getResource(resourceBase);
-
-        if (baseResource.toString().contains("target/classes")) {
-            URL sourceResources = new URL(baseResource.toString().replaceAll("target/classes", "src/main/resources"));
-            try {
-                sourceResources.openStream();
-                baseResource = sourceResources;
-            } catch (FileNotFoundException ignored) {
-            }
-        }
-
-        List<String> welcomeFiles = Collections.singletonList("index.html");
-
         URL resource = new URL(baseResource, req.getPathInfo().substring(1));
-        if (!isDirectory(resource)) {
-            resp.setContentType(getServletContext().getMimeType(req.getPathInfo()));
-            try {
-                resource.openStream().transferTo(resp.getOutputStream());
-            } catch (FileNotFoundException ignored) {
-                resp.sendError(404);
-            }
-        } else {
+        if (isDirectory(resource)) {
+            List<String> welcomeFiles = Collections.singletonList("index.html");
             for (String welcomeFile : welcomeFiles) {
                 try {
                     InputStream inputStream = new URL(resource, welcomeFile).openStream();
@@ -56,9 +55,15 @@ public class ContentServlet extends HttpServlet {
                 }
             }
             try {
-                resp.setContentType(getServletContext().getMimeType(req.getPathInfo()));
                 resource.openStream().transferTo(resp.getOutputStream());
             } catch (IOException e) {
+                resp.sendError(404);
+            }
+        } else {
+            try {
+                resp.setContentType(getServletContext().getMimeType(req.getPathInfo()));
+                resource.openStream().transferTo(resp.getOutputStream());
+            } catch (FileNotFoundException ignored) {
                 resp.sendError(404);
             }
         }

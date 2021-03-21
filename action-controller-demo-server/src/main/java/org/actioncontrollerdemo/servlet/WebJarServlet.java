@@ -25,13 +25,18 @@ public class WebJarServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         URL resource = getClass().getResource(resourcePrefix + req.getPathInfo());
-        if (resource != null) {
-            resp.setContentType(getServletContext().getMimeType(req.getPathInfo()));
-            try (InputStream inputStream = resource.openStream()) {
-                inputStream.transferTo(resp.getOutputStream());
-            }
-        } else {
+        if (resource == null) {
             resp.sendError(404, req.getPathInfo());
+            return;
+        }
+
+        if (resource.getFile().endsWith("/")) {
+            resource = new URL(resource, "index.html");
+        }
+
+        resp.setContentType(getServletContext().getMimeType(req.getPathInfo()));
+        try (InputStream inputStream = resource.openStream()) {
+            inputStream.transferTo(resp.getOutputStream());
         }
     }
 }

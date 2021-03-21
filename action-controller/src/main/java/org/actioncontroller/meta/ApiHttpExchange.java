@@ -79,7 +79,7 @@ public interface ApiHttpExchange {
     /**
      * Returns the specified query string of the requested url for a get request or x-www-form-urlencoded body
      * parameter for a POST or PUT request. For example if the client requests
-     * GET <code>https://example.com:7443/app/api/hello/world?greeting=Hello+There&greeting=Hi</code>
+     * GET <code>https://example.com:7443/app/api/hello/world?greeting=Hello+There&amp;greeting=Hi</code>
      * <code>getParameter("greeting")</code> returns <code>["Hello There", "Hi"]</code>.
      *
      * @param name The query parameter name.

@@ -2,6 +2,7 @@ org.actioncontroller
 org.actioncontroller.client
 org.actioncontroller.config
 org.actioncontroller.httpserver
+org.actioncontroller.jakarta
 org.actioncontroller.jmx
 org.actioncontroller.json
 org.actioncontroller.meta

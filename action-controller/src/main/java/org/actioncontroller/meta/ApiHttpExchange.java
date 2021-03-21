@@ -88,7 +88,9 @@ public interface ApiHttpExchange {
 
     String getParameter(String name);
 
-    boolean hasParameter(String name);
+    default boolean hasParameter(String name) {
+        return getParameter(name) != null;
+    }
 
     void write(String contentType, WriterConsumer consumer) throws IOException;
 

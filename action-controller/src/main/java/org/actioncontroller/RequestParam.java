@@ -91,8 +91,6 @@ public @interface RequestParam {
             }
         }
 
-
-
         @Override
         public HttpClientParameterMapper clientParameterMapper(RequestParam annotation, Parameter parameter) {
             String name = annotation.value();
@@ -104,7 +102,7 @@ public @interface RequestParam {
         @Override
         public HttpParameterMapper create(RemoteUser annotation, Parameter parameter, ApiControllerContext context) {
             return ApiHttpExchange
-                    .withOptional(parameter, exchange -> ((ServletHttpExchange) exchange).getRequest().getRemoteUser());
+                    .withOptional(parameter, exchange -> exchange.getUserPrincipal() != null ? exchange.getUserPrincipal().getName() : null);
         }
 
         @Override

@@ -248,11 +248,6 @@ public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
     }
 
     @Override
-    public boolean hasParameter(String name) {
-        return this.parameters.containsKey(name);
-    }
-
-    @Override
     public void setCookie(
             String name,
             String value,

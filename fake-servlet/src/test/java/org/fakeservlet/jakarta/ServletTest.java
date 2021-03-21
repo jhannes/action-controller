@@ -1,16 +1,14 @@
-package org.fakeservlet;
+package org.fakeservlet.jakarta;
 
-import org.fakeservlet.jakarta.FakeJakartaContainer;
 import org.junit.Test;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ServletTest {
 
     private final TestServlet servlet = new TestServlet();
-    private final FakeServletContainer container = new FakeServletContainer("https://example.com/foo", "/servlet");
+    private final FakeJakartaContainer container = new FakeJakartaContainer("https://example.com/foo", "/servlet");
 
     private static class TestServlet extends HttpServlet {
 
@@ -48,11 +46,11 @@ public class ServletTest {
     
     @Test
     public void shouldServiceRequest() throws IOException, ServletException {
-        FakeServletRequest request = container.newRequest("GET", "/hello/world");
+        FakeJakartaRequest request = container.newRequest("GET", "/hello/world");
         request.addParameter("firstName", "Jane");
         request.addParameter("lastName", "Doe");
 
-        FakeServletResponse response = request.service(servlet);
+        FakeJakartaResponse response = request.service(servlet);
 
         assertThat(response.getHeader("query")).isEqualTo("firstName=Jane&lastName=Doe");
         assertThat(response.getHeader("port")).isEqualTo("443");
@@ -63,17 +61,17 @@ public class ServletTest {
     
     @Test
     public void shouldReadPort() throws IOException, ServletException {
-        FakeServletRequest request = new FakeServletRequest("GET", new URL("http://example.com:8080/foo"), "/servlet", null);
-        FakeServletResponse response = request.service(servlet);
+        FakeJakartaRequest request = new FakeJakartaRequest("GET", new URL("http://example.com:8080/foo"), "/servlet", null);
+        FakeJakartaResponse response = request.service(servlet);
         assertThat(response.getHeader("port")).isEqualTo("8080");
         assertThat(response.getBodyString()).isEqualTo("http://example.com:8080/foo/servlet");
     }
 
     @Test
     public void shouldSetCookie() throws IOException, ServletException {
-        FakeServletRequest request = container.newRequest("POST", null);
+        FakeJakartaRequest request = container.newRequest("POST", null);
         request.setUserPrincipal(() -> "User name");
-        FakeServletResponse response = request.service(servlet);
+        FakeJakartaResponse response = request.service(servlet);
         
         assertThat(response.getCookie("user")).isEqualTo("User name");
         assertThat(response.getHeader("location")).isEqualTo(container.getContextRoot() + "/login");
@@ -82,16 +80,16 @@ public class ServletTest {
 
     @Test
     public void shouldPutBody() throws ServletException, IOException {
-        FakeServletRequest request = container.newRequest("PUT", null);
+        FakeJakartaRequest request = container.newRequest("PUT", null);
         request.setRequestBody("4\n4\n5");
-        FakeServletResponse response = request.service(servlet);
+        FakeJakartaResponse response = request.service(servlet);
         assertThat(response.getHeader("SUM")).isEqualTo("13");
     }
     
     @Test
     public void shouldReturn405OnUnsupportedMethods() throws ServletException, IOException {
-        FakeServletRequest request = container.newRequest("DELETE", null);
-        FakeServletResponse response = request.service(servlet);
+        FakeJakartaRequest request = container.newRequest("DELETE", null);
+        FakeJakartaResponse response = request.service(servlet);
         assertThat(response.getStatus()).isEqualTo(405);
     }
 }

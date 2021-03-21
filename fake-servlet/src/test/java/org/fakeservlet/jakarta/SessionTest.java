@@ -1,13 +1,12 @@
-package org.fakeservlet;
+package org.fakeservlet.jakarta;
 
-import org.fakeservlet.jakarta.FakeJakartaRequest;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.junit.Test;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.Collections;
 
@@ -16,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class SessionTest {
 
     private final TestServlet servlet = new TestServlet();
-    private final FakeServletContainer container = new FakeServletContainer("https://example.com/foo", "/servlet");
+    private final FakeJakartaContainer container = new FakeJakartaContainer("https://example.com/foo", "/servlet");
 
     private static class TestServlet extends HttpServlet {
 
@@ -42,32 +41,32 @@ public class SessionTest {
     
     @Test
     public void shouldAddToSession() throws IOException, ServletException {
-        FakeServletRequest postRequest = container.newRequest("POST", null);
+        FakeJakartaRequest postRequest = container.newRequest("POST", null);
         postRequest.setAttribute("sessionKey", "sessionValue");
         postRequest.service(servlet);
 
         HttpSession session = postRequest.getSession();
 
-        FakeServletRequest getRequest = container.newRequest("GET", "/sessionKey");
+        FakeJakartaRequest getRequest = container.newRequest("GET", "/sessionKey");
         getRequest.setSession(session);
-        FakeServletResponse response = getRequest.service(servlet);
+        FakeJakartaResponse response = getRequest.service(servlet);
         assertThat(response.getBodyString()).isEqualTo("sessionKey=sessionValue");
     }
 
     @Test
     public void shouldDeleteSession() throws ServletException, IOException {
-        FakeServletRequest postRequest = container.newRequest("POST", null);
+        FakeJakartaRequest postRequest = container.newRequest("POST", null);
         postRequest.setAttribute("sessionKey", "sessionValue");
         postRequest.service(servlet);
 
         HttpSession session = postRequest.getSession();
-        FakeServletRequest deleteRequest = container.newRequest("DELETE", null);
+        FakeJakartaRequest deleteRequest = container.newRequest("DELETE", null);
         deleteRequest.setSession(session);
         deleteRequest.service(servlet);
 
-        FakeServletRequest getRequest = container.newRequest("GET", "/sessionKey");
+        FakeJakartaRequest getRequest = container.newRequest("GET", "/sessionKey");
         getRequest.setSession(session);
-        FakeServletResponse response = postRequest.service(servlet);
+        FakeJakartaResponse response = postRequest.service(servlet);
         assertThat(response.getBodyString()).isEmpty();
     }
 }

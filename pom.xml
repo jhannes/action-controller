@@ -159,6 +159,7 @@
         <module>action-controller</module>
         <module>action-controller-demo-app</module>
         <module>action-controller-demo-server</module>
+        <module>action-controller-jakarta-demo</module>
         <module>fake-servlet</module>
     </modules>
 </project>

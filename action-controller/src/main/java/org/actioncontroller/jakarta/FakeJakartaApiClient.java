@@ -1,18 +1,18 @@
-package org.actioncontroller.test;
+package org.actioncontroller.jakarta;
 
+import jakarta.servlet.Servlet;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpSession;
 import org.actioncontroller.IOUtil;
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.meta.OutputStreamConsumer;
 import org.actioncontroller.meta.WriterConsumer;
-import org.fakeservlet.FakeServletRequest;
-import org.fakeservlet.FakeServletResponse;
+import org.fakeservlet.jakarta.FakeJakartaRequest;
+import org.fakeservlet.jakarta.FakeJakartaResponse;
 
-import javax.servlet.Servlet;
-import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpSession;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -33,7 +33,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class FakeApiClient implements ApiClient {
+public class FakeJakartaApiClient implements ApiClient {
     public static final Charset CHARSET = StandardCharsets.ISO_8859_1;
     private final URL contextRoot;
     private final String servletPath;
@@ -44,7 +44,7 @@ public class FakeApiClient implements ApiClient {
     private Principal remoteUser;
     private final URL baseUrl;
 
-    public FakeApiClient(URL contextRoot, String servletPath, Servlet servlet) {
+    public FakeJakartaApiClient(URL contextRoot, String servletPath, Servlet servlet) {
         this.contextRoot = contextRoot;
         this.servletPath = servletPath;
         this.servlet = servlet;
@@ -73,7 +73,7 @@ public class FakeApiClient implements ApiClient {
     @Override
     public String getClientCookie(String key) {
         return Optional.ofNullable(clientCookies.get(key))
-                .filter(FakeApiClient::isUnexpired)
+                .filter(FakeJakartaApiClient::isUnexpired)
                 .map(Cookie::getValue)
                 .orElse(null);
     }
@@ -88,21 +88,21 @@ public class FakeApiClient implements ApiClient {
 
     public class FakeApiClientExchange implements ApiClientExchange {
         private final String apiUrl;
-        private final FakeServletRequest request;
+        private final FakeJakartaRequest request;
 
-        private final FakeServletResponse response;
+        private final FakeJakartaResponse response;
 
         private FakeApiClientExchange(URL contextRoot, String servletPath, Principal remoteUser) {
             List<Cookie> requestCookies = clientCookies.values().stream()
-                    .filter(FakeApiClient::isUnexpired)
+                    .filter(FakeJakartaApiClient::isUnexpired)
                     .collect(Collectors.toList());
 
-            request = new FakeServletRequest("GET", contextRoot, servletPath, "/");
+            request = new FakeJakartaRequest("GET", contextRoot, servletPath, "/");
             request.setSession(session);
             request.setCookies(requestCookies);
             this.apiUrl = contextRoot + servletPath;
             setRemoteUser(remoteUser);
-            response = new FakeServletResponse(request);
+            response = new FakeJakartaResponse(request);
         }
 
         @Override

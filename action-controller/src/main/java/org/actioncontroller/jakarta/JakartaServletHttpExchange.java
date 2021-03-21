@@ -1,4 +1,4 @@
-package org.actioncontroller.servlet;
+package org.actioncontroller.jakarta;
 
 import org.actioncontroller.ExceptionUtil;
 import org.actioncontroller.HttpActionException;
@@ -8,12 +8,12 @@ import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.OutputStreamConsumer;
 import org.actioncontroller.meta.WriterConsumer;
 
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -32,14 +32,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-public class ServletHttpExchange implements ApiHttpExchange {
+public class JakartaServletHttpExchange implements ApiHttpExchange {
 
     public static final Charset CHARSET = StandardCharsets.ISO_8859_1;
     private final HttpServletRequest req;
     private final HttpServletResponse resp;
     private Map<String, String> pathParams = new HashMap<>();
 
-    public ServletHttpExchange(HttpServletRequest req, HttpServletResponse resp) {
+    public JakartaServletHttpExchange(HttpServletRequest req, HttpServletResponse resp) {
         this.req = req;
         this.resp = resp;
     }

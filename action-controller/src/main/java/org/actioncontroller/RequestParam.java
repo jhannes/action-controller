@@ -6,8 +6,9 @@ import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapperFactory;
 import org.actioncontroller.meta.HttpParameterMapping;
-import org.actioncontroller.servlet.ServletHttpExchange;
 import org.actioncontroller.test.FakeApiClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -32,6 +33,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @HttpParameterMapping(RequestParam.MapperFactory.class)
 public @interface RequestParam {
 
+    Logger logger = LoggerFactory.getLogger(RequestParam.class);
+    
     String value();
 
     /**
@@ -70,7 +73,7 @@ public @interface RequestParam {
         static Object convertTo(List<String> value, String parameterName, Type type) {
             try {
                 boolean optional = TypesUtil.getRawType(type) == Optional.class;
-                if (value == null || value.isEmpty()) {
+                if (value == null || value.isEmpty() || value.size() == 1 && value.get(0).isEmpty()) {
                     if (!optional) {
                         throw new HttpRequestException("Missing required parameter " + parameterName);
                     }
@@ -87,6 +90,7 @@ public @interface RequestParam {
                     return ApiHttpExchange.convertRequestValue(value.get(0), type);
                 }
             } catch (IllegalArgumentException e) {
+                logger.info("Could not convert " + parameterName + "=" + value + " to " + type.getTypeName(), e);
                 throw new HttpRequestException("Could not convert " + parameterName + "=" + value + " to " + type.getTypeName());
             }
         }

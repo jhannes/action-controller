@@ -17,6 +17,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -138,8 +139,9 @@ public abstract class AbstractApiClientProxyTest {
         @GET("/lowercaseAll")
         @ContentBody
         public String downcaseAll(@RequestParam("value") Optional<List<String>> value) {
-            return value.orElse(new ArrayList<>()).stream()
-                    .map(String::toLowerCase).collect(Collectors.joining(", "));
+            return value
+                    .map(list -> list.stream().map(String::toLowerCase).collect(Collectors.joining(", ")))
+                    .orElse("<none>");
         }
 
         @GET("/sum")
@@ -269,12 +271,18 @@ public abstract class AbstractApiClientProxyTest {
     public void shouldSupportMultipleArguments() {
         assertThat(controllerClient.downcaseAll(Optional.of(Arrays.asList("A", "B", "c"))))
                 .isEqualTo("a, b, c");
+        assertThat(controllerClient.downcaseAll(Optional.empty()))
+                .isEqualTo("<none>");
+        assertThat(controllerClient.downcaseAll(Optional.of(Collections.singletonList(""))))
+                .isEqualTo("<none>");
     }
 
     @Test
     public void shouldConvertMultipleArguments() {
         assertThat(controllerClient.sum(Optional.of(Arrays.asList(1, 2, 3, 4))))
                 .isEqualTo(10);
+        assertThat(controllerClient.sum(Optional.empty()))
+                .isEqualTo(0);
     }
 
     @Test

@@ -282,11 +282,11 @@ public class ApiServletTest {
         expectedLogEvents.expect(ApiControllerAction.class, Level.DEBUG,
                 "While processing ServletHttpExchange[POST " + container.getServletPath() + "/withEnum?enumValue=unknown] arguments to " +
                 "ApiControllerMethodAction{POST /withEnum => ControllerWithTypedParameters.methodWithEnum(ElementType)}: " +
-                new HttpRequestException("Could not convert enumValue=[unknown] to java.lang.annotation.ElementType"));
+                new HttpRequestException("Value 'unknown' not in [TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE, ANNOTATION_TYPE, PACKAGE, TYPE_PARAMETER, TYPE_USE, MODULE]"));
         FakeServletResponse response = request.service(servlet);
 
         assertThat(response.getStatus()).isEqualTo(400);
-        assertThat(response.getStatusMessage()).contains("Could not convert enumValue=[unknown] to java.lang.annotation.ElementType");
+        assertThat(response.getStatusMessage()).contains("Value 'unknown' not in [TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE, ANNOTATION_TYPE, PACKAGE, TYPE_PARAMETER, TYPE_USE, MODULE]");
     }
 
     @Test

@@ -14,6 +14,7 @@ import java.net.URI;
 import java.net.URL;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -159,8 +160,10 @@ public interface ApiHttpExchange {
 
     void setSessionAttribute(String name, Object value, boolean invalidate);
 
+    @SuppressWarnings("rawtypes")
     Optional getSessionAttribute(String name, boolean createIfMissing);
     
+    @SuppressWarnings("rawtypes")
     default Optional getSessionAttribute(String name) {
         return getSessionAttribute(name, false);
     }
@@ -182,7 +185,7 @@ public interface ApiHttpExchange {
      * @throws HttpRequestException if the value is null and the parameter is not Optional
      * @throws HttpRequestException if the value doesn't have a legal representation in the target type
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings({"rawtypes"})
     static Object convertRequestValue(String value, Type parameterType) {
         if (value == null) {
             return null;
@@ -200,7 +203,7 @@ public interface ApiHttpExchange {
         } else if (!(parameterType instanceof Class)) {
             throw new HttpServerErrorException("Unhandled parameter type " + parameterType);
         } else if (Enum.class.isAssignableFrom((Class<?>)parameterType)) {
-            return Enum.valueOf((Class) parameterType, value);
+            return enumValue(value, (Class) parameterType);
         } else if (URI.class.isAssignableFrom((Class<?>)parameterType)) {
             return IOUtil.asURI(value);
         } else if (URL.class.isAssignableFrom((Class<?>)parameterType)) {
@@ -208,6 +211,15 @@ public interface ApiHttpExchange {
         } else {
             throw new HttpServerErrorException("Unhandled parameter type " + parameterType);
         }
+    }
+
+    private static Enum<?> enumValue(String value, Class<?> parameterType) {
+        for (Object enumConstant : parameterType.getEnumConstants()) {
+            if (enumConstant.toString().equals(value)) {
+                return (Enum<?>) enumConstant;
+            }
+        }
+        throw new HttpRequestException("Value '" + value + "' not in " + Arrays.toString(parameterType.getEnumConstants()));
     }
 
     static HttpParameterMapper withOptional(Parameter parameter, HttpParameterMapper innerMapping) {

@@ -15,15 +15,12 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.annotation.RetentionPolicy;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -43,6 +40,24 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public abstract class AbstractApiClientProxyTest {
 
     protected ApiClient apiClient;
+    
+    public enum Number {
+        ONE("number one", 1),
+        TWO("number two", 2),
+        THREE("number three", 3);
+
+        private final String text;
+        public final int value;
+
+        Number(String text, int value) {
+            this.text = text;
+            this.value = value;
+        }
+        
+        public String toString() {
+            return text;
+        }
+    }
 
     public static class TestController {
 
@@ -176,6 +191,16 @@ public abstract class AbstractApiClientProxyTest {
             return sum;
         }
 
+        @GET("/enumSum")
+        @ContentBody
+        public int enumSum(@RequestParam("values") Optional<List<Number>> value) {
+            int sum = 0;
+            for (Number num : value.orElse(new ArrayList<>())) {
+                sum += num.value;
+            }
+            return sum;
+        }
+
         @POST("/reverseBytes")
         @ContentBody
         public byte[] reverseBytes(@ContentBody byte[] bytes) {
@@ -305,6 +330,12 @@ public abstract class AbstractApiClientProxyTest {
                 .isEqualTo(10);
         assertThat(controllerClient.sum(Optional.empty()))
                 .isEqualTo(0);
+    }
+
+    @Test
+    public void shouldConvertMultipleEnums() {
+        assertThat(controllerClient.enumSum(Optional.of(Arrays.asList(Number.ONE, Number.TWO, Number.THREE))))
+                .isEqualTo(6);
     }
 
     @Test

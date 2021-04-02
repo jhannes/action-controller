@@ -11,13 +11,21 @@ import org.actioncontroller.meta.HttpReturnMapper;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.io.StringReader;
 import java.io.StringWriter;
+import java.io.Writer;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
+import java.net.URL;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.PARAMETER;
@@ -44,6 +52,12 @@ public @interface ContentBody {
                 return (result, exchange) ->
                         exchange.output(annotation.contentType(), output -> output.write((byte[])result));
             }
+            if (InputStream.class.isAssignableFrom(returnClass)) {
+                return (result, exchange) -> exchange.output(annotation.contentType(), ((InputStream) result)::transferTo);
+            }
+            if (Reader.class.isAssignableFrom(returnClass)) {
+                return (result, exchange) -> exchange.write(annotation.contentType(), ((Reader) result)::transferTo);
+            }
             return (result, exchange) ->
                     exchange.write(annotation.contentType(), writer -> writer.write(String.valueOf(result)));
         }
@@ -51,12 +65,30 @@ public @interface ContentBody {
         @Override
         public HttpClientReturnMapper createClientMapper(ContentBody annotation, Type returnType) {
             if (returnType instanceof Class<?> && ((Class<?>)returnType).isArray() && ((Class<?>)returnType).getComponentType() == byte.class) {
-                return ApiClientExchange::getResponseBodyBytes;
+                return exchange -> {
+                    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                    exchange.getResponseBodyStream().transferTo(buffer);
+                    return buffer.toByteArray();
+                };
+            }
+            if (InputStream.class == returnType) {
+                return ApiClientExchange::getResponseBodyStream;
+            }
+            if (BufferedInputStream.class == returnType) {
+                return exchange -> new BufferedInputStream(exchange.getResponseBodyStream());
+            }
+            if (Reader.class == returnType) {
+                return ApiClientExchange::getResponseBodyReader;
+            }
+            if (BufferedReader.class == returnType) {
+                return exchange -> new BufferedReader(exchange.getResponseBodyReader());
             }
             return new HttpClientReturnMapper() {
                 @Override
                 public Object getReturnValue(ApiClientExchange exchange) throws IOException {
-                    return ApiHttpExchange.convertRequestValue(exchange.getResponseBody(), returnType);
+                    StringWriter buffer = new StringWriter();
+                    exchange.getResponseBodyReader().transferTo(buffer);
+                    return ApiHttpExchange.convertRequestValue(buffer.toString(), returnType);
                 }
 
                 @Override

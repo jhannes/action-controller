@@ -15,7 +15,9 @@ import javax.net.ssl.TrustManagerFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.io.Reader;
 import java.io.StringWriter;
 import java.net.HttpCookie;
 import java.net.HttpURLConnection;
@@ -146,7 +148,6 @@ public class HttpURLConnectionApiClient implements ApiClient {
         private String errorBody;
         private KeyStore exchangeKeyStore = null;
         private String contentType;
-        private byte[] responseBody;
 
         @Override
         public void setTarget(String method, String pathInfo) {
@@ -344,18 +345,13 @@ public class HttpURLConnectionApiClient implements ApiClient {
         }
 
         @Override
-        public String getResponseBody() throws IOException {
-            return new String(getResponseBodyBytes());
+        public Reader getResponseBodyReader() throws IOException {
+            return new InputStreamReader(getResponseBodyStream());
         }
 
         @Override
-        public synchronized byte[] getResponseBodyBytes() throws IOException {
-            if (responseBody != null || connection.getInputStream() == null) {
-                return responseBody;
-            }
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            connection.getInputStream().transferTo(outputStream);
-            return this.responseBody = outputStream.toByteArray();
+        public InputStream getResponseBodyStream() throws IOException {
+            return connection.getInputStream();
         }
 
         private String getErrorBody() throws IOException {

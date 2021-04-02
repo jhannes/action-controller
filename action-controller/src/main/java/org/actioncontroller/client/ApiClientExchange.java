@@ -5,6 +5,8 @@ import org.actioncontroller.meta.OutputStreamConsumer;
 import org.actioncontroller.meta.WriterConsumer;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
 import java.lang.reflect.Parameter;
 import java.net.URL;
 import java.security.cert.X509Certificate;
@@ -71,9 +73,9 @@ public interface ApiClientExchange {
 
     Optional<String> getResponseCookie(String name);
 
-    String getResponseBody() throws IOException;
+    Reader getResponseBodyReader() throws IOException;
 
-    byte[] getResponseBodyBytes() throws IOException;
+    InputStream getResponseBodyStream() throws IOException;
 
     void checkForError() throws HttpClientException, IOException;
 

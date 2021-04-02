@@ -10,10 +10,20 @@ import org.junit.Test;
 import org.logevents.extend.junit.ExpectedLogEventsRule;
 import org.slf4j.event.Level;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.lang.annotation.RetentionPolicy;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -46,6 +56,18 @@ public abstract class AbstractApiClientProxyTest {
         @ContentBody
         public String first(@RequestParam("greeting") String greeting, ApiHttpExchange exchange) {
             return greeting + " " + exchange.getPathInfo();
+        }
+        
+        @GET("/stream")
+        @ContentBody
+        public BufferedInputStream getStream() {
+            return new BufferedInputStream(new ByteArrayInputStream("hello world".getBytes()));
+        }
+        
+        @GET("/reader")
+        @ContentBody
+        public BufferedReader getReader() {
+            return new BufferedReader(new StringReader("Hello World"));
         }
 
         @POST("/uppercase")
@@ -415,5 +437,19 @@ public abstract class AbstractApiClientProxyTest {
                 .isEqualTo("<html><h2>Hello from index</h2></html>");
         assertThat(controllerClient.getTextFile("robots"))
                 .isEqualTo("Hello from robots");
+    }
+    
+    @Test
+    public void shouldReadInputStream() throws IOException {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        controllerClient.getStream().transferTo(buffer);
+        assertThat(buffer.toString()).isEqualTo("hello world");
+    }
+    
+    @Test
+    public void shouldReadReader() throws IOException {
+        StringWriter buffer = new StringWriter();
+        controllerClient.getReader().transferTo(buffer);
+        assertThat(buffer.toString()).isEqualTo("Hello World");
     }
 }

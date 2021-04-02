@@ -12,6 +12,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.net.HttpCookie;
 import java.net.Socket;
 import java.net.URL;
@@ -272,7 +275,7 @@ public class SocketHttpClient implements ApiClient {
         }
 
         @Override
-        public String getResponseBody() throws IOException {
+        public Reader getResponseBodyReader() throws IOException {
             if ("chunked".equalsIgnoreCase(responseHeaders.get("transfer-encoding"))) {
                 StringBuilder buffer = new StringBuilder();
 
@@ -282,7 +285,7 @@ public class SocketHttpClient implements ApiClient {
                         buffer.append((char)socket.getInputStream().read());
                     }
                 }
-                return buffer.toString();
+                return new StringReader(buffer.toString());
             }
 
             int contentLength = Integer.parseInt(responseHeaders.get("Content-length"));
@@ -292,6 +295,12 @@ public class SocketHttpClient implements ApiClient {
                 buffer.append((char)socket.getInputStream().read());
             }
 
+            return new StringReader(buffer.toString());
+        }
+        
+        private String getResponseBody() throws IOException {
+            StringWriter buffer = new StringWriter();
+            getResponseBodyReader().transferTo(buffer);
             return buffer.toString();
         }
 
@@ -301,7 +310,7 @@ public class SocketHttpClient implements ApiClient {
         }
 
         @Override
-        public byte[] getResponseBodyBytes() throws IOException {
+        public InputStream getResponseBodyStream() throws IOException {
             if (responseHeaders.get("transfer-encoding").equalsIgnoreCase("chunked")) {
                 ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
@@ -311,7 +320,7 @@ public class SocketHttpClient implements ApiClient {
                         buffer.write(socket.getInputStream().read());
                     }
                 }
-                return buffer.toByteArray();
+                return new ByteArrayInputStream(buffer.toByteArray());
             }
             throw new UnsupportedOperationException();
         }

@@ -11,6 +11,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -191,6 +192,8 @@ public class ApiControllerActionRouterTest {
         exchange.setTarget("BOTTOM", "/path");
         exchange.executeRequest();
         assertThat(exchange.getResponseCode()).isEqualTo(200);
-        assertThat(exchange.getResponseBody()).isEqualTo("bottom");
+        StringWriter buffer = new StringWriter();
+        exchange.getResponseBodyReader().transferTo(buffer);
+        assertThat(buffer.toString()).isEqualTo("bottom");
     }
 }

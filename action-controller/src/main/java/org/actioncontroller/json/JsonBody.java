@@ -89,7 +89,7 @@ public @interface JsonBody {
 
         @Override
         public HttpClientReturnMapper createClientMapper(JsonBody annotation, Type returnType) {
-            return jsonMapper(exchange -> PojoMapper.mapType(JsonParser.parse(exchange.getResponseBody()), returnType));
+            return jsonMapper(exchange -> PojoMapper.mapType(JsonParser.parse(exchange.getResponseBodyStream()), returnType));
         }
 
         private HttpClientReturnMapper jsonMapper(HttpClientReturnMapper mapper) {

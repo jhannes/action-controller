@@ -13,9 +13,13 @@ import javax.servlet.Servlet;
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpSession;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -217,13 +221,13 @@ public class FakeApiClient implements ApiClient {
         }
 
         @Override
-        public String getResponseBody() {
-            return new String(response.getBody());
+        public Reader getResponseBodyReader() {
+            return new StringReader(new String(response.getBody()));
         }
 
         @Override
-        public byte[] getResponseBodyBytes() {
-            return response.getBody();
+        public InputStream getResponseBodyStream() {
+            return new ByteArrayInputStream(response.getBody());
         }
 
         @Override

@@ -49,7 +49,7 @@ public class DemoApplicationListener implements ServletContextListener {
         apiServlet.registerController(new UserController());
         context.addServlet("api", apiServlet).addMapping("/api/*");
         context.addServlet("dropwizard", new AdminServlet()).addMapping("/status/*");
-        context.addServlet("swagger", new WebJarServlet("swagger-ui"))
+        context.addServlet("swagger", new ContentServlet(ContentSource.fromWebJar("swagger-ui")))
                 .addMapping("/swagger/*");
         context.addServlet("default", new ContentServlet("/webapp-actioncontrollerdemo/"))
                 .addMapping("/*");

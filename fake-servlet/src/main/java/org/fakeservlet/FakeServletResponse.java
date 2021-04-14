@@ -14,8 +14,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 /**
  * DANGER! Unfinished class! Implement methods as you go!
  */
@@ -273,7 +271,9 @@ public class FakeServletResponse implements HttpServletResponse {
     }
 
     public void assertNoError() {
-        assertThat(statusCode).describedAs(statusMessage).isLessThan(400);
+        if (statusCode >= 400) {
+            throw new AssertionError("Unexpected error " + statusCode + " " + statusMessage);
+        }
     }
 
     public String getStatusMessage() {

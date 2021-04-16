@@ -1,5 +1,6 @@
 package org.actioncontroller.client;
 
+import org.actioncontroller.HttpNotModifiedException;
 import org.actioncontroller.IOUtil;
 import org.actioncontroller.meta.OutputStreamConsumer;
 import org.actioncontroller.meta.WriterConsumer;
@@ -332,6 +333,8 @@ public class HttpURLConnectionApiClient implements ApiClient {
         public void checkForError() throws HttpClientException, IOException {
             if (getResponseCode() >= 400) {
                 throw new HttpClientException(getResponseCode(), connection.getResponseMessage(), getErrorBody(), getRequestURL());
+            } else if (getResponseCode() == 304) {
+                throw new HttpNotModifiedException(null);
             }
         }
 

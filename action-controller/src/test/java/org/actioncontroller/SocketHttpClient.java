@@ -288,19 +288,28 @@ public class SocketHttpClient implements ApiClient {
                 return new StringReader(buffer.toString());
             }
 
-            int contentLength = Integer.parseInt(responseHeaders.get("Content-length"));
+            String contentLengthHeader = responseHeaders.get("Content-length");
+            if (contentLengthHeader != null) {
+                int contentLength = Integer.parseInt(contentLengthHeader);
 
-            StringBuilder buffer = new StringBuilder();
-            for (int i = 0; i < contentLength; i++) {
-                buffer.append((char)socket.getInputStream().read());
+                StringBuilder buffer = new StringBuilder();
+                for (int i = 0; i < contentLength; i++) {
+                    buffer.append((char)socket.getInputStream().read());
+                }
+
+                return new StringReader(buffer.toString());
+            } else {
+                return null;
             }
-
-            return new StringReader(buffer.toString());
         }
         
         private String getResponseBody() throws IOException {
+            Reader reader = getResponseBodyReader();
+            if (reader == null) {
+                return null;
+            }
             StringWriter buffer = new StringWriter();
-            getResponseBodyReader().transferTo(buffer);
+            reader.transferTo(buffer);
             return buffer.toString();
         }
 
@@ -329,6 +338,8 @@ public class SocketHttpClient implements ApiClient {
         public void checkForError() throws HttpClientException, IOException {
             if (getResponseCode() >= 400) {
                 throw new HttpClientException(getResponseCode(), responseMessage, getResponseBody(), getRequestURL());
+            } else if (getResponseCode() == 304) {
+                throw new HttpNotModifiedException(null);
             }
         }
 

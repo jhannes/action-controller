@@ -21,6 +21,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -76,6 +78,20 @@ public abstract class AbstractApiClientProxyTest {
         @GET("/stream")
         @ContentBody
         public BufferedInputStream getStream() {
+            return new BufferedInputStream(new ByteArrayInputStream("hello world".getBytes()));
+        }
+        
+        @GET("/stream/withCache")
+        @ContentBody
+        public BufferedInputStream getStreamWithTimestamps(
+                @IfModifiedSince Optional<ZonedDateTime> ifModifiedSince,
+                @LastModified Consumer<ZonedDateTime> setLastModified
+        ) {
+            ZonedDateTime lastModified = ZonedDateTime.of(2020, 1, 12, 11, 12, 15, 5000, ZoneId.systemDefault());
+            if (ifModifiedSince.map(lastModified::isAfter).orElse(false)) {
+                throw new HttpNotModifiedException(lastModified);
+            }
+            setLastModified.accept(lastModified);
             return new BufferedInputStream(new ByteArrayInputStream("hello world".getBytes()));
         }
         
@@ -483,4 +499,16 @@ public abstract class AbstractApiClientProxyTest {
         controllerClient.getReader().transferTo(buffer);
         assertThat(buffer.toString()).isEqualTo("Hello World");
     }
+    
+    @Test
+    public void shouldGetNotModifiedWhenRereading() {
+        AtomicReference<ZonedDateTime> lastUpdated = new AtomicReference<>();
+        controllerClient.getStreamWithTimestamps(Optional.empty(), lastUpdated::set);
+        assertThat(lastUpdated.get())
+                .isEqualTo(ZonedDateTime.of(2020, 1, 12, 11, 12, 15, 0, ZoneId.systemDefault()));
+        
+        assertThatThrownBy(() -> controllerClient.getStreamWithTimestamps(Optional.of(lastUpdated.get()), lastUpdated::set))
+                .isInstanceOf(HttpNotModifiedException.class);
+    }
+    
 }

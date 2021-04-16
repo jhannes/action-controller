@@ -134,7 +134,7 @@ public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
         try {
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
             inputStream.transferTo(buffer);
-            return new String(buffer.toByteArray());
+            return buffer.toString();
         } catch (IOException e) {
             throw softenException(e);
         }
@@ -310,12 +310,12 @@ public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
 
     @Override
     public void setStatus(int statusCode) throws IOException {
-        sendResponseHeaders(statusCode, 0);
+        sendResponseHeaders(statusCode, -1);
     }
 
     @Override
     public void sendError(int statusCode) throws IOException {
-        sendResponseHeaders(statusCode, 0);
+        sendResponseHeaders(statusCode, -1);
     }
 
     @Override

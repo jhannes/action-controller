@@ -4,6 +4,7 @@ import jakarta.servlet.Servlet;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpSession;
+import org.actioncontroller.HttpNotModifiedException;
 import org.actioncontroller.IOUtil;
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientExchange;
@@ -196,6 +197,8 @@ public class FakeJakartaApiClient implements ApiClient {
         public void checkForError() throws HttpClientException {
             if (isError()) {
                 throw new HttpClientException(getResponseCode(), response.getStatusMessage(), getErrorResponse(), getRequestURL());
+            } else if (getResponseCode() == 304) {
+                throw new HttpNotModifiedException(null);
             }
         }
 

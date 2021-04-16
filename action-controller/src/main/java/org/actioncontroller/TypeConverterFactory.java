@@ -26,6 +26,7 @@ import java.util.UUID;
 import java.util.function.Function;
 
 public class TypeConverterFactory {
+
     public static final DateTimeFormatter DEFAULT_DATE_FORMAT = DateTimeFormatter.RFC_1123_DATE_TIME;
 
     private static final Map<Type, Function<String, ?>> converters = Map.of(
@@ -43,7 +44,11 @@ public class TypeConverterFactory {
             Long.class, Long::valueOf,
             Long.TYPE, Long::valueOf,
             Short.class, Short::valueOf,
-            Short.TYPE, Short::valueOf
+            Short.TYPE, Short::valueOf,
+            Double.class, Double::valueOf,
+            Double.TYPE, Double::valueOf,
+            Float.class, Float::valueOf,
+            Float.TYPE, Float::valueOf
     );
     
     private static final Map<Type, Function<String, ?>> dateConverters = Map.of(
@@ -54,15 +59,16 @@ public class TypeConverterFactory {
             LocalDate.class, s -> DEFAULT_DATE_FORMAT.parse(s, Instant::from).atZone(ZoneId.systemDefault()).toLocalDate()
     );
 
-    public static Function<List<String>, ?> fromStrings(Type targetClass) {
+    public static TypeConverter fromStrings(Type targetClass) {
         return fromStrings(targetClass, "value");
     }
 
-    public static Function<List<String>, ?> fromStrings(Type targetClass, String description) {
+    public static TypeConverter fromStrings(Type targetClass, String description) {
         if (targetClass instanceof ParameterizedType) {
             return fromStringsToParameterizedType((ParameterizedType) targetClass, description);
+        } else {
+            return nonNullConverter(targetClass, description, getBaseConverter(targetClass, description));
         }
-        return nonNullConverter(targetClass, description, getBaseConverter(targetClass, description));
     }
 
     @SuppressWarnings("unchecked")
@@ -86,11 +92,10 @@ public class TypeConverterFactory {
     }
 
     @SuppressWarnings("SuspiciousMethodCalls")
-    private static Function<List<String>, Object> fromStringsToParameterizedType(ParameterizedType targetClass, String description) {
+    private static TypeConverter fromStringsToParameterizedType(ParameterizedType targetClass, String description) {
         Type parameterType = targetClass.getActualTypeArguments()[0];
         if (targetClass.getRawType() == Optional.class) {
-            Function<List<String>, ?> baseConverter = fromStrings(parameterType, description);
-            return optionalStringConverter(description, parameterType, baseConverter);
+            return optionalStringConverter(description, parameterType, fromStrings(parameterType, description));
         } else if (List.of(Collection.class, List.class, ArrayList.class).contains(targetClass.getRawType())) {
             return arrayListConverter(parameterType, description, getBaseConverter(parameterType, description));
         } else if (List.of(Set.class, HashSet.class).contains(targetClass.getRawType())) {
@@ -100,22 +105,24 @@ public class TypeConverterFactory {
         }
     }
 
-    private static Function<List<String>, ?> nonNullConverter(Type targetClass, String description, Function<String, ?> converter) {
+    private static TypeConverter nonNullConverter(Type targetClass, String description, Function<String, ?> converter) {
         return s -> {
-            if (s == null || s.isEmpty() || s.get(0) == null) {
-                throw new HttpRequestException("Missing " + description);
+            String value = s != null && !s.isEmpty() ? s.iterator().next() : null;
+            if (value == null) {
+                throw new HttpRequestException("Missing required " + description);
             }
             try {
-                return converter.apply(s.get(0));
+                return converter.apply(value);
             } catch (IllegalArgumentException | DateTimeParseException e) {
                 throw new HttpRequestException("Cannot convert " + description + " to " + targetClass + ": " + e.getMessage());
             }
         };
     }
 
-    private static Function<List<String>, Object> optionalStringConverter(String description, Type parameterType, Function<List<String>, ?> converter) {
+    private static TypeConverter optionalStringConverter(String description, Type parameterType, TypeConverter converter) {
         return s -> {
-            if (s == null || s.isEmpty() || s.get(0) == null) {
+            String value = s != null && !s.isEmpty() ? s.iterator().next() : null;
+            if (value == null || value.isEmpty()) {
                 return Optional.empty();
             }
             try {
@@ -126,7 +133,7 @@ public class TypeConverterFactory {
         };
     }
 
-    private static Function<List<String>, Object> arrayListConverter(Type parameterType, String description, Function<String, Object> baseConverter) {
+    private static TypeConverter arrayListConverter(Type parameterType, String description, Function<String, Object> baseConverter) {
         return strings -> {
             ArrayList<Object> result = new ArrayList<>();
             for (String string : strings) {
@@ -140,7 +147,7 @@ public class TypeConverterFactory {
         };
     }
 
-    private static Function<List<String>, Object> hashSetConverter(Type parameterType, String description, Function<String, Object> baseConverter) {
+    private static TypeConverter hashSetConverter(Type parameterType, String description, Function<String, Object> baseConverter) {
         return strings -> {
             HashSet<Object> result = new HashSet<>();
             for (String string : strings) {

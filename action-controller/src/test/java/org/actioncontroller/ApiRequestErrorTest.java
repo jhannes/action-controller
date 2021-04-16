@@ -97,6 +97,6 @@ public class ApiRequestErrorTest {
 
         FakeServletResponse resp = request.service(servlet);
         assertThat(resp.getStatus()).isEqualTo(400);
-        assertThat(resp.getStatusMessage()).isEqualTo("Value 'invalid' not in [UP, DOWN, CEILING, FLOOR, HALF_UP, HALF_DOWN, HALF_EVEN, UNNECESSARY]");
+        assertThat(resp.getStatusMessage()).isEqualTo("Cannot convert parameter mode to class java.math.RoundingMode: invalid not in [UP, DOWN, CEILING, FLOOR, HALF_UP, HALF_DOWN, HALF_EVEN, UNNECESSARY]");
     }
 }

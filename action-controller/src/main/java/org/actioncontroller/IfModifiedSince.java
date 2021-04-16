@@ -26,7 +26,7 @@ public @interface IfModifiedSince {
 
         @Override
         public HttpParameterMapper create(IfModifiedSince annotation, Parameter parameter, ApiControllerContext context) throws Exception {
-            Function<List<String>, ?> converter = TypeConverterFactory.fromStrings(parameter.getParameterizedType(), "header " + HEADER_NAME);
+            TypeConverter converter = TypeConverterFactory.fromStrings(parameter.getParameterizedType(), "header " + HEADER_NAME);
             return exchange -> converter.apply(exchange.getHeader(HEADER_NAME).map(List::of).orElse(null));
         }
 

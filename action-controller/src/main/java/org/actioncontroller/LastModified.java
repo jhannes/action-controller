@@ -39,7 +39,7 @@ public @interface LastModified {
             if (parameter.getType() != Consumer.class || TypesUtil.getRawType(TypesUtil.typeParameter(parameter.getParameterizedType())).isAssignableFrom(Temporal.class)) {
                 throw new ActionControllerConfigurationException("@LastModified must have Consumer<Instant>, Consumer<ZonedDateTime> or Consumer<OffsetDateTime> parameter, was " + parameter.getParameterizedType());
             }
-            Function<List<String>, ?> converter = TypeConverterFactory.fromStrings(
+            TypeConverter converter = TypeConverterFactory.fromStrings(
                     ((ParameterizedType) parameter.getParameterizedType()).getActualTypeArguments()[0]
                 , "header " + HEADER_NAME);
             return (exchange, arg) -> {

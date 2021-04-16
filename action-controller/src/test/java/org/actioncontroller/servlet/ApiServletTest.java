@@ -238,7 +238,7 @@ public class ApiServletTest {
         FakeServletResponse response = request.service(servlet);
 
         assertThat(response.getStatus()).isEqualTo(400);
-        assertThat(response.getStatusMessage()).isEqualTo("Could not convert amount=[one] to int");
+        assertThat(response.getStatusMessage()).isEqualTo("Cannot convert parameter amount to int: For input string: \"one\"");
     }
 
     @Test
@@ -249,11 +249,11 @@ public class ApiServletTest {
         expectedLogEvents.expect(ApiControllerAction.class, Level.DEBUG,
                 "While processing ServletHttpExchange[POST " + container.getServletPath() + "/withUuid?uuid=Not+an+uuid]" +
                 " arguments to ApiControllerMethodAction{POST /withUuid => ControllerWithTypedParameters.methodWithUuid(UUID)}: " +
-                new HttpRequestException("Could not convert uuid=[Not an uuid] to java.util.UUID"));
+                new HttpRequestException("Cannot convert parameter uuid to class java.util.UUID: Invalid UUID string: Not an uuid"));
         FakeServletResponse response = request.service(servlet);
 
         assertThat(response.getStatus()).isEqualTo(400);
-        assertThat(response.getStatusMessage()).contains("Could not convert uuid=[Not an uuid] to java.util.UUID");
+        assertThat(response.getStatusMessage()).contains("Cannot convert parameter uuid to class java.util.UUID: Invalid UUID string: Not an uuid");
     }
 
     @Test
@@ -264,11 +264,11 @@ public class ApiServletTest {
         expectedLogEvents.expect(ApiControllerAction.class, Level.DEBUG,
                 "While processing ServletHttpExchange[POST " + container.getServletPath() + "/withLong?longValue=one+hundred] arguments to " +
                 "ApiControllerMethodAction{POST /withLong => ControllerWithTypedParameters.methodWithLong(long)}: " +
-                new HttpRequestException("Could not convert longValue=[one hundred] to long"));
+                new HttpRequestException("Cannot convert parameter longValue to long: For input string: \"one hundred\""));
         FakeServletResponse response = request.service(servlet);
 
         assertThat(response.getStatus()).isEqualTo(400);
-        assertThat(response.getStatusMessage()).contains("Could not convert longValue=[one hundred] to long");
+        assertThat(response.getStatusMessage()).contains("Cannot convert parameter longValue to long: For input string: \"one hundred\"");
     }
 
     @Rule
@@ -282,11 +282,11 @@ public class ApiServletTest {
         expectedLogEvents.expect(ApiControllerAction.class, Level.DEBUG,
                 "While processing ServletHttpExchange[POST " + container.getServletPath() + "/withEnum?enumValue=unknown] arguments to " +
                 "ApiControllerMethodAction{POST /withEnum => ControllerWithTypedParameters.methodWithEnum(ElementType)}: " +
-                new HttpRequestException("Value 'unknown' not in [TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE, ANNOTATION_TYPE, PACKAGE, TYPE_PARAMETER, TYPE_USE, MODULE]"));
+                new HttpRequestException("Cannot convert parameter enumValue to class java.lang.annotation.ElementType: unknown not in [TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE, ANNOTATION_TYPE, PACKAGE, TYPE_PARAMETER, TYPE_USE, MODULE]"));
         FakeServletResponse response = request.service(servlet);
 
         assertThat(response.getStatus()).isEqualTo(400);
-        assertThat(response.getStatusMessage()).contains("Value 'unknown' not in [TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE, ANNOTATION_TYPE, PACKAGE, TYPE_PARAMETER, TYPE_USE, MODULE]");
+        assertThat(response.getStatusMessage()).contains("Cannot convert parameter enumValue to class java.lang.annotation.ElementType: unknown not in [TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE, ANNOTATION_TYPE, PACKAGE, TYPE_PARAMETER, TYPE_USE, MODULE]");
     }
 
     @Test
@@ -312,7 +312,7 @@ public class ApiServletTest {
         );
         FakeServletResponse response = request.service(servlet);
         assertThat(response.getStatus()).isEqualTo(400);
-        assertThat(response.getStatusMessage()).isEqualTo("Could not convert amount=[one] to int");
+        assertThat(response.getStatusMessage()).isEqualTo("Cannot convert parameter amount to int: For input string: \"one\"");
     }
 
     @Test

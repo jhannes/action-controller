@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -101,13 +100,13 @@ public class TypeConverterFactoryTest {
     public void shouldThrowOnMissingValues() {
         assertThatThrownBy(() -> TypeConverterFactory.fromStrings(URL.class, "parameter myUrl").apply(null))
                 .isInstanceOf(HttpRequestException.class)
-                .hasMessage("Missing parameter myUrl");
-        assertThatThrownBy(() -> TypeConverterFactory.fromStrings(Instant.class).apply(List.of()))
+                .hasMessage("Missing required parameter myUrl");
+        assertThatThrownBy(() -> TypeConverterFactory.fromStrings(double.class).apply(List.of()))
                 .isInstanceOf(HttpRequestException.class)
-                .hasMessage("Missing value");
+                .hasMessage("Missing required value");
         assertThatThrownBy(() -> TypeConverterFactory.fromStrings(Enum.class).apply(Collections.singletonList(null)))
                 .isInstanceOf(HttpRequestException.class)
-                .hasMessage("Missing value");
+                .hasMessage("Missing required value");
     }
     
     @Test
@@ -126,7 +125,7 @@ public class TypeConverterFactoryTest {
                 .isEqualTo(List.of(true, false, false));
         assertThat(TypeConverterFactory.fromStrings(parameterized(Set.class, String.class)).apply(List.of("a", "b", "b")))
                 .isEqualTo(Set.of("a", "b"));
-        Function<List<String>, ?> optionalIntListConverter = TypeConverterFactory.fromStrings(
+        TypeConverter optionalIntListConverter = TypeConverterFactory.fromStrings(
                 parameterized(Optional.class, parameterized(List.class, Integer.TYPE))
         );
         assertThat(optionalIntListConverter.apply(List.of("9", "8", "7")))

@@ -28,7 +28,7 @@ public @interface ContentLocationHeader {
 
     String value() default "";
 
-    String FIELD_NAME = "Content-location";
+    String FIELD_NAME = "Content-Location";
 
     class MappingFactory implements HttpReturnMapperFactory<ContentLocationHeader> {
         @Override

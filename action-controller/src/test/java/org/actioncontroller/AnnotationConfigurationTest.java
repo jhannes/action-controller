@@ -61,9 +61,10 @@ public class AnnotationConfigurationTest {
                 if (parameter.getType() == Consumer.class) {
                     return exchange -> (Consumer<Object>) o -> exchange.setCookie(name, encrypt(encryptCipher, o.toString()), true, true);
                 } else {
+                    Function<String, Object> converter = TypeConverterFactory.fromSingleString(parameter.getParameterizedType(), "cookie " + name);
                     return exchange ->  exchange.getCookie(name)
                             .map(cookie -> decrypt(decryptCipher, cookie))
-                            .map(string -> ApiHttpExchange.convertRequestValue(string, parameter.getParameterizedType()))
+                            .map(converter::apply)
                             .orElseThrow();
                 }
             }

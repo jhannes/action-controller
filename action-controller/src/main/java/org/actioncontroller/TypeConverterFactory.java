@@ -59,6 +59,10 @@ public class TypeConverterFactory {
             LocalDate.class, s -> DEFAULT_DATE_FORMAT.parse(s, Instant::from).atZone(ZoneId.systemDefault()).toLocalDate()
     );
 
+    public static Function<String, Object> fromSingleString(Type targetClass, String description) {
+        return getBaseConverter(targetClass, description);
+    }
+
     public static TypeConverter fromStrings(Type targetClass) {
         return fromStrings(targetClass, "value");
     }

@@ -276,7 +276,7 @@ public class SocketHttpClient implements ApiClient {
 
         @Override
         public Reader getResponseBodyReader() throws IOException {
-            if ("chunked".equalsIgnoreCase(responseHeaders.get("transfer-encoding"))) {
+            if ("chunked".equalsIgnoreCase(getResponseHeader("transfer-encoding"))) {
                 StringBuilder buffer = new StringBuilder();
 
                 int length;
@@ -288,7 +288,7 @@ public class SocketHttpClient implements ApiClient {
                 return new StringReader(buffer.toString());
             }
 
-            String contentLengthHeader = responseHeaders.get("Content-length");
+            String contentLengthHeader = getResponseHeader("Content-length");
             if (contentLengthHeader != null) {
                 int contentLength = Integer.parseInt(contentLengthHeader);
 
@@ -320,7 +320,7 @@ public class SocketHttpClient implements ApiClient {
 
         @Override
         public InputStream getResponseBodyStream() throws IOException {
-            if (responseHeaders.get("transfer-encoding").equalsIgnoreCase("chunked")) {
+            if (getResponseHeader("transfer-encoding").equalsIgnoreCase("chunked")) {
                 ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
                 int length;

@@ -229,7 +229,7 @@ public abstract class AbstractApiClientProxyTest {
 
         @GET("/image.png")
         @ContentBody
-        public byte[] getImage(@HttpHeader("content-type") Consumer<String> setContentType) {
+        public byte[] getImage(@HttpHeader("Content-Type") Consumer<String> setContentType) {
             setContentType.accept("image/png");
             return Base64.getDecoder().decode("iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==");
         }
@@ -259,7 +259,7 @@ public abstract class AbstractApiClientProxyTest {
         }
 
         @POST("/sendRedirect")
-        public void sendRedirect(@HttpHeader("content-location") Consumer<URI> setContentLocation) throws URISyntaxException {
+        public void sendRedirect(@HttpHeader("Content-Location") Consumer<URI> setContentLocation) throws URISyntaxException {
             setContentLocation.accept(new URI("https://github.com/jhannes"));
         }
 

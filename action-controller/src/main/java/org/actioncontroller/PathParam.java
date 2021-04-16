@@ -11,6 +11,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Parameter;
+import java.util.function.Function;
 
 /**
  * Maps part of the HTTP request target to the parameter, converting the type if necessary. For example
@@ -29,7 +30,8 @@ public @interface PathParam {
         @Override
         public HttpParameterMapper create(PathParam annotation, Parameter parameter, ApiControllerContext context) {
             String name = annotation.value();
-            return (exchange) -> ApiHttpExchange.convertRequestValue(exchange.pathParam(name), parameter.getParameterizedType());
+            Function<String, Object> converter = TypeConverterFactory.fromSingleString(parameter.getParameterizedType(), "path parameter " + name);
+            return (exchange) -> converter.apply(exchange.pathParam(name));
         }
 
         @Override

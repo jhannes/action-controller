@@ -1,7 +1,6 @@
 package org.actioncontroller;
 
 import org.actioncontroller.client.ApiClientExchange;
-import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpClientReturnMapper;
 import org.actioncontroller.meta.HttpParameterMapper;
@@ -13,19 +12,16 @@ import org.actioncontroller.meta.HttpReturnMapping;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
-import java.io.StringReader;
 import java.io.StringWriter;
-import java.io.Writer;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
-import java.net.URL;
+import java.util.function.Function;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.PARAMETER;
@@ -83,12 +79,14 @@ public @interface ContentBody {
             if (BufferedReader.class == returnType) {
                 return exchange -> new BufferedReader(exchange.getResponseBodyReader());
             }
+            Function<String, Object> converter = TypeConverterFactory.fromSingleString(returnType, "content body");
+
             return new HttpClientReturnMapper() {
                 @Override
                 public Object getReturnValue(ApiClientExchange exchange) throws IOException {
                     StringWriter buffer = new StringWriter();
                     exchange.getResponseBodyReader().transferTo(buffer);
-                    return ApiHttpExchange.convertRequestValue(buffer.toString(), returnType);
+                    return converter.apply(buffer.toString());
                 }
 
                 @Override

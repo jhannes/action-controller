@@ -18,6 +18,8 @@ import org.jsonbuddy.JsonNull;
 import org.jsonbuddy.parse.JsonParser;
 import org.jsonbuddy.pojo.JsonGenerator;
 import org.jsonbuddy.pojo.PojoMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.annotation.Retention;
@@ -37,7 +39,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @HttpParameterMapping(JsonBody.MapperFactory.class)
 @HttpReturnMapping(JsonBody.ReturnMapperFactory.class)
 public @interface JsonBody {
-
+    
     enum Naming {
         CAMEL_CASE {
             @Override
@@ -60,6 +62,8 @@ public @interface JsonBody {
     boolean buffer() default true;
 
     class ReturnMapperFactory implements HttpReturnMapperFactory<JsonBody> {
+        
+        private static final Logger logger = LoggerFactory.getLogger(ReturnMapperFactory.class);
 
         @Override
         public HttpReturnMapper create(JsonBody annotation, Type returnType) {
@@ -79,6 +83,7 @@ public @interface JsonBody {
                         "application/json",
                         writer -> {
                             JsonNode json = jsonGenerator.generateNode(o, Optional.of(returnType));
+                            logger.trace("Responding with JSON: {}", json);
                             writer.write(json.toJson());
                         }
                 );
@@ -87,6 +92,7 @@ public @interface JsonBody {
                         "application/json",
                         writer -> {
                             JsonNode json = jsonGenerator.generateNode(o, Optional.of(returnType));
+                            logger.trace("Responding with JSON: {}", json);
                             json.toJson(writer);
                         }
                 );
@@ -115,6 +121,8 @@ public @interface JsonBody {
 
     class MapperFactory implements HttpParameterMapperFactory<JsonBody> {
 
+        private static final Logger logger = LoggerFactory.getLogger(JsonBody.class);
+
         private final PojoMapper pojoMapper = PojoMapper.create();
 
         @Override
@@ -128,6 +136,7 @@ public @interface JsonBody {
 
         private Optional<Object> readPojo(ApiHttpExchange exchange, Type targetType) throws IOException {
             JsonNode json = JsonParser.parseNode(exchange.getReader());
+            logger.trace("Received JSON: {}", json);
             return mapToPojo(json, targetType);
         }
 

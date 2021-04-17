@@ -10,6 +10,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.lang.reflect.Type;
 import java.net.URL;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -53,6 +54,7 @@ public @interface ContentLocationHeader {
                 return exchange -> exchange.getResponseHeader(ContentLocationHeader.FIELD_NAME);
             } else {
                 Pattern pattern = Pattern.compile(annotation.value().replaceFirst("\\{[^}]+}", "([^/]+)"));
+                Function<String, ?> converter = TypeConverterFactory.fromSingleString(returnType, "path parameter " + annotation.value());
                 return exchange -> {
                     String contentLocationHeader = exchange.getResponseHeader(ContentLocationHeader.FIELD_NAME);
                     if (!contentLocationHeader.startsWith(exchange.getApiURL())) {
@@ -63,7 +65,7 @@ public @interface ContentLocationHeader {
                     if (!matcher.matches()) {
                         throw new IllegalArgumentException("Expected content-location <" + relativePath + "> to match <" + annotation.value() + ">");
                     }
-                    return ApiHttpExchange.convertRequestValue(matcher.group(1), returnType);
+                    return converter.apply(matcher.group(1));
                 };
             }
         }

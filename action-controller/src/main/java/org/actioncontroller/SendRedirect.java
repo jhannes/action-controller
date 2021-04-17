@@ -9,6 +9,7 @@ import org.actioncontroller.meta.HttpReturnMapping;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.lang.reflect.Type;
+import java.util.function.Function;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -49,11 +50,12 @@ public @interface SendRedirect {
 
         @Override
         public HttpClientReturnMapper createClientMapper(SendRedirect annotation, Type returnType) {
+            Function<String, ?> converter = TypeConverterFactory.fromSingleString(returnType, "header Location");
             return exchange -> {
                 if (exchange.getResponseCode() < 300) {
                     throw new IllegalArgumentException("Expected redirect, but was " + exchange.getResponseCode());
                 }
-                return ApiHttpExchange.convertRequestValue(exchange.getResponseHeader("Location"), returnType);
+                return converter.apply(exchange.getResponseHeader("Location"));
             };
         }
     }

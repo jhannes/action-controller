@@ -1,11 +1,10 @@
 package org.actioncontroller;
 
 import com.sun.net.httpserver.HttpServer;
-import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.client.ApiClientClassProxy;
+import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.client.HttpURLConnectionApiClient;
 import org.actioncontroller.httpserver.ApiHandler;
-import org.actioncontroller.meta.ApiHttpExchange;
 import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapperFactory;
@@ -61,10 +60,10 @@ public class AnnotationConfigurationTest {
                 if (parameter.getType() == Consumer.class) {
                     return exchange -> (Consumer<Object>) o -> exchange.setCookie(name, encrypt(encryptCipher, o.toString()), true, true);
                 } else {
-                    Function<String, Object> converter = TypeConverterFactory.fromSingleString(parameter.getParameterizedType(), "cookie " + name);
+                    Function<String, ?> converter = TypeConverterFactory.fromSingleString(parameter.getParameterizedType(), "cookie " + name);
                     return exchange ->  exchange.getCookie(name)
                             .map(cookie -> decrypt(decryptCipher, cookie))
-                            .map(converter::apply)
+                            .map(converter)
                             .orElseThrow();
                 }
             }
@@ -85,7 +84,6 @@ public class AnnotationConfigurationTest {
                 }
             }
 
-
             @Override
             public HttpClientParameterMapper clientParameterMapper(MyEncryptedCookie annotation, Parameter parameter) {
                 String name = annotation.value();
@@ -99,8 +97,8 @@ public class AnnotationConfigurationTest {
             @SuppressWarnings({"unchecked", "rawtypes"})
             private HttpClientParameterMapper consumer(Parameter parameter, Function<ApiClientExchange, Optional<String>> f) {
                 Type targetType = TypesUtil.typeParameter(parameter.getParameterizedType());
-                return (exchange, arg) -> f.apply(exchange)
-                        .ifPresent(string -> ((Consumer)arg).accept(ApiHttpExchange.convertRequestValue(string, targetType)));
+                Function<String, ?> converter = TypeConverterFactory.fromSingleString(targetType, "cookie");
+                return (exchange, arg) -> f.apply(exchange).ifPresent(string -> ((Consumer)arg).accept(converter.apply(string)));
             }
         }
     }

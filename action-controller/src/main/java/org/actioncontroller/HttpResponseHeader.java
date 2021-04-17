@@ -9,6 +9,7 @@ import org.actioncontroller.meta.HttpReturnMapping;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.lang.reflect.Type;
+import java.util.function.Function;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -34,8 +35,8 @@ public @interface HttpResponseHeader {
 
         @Override
         public HttpClientReturnMapper createClientMapper(HttpResponseHeader annotation, Type returnType) {
-            return (exchange) ->
-                    ApiHttpExchange.convertRequestValue(exchange.getResponseHeader(annotation.value()), returnType);
+            Function<String, ?> converter = TypeConverterFactory.fromSingleString(returnType, "header " + annotation.value());
+            return (exchange) -> converter.apply(exchange.getResponseHeader(annotation.value()));
         }
     }
 }

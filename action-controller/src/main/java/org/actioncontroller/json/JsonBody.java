@@ -77,12 +77,18 @@ public @interface JsonBody {
             if (annotation.buffer()) {
                 return (o, exchange) -> exchange.write(
                         "application/json",
-                        writer -> writer.write(jsonGenerator.generateNode(o, java.util.Optional.of(returnType)).toJson())
+                        writer -> {
+                            JsonNode json = jsonGenerator.generateNode(o, Optional.of(returnType));
+                            writer.write(json.toJson());
+                        }
                 );
             } else {
                 return (o, exchange) -> exchange.write(
                         "application/json",
-                        writer -> jsonGenerator.generateNode(o, java.util.Optional.of(returnType)).toJson(writer)
+                        writer -> {
+                            JsonNode json = jsonGenerator.generateNode(o, Optional.of(returnType));
+                            json.toJson(writer);
+                        }
                 );
             }
         }
@@ -121,7 +127,8 @@ public @interface JsonBody {
         }
 
         private Optional<Object> readPojo(ApiHttpExchange exchange, Type targetType) throws IOException {
-            return mapToPojo(JsonParser.parseNode(exchange.getReader()), targetType);
+            JsonNode json = JsonParser.parseNode(exchange.getReader());
+            return mapToPojo(json, targetType);
         }
 
         private Optional<Object> mapToPojo(JsonNode json, Type targetType) {

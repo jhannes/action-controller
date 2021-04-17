@@ -79,7 +79,7 @@ public @interface ContentBody {
             if (BufferedReader.class == returnType) {
                 return exchange -> new BufferedReader(exchange.getResponseBodyReader());
             }
-            Function<String, Object> converter = TypeConverterFactory.fromSingleString(returnType, "content body");
+            Function<String, ?> converter = TypeConverterFactory.fromSingleString(returnType, "content body");
 
             return new HttpClientReturnMapper() {
                 @Override

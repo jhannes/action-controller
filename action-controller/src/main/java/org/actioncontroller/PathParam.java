@@ -30,7 +30,7 @@ public @interface PathParam {
         @Override
         public HttpParameterMapper create(PathParam annotation, Parameter parameter, ApiControllerContext context) {
             String name = annotation.value();
-            Function<String, Object> converter = TypeConverterFactory.fromSingleString(parameter.getParameterizedType(), "path parameter " + name);
+            Function<String, ?> converter = TypeConverterFactory.fromSingleString(parameter.getParameterizedType(), "path parameter " + name);
             return (exchange) -> converter.apply(exchange.pathParam(name));
         }
 

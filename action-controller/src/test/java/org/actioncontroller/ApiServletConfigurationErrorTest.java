@@ -151,7 +151,8 @@ public class ApiServletConfigurationErrorTest {
                 expect.pattern("While processing {} arguments to {}");
             }
         });
-        assertThatThrownBy(() -> clientController.doIt("something")).isInstanceOf(HttpClientException.class);
+        assertThatThrownBy(() -> clientController.doIt("something"))
+                .hasMessage("Unsupported target void for header Location");
     }
 
     public static class ParameterMapperWithoutProperConstructor implements

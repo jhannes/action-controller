@@ -59,7 +59,7 @@ public class TypeConverterFactory {
             LocalDate.class, s -> DEFAULT_DATE_FORMAT.parse(s, Instant::from).atZone(ZoneId.systemDefault()).toLocalDate()
     );
 
-    public static Function<String, Object> fromSingleString(Type targetClass, String description) {
+    public static Function<String, ?> fromSingleString(Type targetClass, String description) {
         return getBaseConverter(targetClass, description);
     }
 
@@ -75,19 +75,18 @@ public class TypeConverterFactory {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private static <T> Function<String, T> getBaseConverter(Type targetClass, String description) {
+    private static Function<String, ?> getBaseConverter(Type targetClass, String description) {
         Function<String, ?> converter = converters.get(targetClass);
         if (converter != null) {
-            return (Function<String, T>) converter;
+            return converter;
         }
         Function<String, ?> numberConverter = numberConverters.get(targetClass);
         if (numberConverter != null) {
-            return (Function<String, T>) numberConverter;
+            return numberConverter;
         }
         Function<String, ?> dateConverter = dateConverters.get(targetClass);
         if (dateConverter != null) {
-            return (Function<String, T>) dateConverter;
+            return dateConverter;
         }
         if ((targetClass instanceof Class) && Enum.class.isAssignableFrom((Class<?>) targetClass)) {
             return enumConverter(targetClass);
@@ -137,7 +136,7 @@ public class TypeConverterFactory {
         };
     }
 
-    private static TypeConverter arrayListConverter(Type parameterType, String description, Function<String, Object> baseConverter) {
+    private static TypeConverter arrayListConverter(Type parameterType, String description, Function<String, ?> baseConverter) {
         return strings -> {
             ArrayList<Object> result = new ArrayList<>();
             for (String string : strings) {
@@ -151,7 +150,7 @@ public class TypeConverterFactory {
         };
     }
 
-    private static TypeConverter hashSetConverter(Type parameterType, String description, Function<String, Object> baseConverter) {
+    private static TypeConverter hashSetConverter(Type parameterType, String description, Function<String, ?> baseConverter) {
         return strings -> {
             HashSet<Object> result = new HashSet<>();
             for (String string : strings) {

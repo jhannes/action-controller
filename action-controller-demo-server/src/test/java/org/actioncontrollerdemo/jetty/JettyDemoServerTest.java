@@ -76,8 +76,8 @@ public class JettyDemoServerTest {
         long lastModified = connection.getHeaderFieldDate("Last-Modified", -1);
         assertThat(lastModified).isNotEqualTo(-1);
         assertThat(System.currentTimeMillis() - lastModified)
-                .as("last modified should be more than one minute ago or something is fishy")
-                .isGreaterThan(60_000);
+                .as("last modified should be more than five seconds ago or something is fishy")
+                .isGreaterThan(5000);
     }
     
     @Test

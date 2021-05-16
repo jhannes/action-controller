@@ -1,6 +1,7 @@
-package org.actioncontroller;
+package org.actioncontroller.httpserver;
 
 import com.sun.net.httpserver.HttpServer;
+import org.actioncontroller.AbstractHttpPrincipalTest;
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.HttpURLConnectionApiClient;
 import org.actioncontroller.httpserver.ApiHandler;

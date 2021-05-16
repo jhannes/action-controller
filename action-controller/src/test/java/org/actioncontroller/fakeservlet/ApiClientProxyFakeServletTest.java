@@ -1,8 +1,9 @@
-package org.actioncontroller.test;
+package org.actioncontroller.fakeservlet;
 
 import org.actioncontroller.AbstractApiClientProxyTest;
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.servlet.ApiServlet;
+import org.actioncontroller.test.FakeApiClient;
 import org.junit.Test;
 
 import java.net.URL;

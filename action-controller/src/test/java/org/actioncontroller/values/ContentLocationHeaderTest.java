@@ -1,4 +1,4 @@
-package org.actioncontroller;
+package org.actioncontroller.values;
 
 import org.actioncontroller.actions.POST;
 import org.actioncontroller.servlet.ApiServlet;

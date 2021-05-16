@@ -1,5 +1,6 @@
-package org.actioncontroller.https;
+package org.actioncontroller.fakeservlet;
 
+import org.actioncontroller.AbstractApiClientProxyHttpsTest;
 import org.actioncontroller.servlet.ApiServlet;
 import org.actioncontroller.test.FakeApiClient;
 import org.junit.Before;

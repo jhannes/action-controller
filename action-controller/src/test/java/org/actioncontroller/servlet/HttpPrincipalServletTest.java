@@ -1,5 +1,6 @@
-package org.actioncontroller;
+package org.actioncontroller.servlet;
 
+import org.actioncontroller.AbstractHttpPrincipalTest;
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.HttpURLConnectionApiClient;
 import org.actioncontroller.servlet.ApiServlet;

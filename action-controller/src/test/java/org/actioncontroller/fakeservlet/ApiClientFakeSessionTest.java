@@ -1,8 +1,9 @@
-package org.actioncontroller.test;
+package org.actioncontroller.fakeservlet;
 
 import org.actioncontroller.AbstractApiClientSessionTest;
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.servlet.ApiServlet;
+import org.actioncontroller.test.FakeApiClient;
 
 import java.net.URL;
 import java.security.Principal;

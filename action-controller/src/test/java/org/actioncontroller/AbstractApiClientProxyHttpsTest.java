@@ -1,5 +1,6 @@
-package org.actioncontroller.https;
+package org.actioncontroller;
 
+import org.actioncontroller.servlet.ApiClientProxyHttpsServletTest;
 import org.actioncontroller.values.ClientCertificate;
 import org.actioncontroller.values.ContentBody;
 import org.actioncontroller.util.ExceptionUtil;

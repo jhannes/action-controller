@@ -1,5 +1,6 @@
-package org.actioncontroller;
+package org.actioncontroller.fakeservlet;
 
+import org.actioncontroller.AbstractHttpPrincipalTest;
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.servlet.ApiServlet;
 import org.actioncontroller.test.FakeApiClient;

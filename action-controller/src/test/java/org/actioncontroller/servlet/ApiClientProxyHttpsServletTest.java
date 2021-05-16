@@ -1,7 +1,7 @@
-package org.actioncontroller.https;
+package org.actioncontroller.servlet;
 
 import org.actioncontroller.client.HttpURLConnectionApiClient;
-import org.actioncontroller.servlet.ApiServlet;
+import org.actioncontroller.AbstractApiClientProxyHttpsTest;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;

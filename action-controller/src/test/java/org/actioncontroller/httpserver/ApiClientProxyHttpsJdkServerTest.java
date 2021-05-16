@@ -1,8 +1,9 @@
-package org.actioncontroller.https;
+package org.actioncontroller.httpserver;
 
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
 import com.sun.net.httpserver.HttpsServer;
+import org.actioncontroller.AbstractApiClientProxyHttpsTest;
 import org.actioncontroller.client.HttpURLConnectionApiClient;
 import org.actioncontroller.httpserver.ApiHandler;
 import org.junit.Before;

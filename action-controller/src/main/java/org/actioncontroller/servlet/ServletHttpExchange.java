@@ -1,10 +1,10 @@
 package org.actioncontroller.servlet;
 
-import org.actioncontroller.ExceptionUtil;
-import org.actioncontroller.HttpActionException;
-import org.actioncontroller.HttpServerErrorException;
-import org.actioncontroller.IOUtil;
-import org.actioncontroller.meta.ApiHttpExchange;
+import org.actioncontroller.util.ExceptionUtil;
+import org.actioncontroller.exceptions.HttpActionException;
+import org.actioncontroller.exceptions.HttpServerErrorException;
+import org.actioncontroller.util.IOUtil;
+import org.actioncontroller.ApiHttpExchange;
 import org.actioncontroller.meta.OutputStreamConsumer;
 import org.actioncontroller.meta.WriterConsumer;
 
@@ -105,11 +105,6 @@ public class ServletHttpExchange implements ApiHttpExchange {
     }
 
     @Override
-    public String getRequestURL() {
-        return getFullURL();
-    }
-
-    @Override
     public String getPathInfo() {
         return req.getPathInfo() != null ? req.getPathInfo() : "";
     }
@@ -162,11 +157,6 @@ public class ServletHttpExchange implements ApiHttpExchange {
     public List<String> getParameters(String name) {
         String[] values = req.getParameterValues(name);
         return values != null ? Arrays.asList(values) : null;
-    }
-
-    @Override
-    public String getParameter(String name) {
-        return req.getParameter(name);
     }
 
     @Override
@@ -277,10 +267,6 @@ public class ServletHttpExchange implements ApiHttpExchange {
                 : Optional.empty();
     }
 
-    private String getFullURL() {
-        return getServerURL() + getContextPath() + req.getServletPath() + getPathInfo() + (req.getQueryString() != null ? "?" + req.getQueryString() : "");
-    }
-
     @Override
     public X509Certificate[] getClientCertificate() {
         return (X509Certificate[]) req.getAttribute("javax.servlet.request.X509Certificate");
@@ -307,6 +293,6 @@ public class ServletHttpExchange implements ApiHttpExchange {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + getHttpMethod() + " " + getFullURL() + "]";
+        return getClass().getSimpleName() + "[" + getHttpMethod() + " " + getRequestURL() + "]";
     }
 }

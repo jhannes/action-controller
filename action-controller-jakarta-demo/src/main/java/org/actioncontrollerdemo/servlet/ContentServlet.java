@@ -1,6 +1,6 @@
 package org.actioncontrollerdemo.servlet;
 
-import org.actioncontroller.ExceptionUtil;
+import org.actioncontroller.util.ExceptionUtil;
 
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;

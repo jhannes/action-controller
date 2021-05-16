@@ -1,5 +1,7 @@
 package org.actioncontroller;
 
+import org.actioncontroller.exceptions.HttpRequestException;
+
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.MalformedURLException;

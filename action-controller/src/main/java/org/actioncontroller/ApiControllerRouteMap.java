@@ -1,6 +1,8 @@
 package org.actioncontroller;
 
-import org.actioncontroller.meta.ApiHttpExchange;
+import org.actioncontroller.exceptions.ActionControllerConfigurationException;
+import org.actioncontroller.exceptions.HttpNotFoundException;
+import org.actioncontroller.exceptions.HttpRequestException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

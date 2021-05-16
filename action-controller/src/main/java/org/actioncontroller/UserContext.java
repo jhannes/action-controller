@@ -1,7 +1,5 @@
 package org.actioncontroller;
 
-import org.actioncontroller.meta.ApiHttpExchange;
-
 public interface UserContext {
     boolean isUserLoggedIn(ApiHttpExchange exchange);
 

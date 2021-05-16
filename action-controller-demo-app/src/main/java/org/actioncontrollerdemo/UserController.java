@@ -1,12 +1,12 @@
 package org.actioncontrollerdemo;
 
-import org.actioncontroller.ContentBody;
-import org.actioncontroller.GET;
-import org.actioncontroller.POST;
-import org.actioncontroller.RequestParam;
-import org.actioncontroller.SendRedirect;
-import org.actioncontroller.UnencryptedCookie;
-import org.actioncontroller.UserPrincipal;
+import org.actioncontroller.values.ContentBody;
+import org.actioncontroller.actions.GET;
+import org.actioncontroller.actions.POST;
+import org.actioncontroller.values.RequestParam;
+import org.actioncontroller.values.SendRedirect;
+import org.actioncontroller.values.UnencryptedCookie;
+import org.actioncontroller.values.UserPrincipal;
 
 import java.security.Principal;
 import java.util.Optional;

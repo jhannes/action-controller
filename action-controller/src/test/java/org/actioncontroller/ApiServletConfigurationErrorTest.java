@@ -1,7 +1,10 @@
 package org.actioncontroller;
 
+import org.actioncontroller.actions.GET;
+import org.actioncontroller.actions.POST;
 import org.actioncontroller.client.ApiClientClassProxy;
-import org.actioncontroller.client.HttpClientException;
+import org.actioncontroller.exceptions.ActionControllerConfigurationException;
+import org.actioncontroller.exceptions.HttpServerErrorException;
 import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpParameterMapper;
@@ -11,6 +14,8 @@ import org.actioncontroller.meta.HttpReturnMapping;
 import org.actioncontroller.meta.HttpReturnMapper;
 import org.actioncontroller.servlet.ApiServlet;
 import org.actioncontroller.test.FakeApiClient;
+import org.actioncontroller.values.PathParam;
+import org.actioncontroller.values.SendRedirect;
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.extend.junit.ExpectedLogEventsRule;

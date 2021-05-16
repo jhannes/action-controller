@@ -1,9 +1,9 @@
 package org.actioncontrollerdemo;
 
-import org.actioncontroller.ContentBody;
-import org.actioncontroller.GET;
-import org.actioncontroller.RequestParam;
-import org.actioncontroller.json.JsonBody;
+import org.actioncontroller.values.ContentBody;
+import org.actioncontroller.actions.GET;
+import org.actioncontroller.values.RequestParam;
+import org.actioncontroller.values.json.JsonBody;
 import org.jsonbuddy.JsonObject;
 
 import java.util.Optional;

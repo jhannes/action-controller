@@ -4,10 +4,10 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpPrincipal;
 import com.sun.net.httpserver.HttpsExchange;
-import org.actioncontroller.HttpActionException;
-import org.actioncontroller.HttpServerErrorException;
-import org.actioncontroller.IOUtil;
-import org.actioncontroller.meta.ApiHttpExchange;
+import org.actioncontroller.exceptions.HttpActionException;
+import org.actioncontroller.exceptions.HttpServerErrorException;
+import org.actioncontroller.util.IOUtil;
+import org.actioncontroller.ApiHttpExchange;
 import org.actioncontroller.meta.OutputStreamConsumer;
 import org.actioncontroller.meta.WriterConsumer;
 
@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.actioncontroller.ExceptionUtil.softenException;
+import static org.actioncontroller.util.ExceptionUtil.softenException;
 
 public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
     public static final Charset CHARSET = StandardCharsets.ISO_8859_1;
@@ -239,12 +239,6 @@ public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
     @Override
     public List<String> getParameters(String name) {
         return this.parameters.get(name);
-    }
-
-    @Override
-    public String getParameter(String name) {
-        List<String> parameterValues = this.parameters.get(name);
-        return parameterValues != null && !parameterValues.isEmpty() ? parameterValues.get(0) : null;
     }
 
     @Override

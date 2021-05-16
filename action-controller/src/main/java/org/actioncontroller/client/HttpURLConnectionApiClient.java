@@ -1,7 +1,7 @@
 package org.actioncontroller.client;
 
-import org.actioncontroller.HttpNotModifiedException;
-import org.actioncontroller.IOUtil;
+import org.actioncontroller.exceptions.HttpNotModifiedException;
+import org.actioncontroller.util.IOUtil;
 import org.actioncontroller.meta.OutputStreamConsumer;
 import org.actioncontroller.meta.WriterConsumer;
 import org.slf4j.Logger;
@@ -46,7 +46,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static org.actioncontroller.ExceptionUtil.softenException;
+import static org.actioncontroller.util.ExceptionUtil.softenException;
 
 public class HttpURLConnectionApiClient implements ApiClient {
     private static final Logger logger = LoggerFactory.getLogger(HttpURLConnectionApiClient.class);

@@ -1,9 +1,9 @@
 package org.actioncontroller.https;
 
-import org.actioncontroller.ClientCertificate;
-import org.actioncontroller.ContentBody;
-import org.actioncontroller.ExceptionUtil;
-import org.actioncontroller.GET;
+import org.actioncontroller.values.ClientCertificate;
+import org.actioncontroller.values.ContentBody;
+import org.actioncontroller.util.ExceptionUtil;
+import org.actioncontroller.actions.GET;
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.HttpClientException;

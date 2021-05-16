@@ -4,7 +4,7 @@ import com.sun.net.httpserver.HttpExchange;
 import org.actioncontroller.httpserver.ActionAuthenticator;
 import org.actioncontroller.httpserver.JdkHttpExchange;
 import org.actioncontroller.httpserver.NestedHttpPrincipal;
-import org.actioncontroller.meta.ApiHttpExchange;
+import org.actioncontroller.ApiHttpExchange;
 import org.actioncontrollerdemo.DemoPrincipal;
 
 import java.io.IOException;

@@ -4,6 +4,7 @@ import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.client.HttpURLConnectionApiClient;
 import org.actioncontroller.servlet.ApiServlet;
+import org.actioncontroller.util.ExceptionUtil;
 import org.eclipse.jetty.server.HttpChannel;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;

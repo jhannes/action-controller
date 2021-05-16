@@ -1,5 +1,8 @@
 package org.actioncontroller.meta;
 
+import org.actioncontroller.values.ContentBody;
+import org.actioncontroller.values.SendRedirect;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
@@ -8,7 +11,7 @@ import java.util.Optional;
 /**
  * Implementations of this interface should be annotated on annotations used to
  * convert method invocation return values to HTTP response information, such as
- * {@link org.actioncontroller.ContentBody} and {@link org.actioncontroller.SendRedirect}
+ * {@link ContentBody} and {@link SendRedirect}
  */
 public interface HttpReturnMapperFactory<ANNOTATION extends Annotation> extends AnnotationFactory {
 

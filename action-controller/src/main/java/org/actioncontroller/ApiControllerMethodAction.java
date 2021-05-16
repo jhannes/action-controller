@@ -1,11 +1,19 @@
 package org.actioncontroller;
 
-import org.actioncontroller.json.JsonHttpActionException;
-import org.actioncontroller.meta.ApiHttpExchange;
+import org.actioncontroller.exceptions.ApiActionParameterUnknownMappingException;
+import org.actioncontroller.exceptions.ApiActionResponseUnknownMappingException;
+import org.actioncontroller.exceptions.HttpActionException;
+import org.actioncontroller.exceptions.HttpRedirectException;
+import org.actioncontroller.exceptions.HttpRequestException;
+import org.actioncontroller.exceptions.HttpServerErrorException;
+import org.actioncontroller.values.json.JsonHttpActionException;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapper;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
+import org.actioncontroller.util.ExceptionUtil;
+import org.actioncontroller.values.PathParam;
+import org.actioncontroller.values.RequireUserRole;
 import org.jsonbuddy.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -282,7 +290,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
                 }
             }
             return arguments;
-        } catch (HttpRequestException|HttpRedirectException e) {
+        } catch (HttpRequestException | HttpRedirectException e) {
             logger.debug("While processing {} arguments to {}: {}", exchange, this, e.toString());
             throw e;
         } catch (HttpActionException e) {

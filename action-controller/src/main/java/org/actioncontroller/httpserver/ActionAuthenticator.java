@@ -2,7 +2,7 @@ package org.actioncontroller.httpserver;
 
 import com.sun.net.httpserver.Authenticator;
 import com.sun.net.httpserver.HttpExchange;
-import org.actioncontroller.meta.ApiHttpExchange;
+import org.actioncontroller.ApiHttpExchange;
 
 import java.io.IOException;
 

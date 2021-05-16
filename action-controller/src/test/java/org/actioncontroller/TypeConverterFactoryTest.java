@@ -1,5 +1,6 @@
 package org.actioncontroller;
 
+import org.actioncontroller.exceptions.HttpRequestException;
 import org.junit.Test;
 
 import java.lang.annotation.RetentionPolicy;

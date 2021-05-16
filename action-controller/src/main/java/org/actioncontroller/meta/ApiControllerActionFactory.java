@@ -2,8 +2,8 @@ package org.actioncontroller.meta;
 
 import org.actioncontroller.ApiControllerAction;
 import org.actioncontroller.ApiControllerContext;
-import org.actioncontroller.GET;
-import org.actioncontroller.POST;
+import org.actioncontroller.actions.GET;
+import org.actioncontroller.actions.POST;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;

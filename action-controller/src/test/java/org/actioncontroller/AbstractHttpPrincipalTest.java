@@ -1,8 +1,10 @@
 package org.actioncontroller;
 
+import org.actioncontroller.actions.GET;
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.HttpClientException;
+import org.actioncontroller.values.ContentBody;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -37,17 +39,17 @@ public abstract class AbstractHttpPrincipalTest {
 
         @GET("/user/optional")
         @ContentBody
-        public String optionalUser(@org.actioncontroller.UserPrincipal Optional<UserPrincipal> principal) {
+        public String optionalUser(@org.actioncontroller.values.UserPrincipal Optional<UserPrincipal> principal) {
             return principal.map(Principal::getName).orElse("<none>");
         }
 
         @GET("/user/required")
-        public void requiredUser(@org.actioncontroller.UserPrincipal UserPrincipal principal) {
+        public void requiredUser(@org.actioncontroller.values.UserPrincipal UserPrincipal principal) {
 
         }
 
         @GET("/admin/optional")
-        public void optionalAdmin(@org.actioncontroller.UserPrincipal Optional<AdminPrincipal> principal) {
+        public void optionalAdmin(@org.actioncontroller.values.UserPrincipal Optional<AdminPrincipal> principal) {
 
         }
     }

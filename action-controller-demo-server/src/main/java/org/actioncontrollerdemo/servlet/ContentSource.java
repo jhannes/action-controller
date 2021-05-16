@@ -1,6 +1,6 @@
 package org.actioncontrollerdemo.servlet;
 
-import org.actioncontroller.ExceptionUtil;
+import org.actioncontroller.util.ExceptionUtil;
 
 import java.io.File;
 import java.io.FileNotFoundException;

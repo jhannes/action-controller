@@ -1,6 +1,6 @@
 package org.actioncontroller.meta;
 
-import org.actioncontroller.ExceptionUtil;
+import org.actioncontroller.util.ExceptionUtil;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;

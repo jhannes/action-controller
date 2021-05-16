@@ -1,7 +1,7 @@
 package org.actioncontroller.test;
 
-import org.actioncontroller.HttpNotModifiedException;
-import org.actioncontroller.IOUtil;
+import org.actioncontroller.exceptions.HttpNotModifiedException;
+import org.actioncontroller.util.IOUtil;
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.client.HttpClientException;

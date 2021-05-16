@@ -1,5 +1,7 @@
 package org.actioncontroller;
 
+import org.actioncontroller.exceptions.ActionControllerConfigurationException;
+
 import java.util.HashMap;
 import java.util.Map;
 

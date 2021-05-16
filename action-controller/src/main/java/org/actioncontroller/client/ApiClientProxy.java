@@ -1,9 +1,9 @@
 package org.actioncontroller.client;
 
-import org.actioncontroller.DELETE;
-import org.actioncontroller.GET;
-import org.actioncontroller.POST;
-import org.actioncontroller.PUT;
+import org.actioncontroller.actions.DELETE;
+import org.actioncontroller.actions.GET;
+import org.actioncontroller.actions.POST;
+import org.actioncontroller.actions.PUT;
 import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpClientReturnMapper;
 import org.actioncontroller.meta.HttpParameterMapperFactory;

@@ -10,13 +10,13 @@
  *     <li>
  *         {@link org.actioncontroller.meta.HttpParameterMapping} annotates
  *         annotations used on parameters to specify how to populate the
- *         arguments in the context onf an {@link org.actioncontroller.meta.ApiHttpExchange}
+ *         arguments in the context onf an {@link org.actioncontroller.ApiHttpExchange}
  *          (and {@link org.actioncontroller.client.ApiClientExchange})
  *     </li>
  *     <li>
  *         {@link org.actioncontroller.meta.HttpReturnMapping} annotates
  *          annotations used on methods to specify how to deal with a return value
- *          in the context of an {@link org.actioncontroller.meta.ApiHttpExchange}
+ *          in the context of an {@link org.actioncontroller.ApiHttpExchange}
  *          (and {@link org.actioncontroller.client.ApiClientExchange})
  *     </li>
  *     <li>
@@ -38,11 +38,11 @@
  *     </li>
  *     <li>
  *         {@link org.actioncontroller.meta.HttpParameterMapperFactory} creates mappers from
- *         {@link org.actioncontroller.meta.ApiHttpExchange} to method invocation arguments
+ *         {@link org.actioncontroller.ApiHttpExchange} to method invocation arguments
  *     </li>
  *     <li>
  *         {@link org.actioncontroller.meta.HttpReturnMapperFactory} creates mappers from
- *         method invocation return value {@link org.actioncontroller.meta.ApiHttpExchange}
+ *         method invocation return value {@link org.actioncontroller.ApiHttpExchange}
  *     </li>
  * </ul>
  *
@@ -54,11 +54,11 @@
  * <ul>
  *     <li>
  *         {@link org.actioncontroller.meta.HttpParameterMapper} maps from an
- *         {@link org.actioncontroller.meta.ApiHttpExchange} to a method invocation argument
+ *         {@link org.actioncontroller.ApiHttpExchange} to a method invocation argument
  *     </li>
  *     <li>
  *         {@link org.actioncontroller.meta.HttpReturnMapper} maps from an
- *         method invocation return value to {@link org.actioncontroller.meta.ApiHttpExchange}
+ *         method invocation return value to {@link org.actioncontroller.ApiHttpExchange}
  *     </li>
  *     <li>
  *         {@link org.actioncontroller.meta.HttpClientParameterMapper} maps from an

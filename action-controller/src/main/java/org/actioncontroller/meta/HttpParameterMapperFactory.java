@@ -1,10 +1,14 @@
 package org.actioncontroller.meta;
 
 import org.actioncontroller.ApiControllerContext;
-import org.actioncontroller.ExceptionUtil;
-import org.actioncontroller.TypesUtil;
+import org.actioncontroller.ApiHttpExchange;
+import org.actioncontroller.util.ExceptionUtil;
+import org.actioncontroller.util.TypesUtil;
 import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.ApiClientExchange;
+import org.actioncontroller.values.PathParam;
+import org.actioncontroller.values.RequestParam;
+import org.actioncontroller.values.UnencryptedCookie;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Parameter;
@@ -19,8 +23,8 @@ import java.util.function.Supplier;
 /**
  * Implementations of this interface should be annotated on annotations used to
  * convert HTTP requests into method invocation arguments, such as
- * {@link org.actioncontroller.RequestParam}, {@link org.actioncontroller.PathParam}
- * and {@link org.actioncontroller.UnencryptedCookie}
+ * {@link RequestParam}, {@link PathParam}
+ * and {@link UnencryptedCookie}
  */
 public interface HttpParameterMapperFactory<ANNOTATION extends Annotation> extends AnnotationFactory {
 

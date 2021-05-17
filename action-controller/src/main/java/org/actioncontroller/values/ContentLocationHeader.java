@@ -51,12 +51,12 @@ public @interface ContentLocationHeader {
         @Override
         public HttpClientReturnMapper createClientMapper(ContentLocationHeader annotation, Type returnType) {
             if (annotation.value().isEmpty()) {
-                return exchange -> exchange.getResponseHeader(ContentLocationHeader.FIELD_NAME);
+                return exchange -> exchange.getResponseHeaders(ContentLocationHeader.FIELD_NAME).iterator().next();
             } else {
                 Pattern pattern = Pattern.compile(annotation.value().replaceFirst("\\{[^}]+}", "([^/]+)"));
                 Function<String, ?> converter = TypeConverterFactory.fromSingleString(returnType, "path parameter " + annotation.value());
                 return exchange -> {
-                    String contentLocationHeader = exchange.getResponseHeader(ContentLocationHeader.FIELD_NAME);
+                    String contentLocationHeader = exchange.getResponseHeaders(ContentLocationHeader.FIELD_NAME).iterator().next();
                     if (!contentLocationHeader.startsWith(exchange.getApiURL())) {
                         throw new IllegalArgumentException("Expected content-location <" + contentLocationHeader + "> to start with <" + exchange.getApiURL() + ">");
                     }

@@ -16,6 +16,8 @@ public class DemoAuthenticator extends ActionAuthenticator {
     @Override
     public Result authenticate(HttpExchange exchange) {
         return JdkHttpExchange.getCookie("username", exchange.getRequestHeaders())
+                .stream()
+                .findFirst()
                 .map(username -> new Success(new NestedHttpPrincipal("demo", DemoPrincipal.createPrincipal(username))))
                 .orElseGet(() -> new Success(null));
     }

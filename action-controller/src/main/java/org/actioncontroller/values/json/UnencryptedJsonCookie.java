@@ -109,8 +109,9 @@ public @interface UnencryptedJsonCookie {
         }
 
         protected Object getCookie(ApiHttpExchange exchange, String name, Type type) {
-            return exchange.getCookie(name)
+            return exchange.getCookies(name).stream()
                     .map(JsonObject::parse).map(json -> PojoMapper.mapType(json, type))
+                    .findFirst()
                     .orElseGet(() -> PojoMapper.mapType(new JsonObject(), type));
         }
 

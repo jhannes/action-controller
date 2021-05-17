@@ -26,10 +26,12 @@ import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class JakartaServletHttpExchange implements ApiHttpExchange {
@@ -216,19 +218,23 @@ public class JakartaServletHttpExchange implements ApiHttpExchange {
     }
 
     @Override
-    public Optional<String> getCookie(String name) {
+    public List<String> getCookies(String name) {
         return getCookie(name, req);
     }
 
-    public static Optional<String> getCookie(String name, HttpServletRequest req) {
-        return Optional.ofNullable(req.getCookies()).map(Stream::of)
-                .flatMap(cookieStream -> cookieStream.filter(c -> c.getName().equalsIgnoreCase(name)).findAny())
-                .map(c -> URLDecoder.decode(c.getValue(), CHARSET));
+    public static List<String> getCookie(String name, HttpServletRequest req) {
+        if (req.getCookies() == null) {
+            return Collections.emptyList();
+        }
+        return Stream.of(req.getCookies())
+                .filter(c -> c.getName().equalsIgnoreCase(name))
+                .map(c -> URLDecoder.decode(c.getValue(), CHARSET))
+                .collect(Collectors.toList());
     }
 
     @Override
-    public Optional<String> getHeader(String name) {
-        return Optional.ofNullable(req.getHeader(name));
+    public List<String> getHeaders(String name) {
+        return req.getHeaders(name) != null ? Collections.list(req.getHeaders(name)) : null;
     }
 
     @Override

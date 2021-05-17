@@ -1,16 +1,14 @@
 package org.actioncontroller.client;
 
-import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.OutputStreamConsumer;
 import org.actioncontroller.meta.WriterConsumer;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
-import java.lang.reflect.Parameter;
 import java.net.URL;
 import java.security.cert.X509Certificate;
-import java.util.Optional;
+import java.util.List;
 
 /**
  * Abstracts a HTTP request and response from the client perspective. Can be implemented with various
@@ -69,9 +67,9 @@ public interface ApiClientExchange {
 
     int getResponseCode() throws IOException;
 
-    String getResponseHeader(String name);
+    List<String> getResponseHeaders(String name);
 
-    Optional<String> getResponseCookie(String name);
+    List<String> getResponseCookies(String name);
 
     Reader getResponseBodyReader() throws IOException;
 

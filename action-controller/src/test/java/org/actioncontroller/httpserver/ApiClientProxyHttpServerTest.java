@@ -17,6 +17,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URL;
 
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -58,7 +59,7 @@ public class ApiClientProxyHttpServerTest extends AbstractApiClientProxyTest {
         String responseLine = SocketHttpClient.readLine(socket.getInputStream());
         assertThat(responseLine).startsWith("HTTP/1.1 302 ");
         assertThat(SocketHttpClient.readHttpHeaders(socket.getInputStream()))
-                .containsEntry("location", "http://" + Inet4Address.getByName("127.0.0.1").getHostName() + ":" + url.getPort() + "/frontPage");
+                .containsEntry("location", singletonList("http://" + Inet4Address.getByName("127.0.0.1").getHostName() + ":" + url.getPort() + "/frontPage"));
     }
 
     @Override

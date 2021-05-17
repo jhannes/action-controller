@@ -214,13 +214,13 @@ public class FakeApiClient implements ApiClient {
         }
 
         @Override
-        public String getResponseHeader(String name) {
-            return response.getHeader(name);
+        public List<String> getResponseHeaders(String name) {
+            return response.getHeaders(name);
         }
 
         @Override
-        public Optional<String> getResponseCookie(String name) {
-            return Optional.ofNullable(response.getCookie(name)).map(c -> URLDecoder.decode(c, CHARSET));
+        public List<String> getResponseCookies(String name) {
+            return response.getCookies(name);
         }
 
         @Override

@@ -73,7 +73,7 @@ public class ServletTest {
         request.setUserPrincipal(() -> "User name");
         FakeJakartaResponse response = request.service(servlet);
         
-        assertThat(response.getCookie("user")).isEqualTo("User name");
+        assertThat(response.getCookies("user")).containsOnly("User name");
         assertThat(response.getHeader("location")).isEqualTo(container.getContextRoot() + "/login");
         assertThat(response.getStatus()).isEqualTo(302);
     }

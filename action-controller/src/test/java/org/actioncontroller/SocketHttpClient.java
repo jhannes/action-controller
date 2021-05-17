@@ -48,14 +48,14 @@ public class SocketHttpClient implements ApiClient {
         this.baseUrl = baseUrl;
     }
 
-    public static Map<String, String> readHttpHeaders(InputStream inputStream) throws IOException {
-        Map<String, String> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    public static Map<String, List<String>> readHttpHeaders(InputStream inputStream) throws IOException {
+        Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         String headerLine;
         while (!(headerLine = readLine(inputStream)).trim().isEmpty()) {
             int colonPos = headerLine.indexOf(':');
             String headerName = headerLine.substring(0, colonPos).trim().toLowerCase();
             String headerValue = headerLine.substring(colonPos + 1).trim();
-            headers.put(headerName, headerValue);
+            headers.computeIfAbsent(headerName, k -> new ArrayList<>()).add(headerValue);
         }
         return headers;
     }
@@ -121,7 +121,7 @@ public class SocketHttpClient implements ApiClient {
 
         private Integer responseCode;
         private String responseMessage;
-        private Map<String, String> responseHeaders;
+        private Map<String, List<String>> responseHeaders;
         private OutputStreamConsumer consumer;
         private ByteArrayOutputStream requestBody;
 
@@ -246,9 +246,8 @@ public class SocketHttpClient implements ApiClient {
 
             responseHeaders = readHttpHeaders(socket.getInputStream());
             responseCookies = new ArrayList<>();
-            String setCookieField = getResponseHeader("Set-Cookie");
-            if (setCookieField != null) {
-                responseCookies = HttpCookie.parse(setCookieField);
+            for (String setCookieHeader : getResponseHeaders("Set-Cookie")) {
+                responseCookies = HttpCookie.parse(setCookieHeader);
                 responseCookies.forEach(c -> clientCookies.put(c.getName(), c));
             }
         }
@@ -263,22 +262,26 @@ public class SocketHttpClient implements ApiClient {
         }
 
         @Override
-        public String getResponseHeader(String name) {
-            return responseHeaders.get(name);
+        public List<String> getResponseHeaders(String name) {
+            return responseHeaders.getOrDefault(name, new ArrayList<>());
+        }
+        
+        public String firstResponseHeader(String name) {
+            return responseHeaders.containsKey(name) ? responseHeaders.get(name).get(0) : null;
         }
 
         @Override
-        public Optional<String> getResponseCookie(String name) {
+        public List<String> getResponseCookies(String name) {
             return responseCookies.stream()
                     .filter(c -> c.getName().equals(name))
                     .filter(SocketHttpClient::isUnexpired)
                     .map(httpCookie -> URLDecoder.decode(httpCookie.getValue(), CHARSET))
-                    .findFirst();
+                    .collect(Collectors.toList());
         }
 
         @Override
         public Reader getResponseBodyReader() throws IOException {
-            if ("chunked".equalsIgnoreCase(getResponseHeader("transfer-encoding"))) {
+            if ("chunked".equalsIgnoreCase(firstResponseHeader("transfer-encoding"))) {
                 StringBuilder buffer = new StringBuilder();
 
                 int length;
@@ -290,7 +293,7 @@ public class SocketHttpClient implements ApiClient {
                 return new StringReader(buffer.toString());
             }
 
-            String contentLengthHeader = getResponseHeader("Content-length");
+            String contentLengthHeader = firstResponseHeader("Content-length");
             if (contentLengthHeader != null) {
                 int contentLength = Integer.parseInt(contentLengthHeader);
 
@@ -322,7 +325,7 @@ public class SocketHttpClient implements ApiClient {
 
         @Override
         public InputStream getResponseBodyStream() throws IOException {
-            if (getResponseHeader("transfer-encoding").equalsIgnoreCase("chunked")) {
+            if ("chunked".equalsIgnoreCase(firstResponseHeader("transfer-encoding"))) {
                 ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
                 int length;

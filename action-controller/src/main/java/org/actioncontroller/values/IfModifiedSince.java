@@ -30,15 +30,13 @@ public @interface IfModifiedSince {
         @Override
         public HttpParameterMapper create(IfModifiedSince annotation, Parameter parameter, ApiControllerContext context) throws Exception {
             TypeConverter converter = TypeConverterFactory.fromStrings(parameter.getParameterizedType(), "header " + HEADER_NAME);
-            return exchange -> converter.apply(exchange.getHeader(HEADER_NAME).map(List::of).orElse(null));
+            return exchange -> converter.apply(exchange.getHeaders(HEADER_NAME));
         }
 
         @Override
         public HttpClientParameterMapper clientParameterMapper(IfModifiedSince annotation, Parameter parameter) {
             if (TypesUtil.getRawType(parameter.getParameterizedType()) == Optional.class) {
-                return (exchange, obj) -> {
-                    ((Optional<?>)obj).ifPresent(o -> exchange.setHeader(HEADER_NAME, DateTimeFormatter.RFC_1123_DATE_TIME.format((Temporal)o)));
-                };
+                return (exchange, obj) -> ((Optional<?>)obj).ifPresent(o -> exchange.setHeader(HEADER_NAME, DateTimeFormatter.RFC_1123_DATE_TIME.format((Temporal)o)));
             } else {
                 return (exchange, obj) -> exchange.setHeader(HEADER_NAME, DateTimeFormatter.RFC_1123_DATE_TIME.format((Temporal)obj));
             }

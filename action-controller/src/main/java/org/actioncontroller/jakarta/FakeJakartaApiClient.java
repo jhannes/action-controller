@@ -4,13 +4,13 @@ import jakarta.servlet.Servlet;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpSession;
-import org.actioncontroller.exceptions.HttpNotModifiedException;
-import org.actioncontroller.util.IOUtil;
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.client.HttpClientException;
+import org.actioncontroller.exceptions.HttpNotModifiedException;
 import org.actioncontroller.meta.OutputStreamConsumer;
 import org.actioncontroller.meta.WriterConsumer;
+import org.actioncontroller.util.IOUtil;
 import org.fakeservlet.jakarta.FakeJakartaRequest;
 import org.fakeservlet.jakarta.FakeJakartaResponse;
 
@@ -23,7 +23,6 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
@@ -214,13 +213,13 @@ public class FakeJakartaApiClient implements ApiClient {
         }
 
         @Override
-        public String getResponseHeader(String name) {
-            return response.getHeader(name);
+        public List<String> getResponseHeaders(String name) {
+            return response.getHeaders(name);
         }
 
         @Override
-        public Optional<String> getResponseCookie(String name) {
-            return Optional.ofNullable(response.getCookie(name)).map(c -> URLDecoder.decode(c, CHARSET));
+        public List<String> getResponseCookies(String name) {
+            return response.getCookies(name);
         }
 
         @Override

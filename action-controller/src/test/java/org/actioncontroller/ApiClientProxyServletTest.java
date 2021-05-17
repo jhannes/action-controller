@@ -17,7 +17,9 @@ import javax.servlet.ServletContextEvent;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.URL;
+import java.util.Collections;
 
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -71,7 +73,7 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
         String responseLine = SocketHttpClient.readLine(socket.getInputStream());
         assertThat(responseLine).startsWith("HTTP/1.1 302 ");
         assertThat(SocketHttpClient.readHttpHeaders(socket.getInputStream()))
-                .containsEntry("location", "http://127.0.0.1:" + url.getPort() + "/test/frontPage");
+                .containsEntry("location", singletonList("http://127.0.0.1:" + url.getPort() + "/test/frontPage"));
     }
 
     @Test
@@ -87,7 +89,7 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
         String responseLine = SocketHttpClient.readLine(socket.getInputStream());
         assertThat(responseLine).startsWith("HTTP/1.1 302 ");
         assertThat(SocketHttpClient.readHttpHeaders(socket.getInputStream()))
-                .containsEntry("location", "http://www.example.com:8080/test/frontPage");
+                .containsEntry("location", singletonList("http://www.example.com:8080/test/frontPage"));
     }
 
     @Test
@@ -105,7 +107,7 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
         String responseLine = SocketHttpClient.readLine(socket.getInputStream());
         assertThat(responseLine).startsWith("HTTP/1.1 302 ");
         assertThat(SocketHttpClient.readHttpHeaders(socket.getInputStream()))
-                .containsEntry("location", "https://www.example.com:8443/test/frontPage");
+                .containsEntry("location", singletonList("https://www.example.com:8443/test/frontPage"));
     }
 
     @Override

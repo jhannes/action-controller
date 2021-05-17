@@ -3,26 +3,30 @@ package org.fakeservlet;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
 import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
+import java.net.URLDecoder;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /**
  * DANGER! Unfinished class! Implement methods as you go!
  */
 public class FakeServletResponse implements HttpServletResponse {
+    public static final Charset CHARSET = StandardCharsets.ISO_8859_1;
     private final FakeServletRequest request;
     private int statusCode = 200;
     private String statusMessage;
     private String contentType;
-    private final Map<String, String> headers = new HashMap<>();
+    private final Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     private final List<Cookie> cookies = new ArrayList<>();
     private String characterEncoding;
 
@@ -35,11 +39,12 @@ public class FakeServletResponse implements HttpServletResponse {
         cookies.add(cookie);
     }
 
-    public String getCookie(String name) {
+    public List<String> getCookies(String name) {
         return cookies.stream()
                 .filter(c -> c.getName().equals(name))
-                .findFirst().map(Cookie::getValue)
-                .orElse(null);
+                .map(Cookie::getValue)
+                .map(c -> URLDecoder.decode(c, CHARSET))
+                .collect(Collectors.toList());
     }
 
     public List<Cookie> getCookies() {
@@ -113,7 +118,7 @@ public class FakeServletResponse implements HttpServletResponse {
 
     @Override
     public void setHeader(String name, String value) {
-        headers.put(name.toLowerCase(), value);
+        headers.computeIfAbsent(name, k -> new ArrayList<>()).add(value);
     }
 
     // TODO
@@ -150,13 +155,13 @@ public class FakeServletResponse implements HttpServletResponse {
 
     @Override
     public String getHeader(String name) {
-        return this.headers.get(name.toLowerCase());
+        return headers.containsKey(name) ? headers.get(name).get(0) : null;
     }
 
     // TODO
     @Override
-    public Collection<String> getHeaders(String s) {
-        throw unimplemented();
+    public List<String> getHeaders(String s) {
+        return headers.getOrDefault(s, new ArrayList<>());
     }
 
     @Override

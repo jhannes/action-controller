@@ -46,10 +46,7 @@ public @interface LastModified {
             TypeConverter converter = TypeConverterFactory.fromStrings(
                     ((ParameterizedType) parameter.getParameterizedType()).getActualTypeArguments()[0]
                 , "header " + HEADER_NAME);
-            return (exchange, arg) -> {
-                String responseHeader = exchange.getResponseHeader(HEADER_NAME);
-                ((Consumer)arg).accept(converter.apply(responseHeader != null ? List.of(responseHeader) : null));
-            };
+            return (exchange, arg) -> ((Consumer)arg).accept(converter.apply(exchange.getResponseHeaders(HEADER_NAME)));
         }
     }
 }

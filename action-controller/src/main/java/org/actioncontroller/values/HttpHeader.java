@@ -1,6 +1,7 @@
 package org.actioncontroller.values;
 
 import org.actioncontroller.ApiControllerContext;
+import org.actioncontroller.TypeConverter;
 import org.actioncontroller.TypeConverterFactory;
 import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpClientReturnMapper;
@@ -46,12 +47,10 @@ public @interface HttpHeader {
             String name = annotation.value();
             Class<?> type = TypesUtil.getRawType(parameter.getParameterizedType());
             if (type == Consumer.class) {
-                return exchange -> (Consumer<?>) o -> {
-                    exchange.setResponseHeader(name, Objects.toString(o, null));
-                };
+                return exchange -> (Consumer<?>) o -> exchange.setResponseHeader(name, Objects.toString(o, null));
             } else {
-                Function<String, ?> converter = TypeConverterFactory.fromSingleString(type, "header " + name);
-                return exchange -> converter.apply(exchange.getHeader(name).orElse(null));
+                TypeConverter converter = TypeConverterFactory.fromStrings(type, "header " + name);
+                return exchange -> converter.apply(exchange.getHeaders(name));
             }
         }
 
@@ -65,12 +64,10 @@ public @interface HttpHeader {
             Type parameterType = parameter.getParameterizedType();
             if (TypesUtil.getRawType(parameterType) == Consumer.class) {
                 Type typeParameter = TypesUtil.typeParameter(parameterType);
-                Function<String, ?> converter = TypeConverterFactory.fromSingleString(typeParameter, "header " + annotation.value());
+                TypeConverter converter = TypeConverterFactory.fromStrings(typeParameter, "header " + annotation.value());
                 return (exchange, arg) -> {
                     if (arg != null) {
-                        Optional.ofNullable(exchange.getResponseHeader(annotation.value()))
-                                .map(converter)
-                                .ifPresent(((Consumer) arg));
+                        ((Consumer) arg).accept(converter.apply(exchange.getResponseHeaders(annotation.value())));
                     }
                 };
             } else {
@@ -80,7 +77,7 @@ public @interface HttpHeader {
 
         @Override
         public HttpClientReturnMapper createClientMapper(HttpHeader annotation, Type returnType) {
-            return (exchange -> exchange.getResponseHeader(annotation.value()));
+            return (exchange -> exchange.getResponseHeaders(annotation.value()).iterator().next());
         }
     }
 

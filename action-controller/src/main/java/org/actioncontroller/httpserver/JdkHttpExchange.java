@@ -29,10 +29,12 @@ import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.actioncontroller.util.ExceptionUtil.softenException;
 
@@ -181,8 +183,8 @@ public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
     }
 
     @Override
-    public Optional<String> getHeader(String name) {
-        return Optional.ofNullable(exchange.getRequestHeaders().getFirst(name));
+    public List<String> getHeaders(String name) {
+        return exchange.getRequestHeaders().get(name);
     }
 
     @Override
@@ -276,30 +278,30 @@ public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
     }
 
     @Override
-    public Optional<String> getCookie(String name) {
+    public List<String> getCookies(String name) {
         return getCookie(name, exchange.getRequestHeaders());
     }
 
-    public static Optional<String> getCookie(String name, Headers requestHeaders) {
+    public static List<String> getCookie(String name, Headers requestHeaders) {
         if (!requestHeaders.containsKey("Cookie")) {
-            return Optional.empty();
+            return Collections.emptyList();
         }
-        return HttpCookie.parse(requestHeaders.getFirst("Cookie"))
+        return requestHeaders.get("Cookie")
                 .stream()
+                .flatMap(header -> HttpCookie.parse(header).stream())
                 .filter(c -> c.getName().equals(name))
                 .map(httpCookie -> URLDecoder.decode(httpCookie.getValue(), CHARSET))
-                .findFirst();
+                .collect(Collectors.toList());
     }
 
     private String getErrorResponse(int statusCode, String message) {
-        for (String contentType : getHeader("Accept").orElse("").split(";")) {
-            if (contentType.trim().equalsIgnoreCase("application/json")) {
-                return "{\"message\":\"" + message + "\"}";
-            } else if (contentType.equalsIgnoreCase("text/html")) {
-                return "<body><h2>Error " + statusCode + " " + message +  "</h2><table><tr><th>MESSAGE:</th><td>" + message + "</td></tr></table></body>";
-            }
+        if (accept("application/json")) {
+            return "{\"message\":\"" + message + "\"}";
+        } else if (accept("text/html")) {
+            return "<body><h2>Error " + statusCode + " " + message +  "</h2><table><tr><th>MESSAGE:</th><td>" + message + "</td></tr></table></body>";
+        } else {
+            return "MESSAGE: " + message;
         }
-        return "MESSAGE: " + message;
     }
 
     @Override

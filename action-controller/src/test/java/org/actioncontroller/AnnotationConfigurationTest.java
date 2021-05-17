@@ -67,9 +67,11 @@ public class AnnotationConfigurationTest {
                     return exchange -> (Consumer<Object>) o -> exchange.setCookie(name, encrypt(encryptCipher, o.toString()), true, true);
                 } else {
                     Function<String, ?> converter = TypeConverterFactory.fromSingleString(parameter.getParameterizedType(), "cookie " + name);
-                    return exchange ->  exchange.getCookie(name)
+                    return exchange ->  exchange.getCookies(name)
+                            .stream()
                             .map(cookie -> decrypt(decryptCipher, cookie))
                             .map(converter)
+                            .findFirst()
                             .orElseThrow();
                 }
             }
@@ -94,7 +96,7 @@ public class AnnotationConfigurationTest {
             public HttpClientParameterMapper clientParameterMapper(MyEncryptedCookie annotation, Parameter parameter) {
                 String name = annotation.value();
                 if (parameter.getType() == Consumer.class) {
-                    return consumer(parameter, exchange -> exchange.getResponseCookie(name));
+                    return consumer(parameter, exchange -> exchange.getResponseCookies(name).stream().findFirst());
                 } else {
                     return (exchange, arg) -> exchange.addRequestCookie(name, arg);
                 }

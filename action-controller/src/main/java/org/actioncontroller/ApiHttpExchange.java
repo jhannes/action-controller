@@ -1,28 +1,20 @@
 package org.actioncontroller;
 
 import org.actioncontroller.exceptions.HttpActionException;
-import org.actioncontroller.exceptions.HttpRequestException;
-import org.actioncontroller.exceptions.HttpServerErrorException;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpReturnMapping;
 import org.actioncontroller.meta.OutputStreamConsumer;
 import org.actioncontroller.meta.WriterConsumer;
-import org.actioncontroller.util.IOUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
-import java.lang.reflect.Parameter;
-import java.lang.reflect.Type;
-import java.net.URI;
 import java.net.URL;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Stream;
 
 /**
@@ -97,15 +89,22 @@ public interface ApiHttpExchange {
 
     void output(String contentType, OutputStreamConsumer consumer) throws IOException;
 
-    Optional<String> getHeader(String name);
-
+    /**
+     * Returns the values for all instances of this header in the HTTP request
+     *
+     * @param name The header name
+     * @return the non-empty list of headers matching the name or null if none were provided
+     */
+    List<String> getHeaders(String name);
+    
     /**
      * Returns true if the "Accept" request header matches the argument content type
      */
     default boolean accept(String contentType) {
-        return getHeader("Accept")
-                .map(acceptHeader -> Stream.of(acceptHeader.split(",")).anyMatch(type -> type.startsWith(contentType)))
-                .orElse(false);
+        List<String> accept = getHeaders("Accept");
+        return accept != null && accept
+                .stream().flatMap(acceptHeader -> Stream.of(acceptHeader.split(",")))
+                .anyMatch(type -> type.startsWith(contentType));
 
     }
 
@@ -145,7 +144,13 @@ public interface ApiHttpExchange {
      */
     void setCookie(String name, String value, boolean secure, boolean isHttpOnly, String contextPath, int maxAge, String domain, String comment);
 
-    Optional<String> getCookie(String name);
+    /**
+     * Returns all values of this cookie
+     *
+     * @param name The cookie name
+     * @return a non-null list of cookies matching the name or empty if none were provided
+     */
+    List<String> getCookies(String name);
 
     void sendError(int statusCode, String message) throws IOException;
 

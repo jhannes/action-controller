@@ -1,6 +1,5 @@
 package org.fakeservlet;
 
-import org.fakeservlet.jakarta.FakeJakartaContainer;
 import org.junit.Test;
 
 import javax.servlet.ServletException;
@@ -10,7 +9,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -75,7 +73,7 @@ public class ServletTest {
         request.setUserPrincipal(() -> "User name");
         FakeServletResponse response = request.service(servlet);
         
-        assertThat(response.getCookie("user")).isEqualTo("User name");
+        assertThat(response.getCookies("user")).containsOnly("User name");
         assertThat(response.getHeader("location")).isEqualTo(container.getContextRoot() + "/login");
         assertThat(response.getStatus()).isEqualTo(302);
     }

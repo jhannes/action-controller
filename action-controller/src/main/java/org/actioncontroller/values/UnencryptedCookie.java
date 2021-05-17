@@ -16,7 +16,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -65,7 +64,7 @@ public @interface UnencryptedCookie {
                 return new HttpParameterMapper() {
                     @Override
                     public Object apply(ApiHttpExchange exchange) {
-                        return converter.apply(exchange.getCookie(name).map(Arrays::asList).orElse(null));
+                        return converter.apply(exchange.getCookies(name));
                     }
     
                     @Override
@@ -76,7 +75,7 @@ public @interface UnencryptedCookie {
                 };
             } else {
                 TypeConverter converter = TypeConverterFactory.fromStrings(parameter.getParameterizedType(), "cookie " + name);
-                return exchange -> converter.apply(exchange.getCookie(name).map(Arrays::asList).orElse(null));
+                return exchange -> converter.apply(exchange.getCookies(name));
             }
         }
 
@@ -86,20 +85,21 @@ public @interface UnencryptedCookie {
             Type parameterType = parameter.getParameterizedType();
             Class<?> type = TypesUtil.getRawType(parameterType);
             if (type == Consumer.class) {
-                Function<String, ?> converter = TypeConverterFactory.fromSingleString(TypesUtil.typeParameter(parameterType), "header " + annotation.value());
+                TypeConverter converter = TypeConverterFactory.fromStrings(TypesUtil.typeParameter(parameterType), "cookie " + annotation.value());
                 return (exchange, arg) -> {
                     if (arg != null) {
-                        exchange.getResponseCookie(name).map(converter).ifPresent(((Consumer) arg));
+                        ((Consumer) arg).accept(converter.apply(exchange.getResponseCookies(name)));
                     }
                 };
             } else if (type == AtomicReference.class) {
-                Function<String, ?> converter = TypeConverterFactory.fromSingleString(TypesUtil.typeParameter(parameterType), "header " + annotation.value());
+                TypeConverter converter = TypeConverterFactory.fromStrings(parameterType, "cookie " + annotation.value());
                 Type typeParameter = TypesUtil.typeParameter(parameterType);
                 return (exchange, atomicReference) -> {
                     if (atomicReference != null) {
                         Object arg = ((AtomicReference<?>) atomicReference).get();
                         if (arg != null) exchange.addRequestCookie(name, arg);
-                        exchange.getResponseCookie(name).map(converter).ifPresent(((AtomicReference) atomicReference)::set);
+                        AtomicReference value = (AtomicReference) converter.apply(exchange.getResponseCookies(name));
+                        ((AtomicReference) atomicReference).set(value.get());
                     }
                 };
             } else {

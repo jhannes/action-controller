@@ -325,8 +325,12 @@ public class HttpURLConnectionApiClient implements ApiClient {
         }
 
         @Override
-        public String getResponseHeader(String name) {
-            return connection.getHeaderField(name);
+        public List<String> getResponseHeaders(String name) {
+            return connection.getHeaderFields().entrySet().stream()
+                    .filter(e -> name.equalsIgnoreCase(e.getKey()))
+                    .map(Map.Entry::getValue)
+                    .findFirst()
+                    .orElseGet(ArrayList::new);
         }
 
         @Override
@@ -339,12 +343,12 @@ public class HttpURLConnectionApiClient implements ApiClient {
         }
 
         @Override
-        public Optional<String> getResponseCookie(String name) {
+        public List<String> getResponseCookies(String name) {
             return responseCookies.stream()
                     .filter(c -> c.getName().equals(name))
                     .filter(HttpURLConnectionApiClient::isUnexpired)
                     .map(httpCookie -> URLDecoder.decode(httpCookie.getValue(), CHARSET))
-                    .findFirst();
+                    .collect(Collectors.toList());
         }
 
         @Override

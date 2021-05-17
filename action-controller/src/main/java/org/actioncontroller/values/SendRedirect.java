@@ -1,5 +1,6 @@
 package org.actioncontroller.values;
 
+import org.actioncontroller.TypeConverter;
 import org.actioncontroller.exceptions.ActionControllerConfigurationException;
 import org.actioncontroller.TypeConverterFactory;
 import org.actioncontroller.meta.HttpClientReturnMapper;
@@ -51,12 +52,12 @@ public @interface SendRedirect {
 
         @Override
         public HttpClientReturnMapper createClientMapper(SendRedirect annotation, Type returnType) {
-            Function<String, ?> converter = TypeConverterFactory.fromSingleString(returnType, "header Location");
+            TypeConverter converter = TypeConverterFactory.fromStrings(returnType, "header Location");
             return exchange -> {
                 if (exchange.getResponseCode() < 300) {
                     throw new IllegalArgumentException("Expected redirect, but was " + exchange.getResponseCode());
                 }
-                return converter.apply(exchange.getResponseHeader("Location"));
+                return converter.apply(exchange.getResponseHeaders("Location"));
             };
         }
     }

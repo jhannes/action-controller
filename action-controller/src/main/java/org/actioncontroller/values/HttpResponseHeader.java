@@ -1,5 +1,6 @@
 package org.actioncontroller.values;
 
+import org.actioncontroller.TypeConverter;
 import org.actioncontroller.TypeConverterFactory;
 import org.actioncontroller.meta.HttpClientReturnMapper;
 import org.actioncontroller.meta.HttpReturnMapper;
@@ -35,8 +36,8 @@ public @interface HttpResponseHeader {
 
         @Override
         public HttpClientReturnMapper createClientMapper(HttpResponseHeader annotation, Type returnType) {
-            Function<String, ?> converter = TypeConverterFactory.fromSingleString(returnType, "header " + annotation.value());
-            return (exchange) -> converter.apply(exchange.getResponseHeader(annotation.value()));
+            TypeConverter converter = TypeConverterFactory.fromStrings(returnType, "header " + annotation.value());
+            return (exchange) -> converter.apply(exchange.getResponseHeaders(annotation.value()));
         }
     }
 }

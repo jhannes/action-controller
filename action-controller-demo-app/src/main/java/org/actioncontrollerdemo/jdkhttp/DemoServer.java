@@ -3,6 +3,7 @@ package org.actioncontrollerdemo.jdkhttp;
 import com.sun.net.httpserver.HttpServer;
 import org.actioncontroller.config.ConfigObserver;
 import org.actioncontroller.httpserver.ApiHandler;
+import org.actioncontrollerdemo.ContentSource;
 import org.actioncontrollerdemo.TestController;
 import org.actioncontrollerdemo.UserController;
 
@@ -13,17 +14,14 @@ import java.net.MalformedURLException;
 public class DemoServer {
     private HttpServer httpServer;
     
-    private final WebjarContent handler = new WebjarContent("swagger-ui", "/demo/swagger");
     private Runnable updater = () -> System.out.println("Hello");
     private final ApiHandler apiHandler = new ApiHandler(new Object[]{
             new TestController(() -> updater.run()),
             new UserController()
     });
-    private final StaticContent staticContent = new StaticContent(getClass().getResource("/webapp-actioncontrollerdemo"), "/demo");
+    private final StaticContent swaggerHandler = new StaticContent(ContentSource.fromWebJar("swagger-ui"));
+    private final StaticContent staticContent = new StaticContent(getClass().getResource("/webapp-actioncontrollerdemo/"));
     private final RedirectHandler redirectHandler = new RedirectHandler("/demo");
-
-    public DemoServer() throws MalformedURLException {
-    }
 
     public void setUpdater(Runnable updater) {
         this.updater = updater;
@@ -35,7 +33,7 @@ public class DemoServer {
         }
         
         httpServer = HttpServer.create();
-        httpServer.createContext("/demo/swagger", handler);
+        httpServer.createContext("/demo/swagger", swaggerHandler);
         httpServer.createContext("/demo/api", apiHandler)
                 .setAuthenticator(new DemoAuthenticator());
         httpServer.createContext("/demo", staticContent);
@@ -57,7 +55,7 @@ public class DemoServer {
         return "http://" + "localhost" + ":" + httpServer.getAddress().getPort();
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws InterruptedException {
         DemoServer server = new DemoServer();
         ConfigObserver config = new ConfigObserver("demoserver");
         config.onInetSocketAddress("httpSocketAddress", 8080, server::setServerPort);

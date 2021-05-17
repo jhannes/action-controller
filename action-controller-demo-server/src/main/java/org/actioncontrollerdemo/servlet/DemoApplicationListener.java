@@ -6,9 +6,9 @@ import com.codahale.metrics.health.HealthCheckRegistry;
 import com.codahale.metrics.servlets.AdminServlet;
 import com.codahale.metrics.servlets.HealthCheckServlet;
 import com.codahale.metrics.servlets.MetricsServlet;
-import org.actioncontroller.ApiControllerAction;
 import org.actioncontroller.TimerRegistry;
 import org.actioncontroller.servlet.ApiServlet;
+import org.actioncontrollerdemo.ContentSource;
 import org.actioncontrollerdemo.TestController;
 import org.actioncontrollerdemo.UserController;
 
@@ -17,10 +17,7 @@ import javax.servlet.Filter;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
-import java.time.Duration;
 import java.util.EnumSet;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class DemoApplicationListener implements ServletContextListener {
     private final Filter principalFilter;

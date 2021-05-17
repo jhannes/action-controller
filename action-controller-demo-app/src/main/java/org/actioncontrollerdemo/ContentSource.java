@@ -1,4 +1,4 @@
-package org.actioncontrollerdemo.servlet;
+package org.actioncontrollerdemo;
 
 import org.actioncontroller.util.ExceptionUtil;
 
@@ -36,9 +36,13 @@ public class ContentSource {
         if (baseResourceTmp == null) {
             throw new IllegalArgumentException("Could not find resource " + resourceBase);
         }
-        if (baseResourceTmp.toString().contains("target/classes")) {
+        return fromClasspath(baseResourceTmp);
+    }
+
+    public static ContentSource fromClasspath(URL baseResource) {
+        if (baseResource.toString().contains("target/classes")) {
             try {
-                URL sourceResources = new URL(baseResourceTmp.toString().replaceAll("target/classes", "src/main/resources"));
+                URL sourceResources = new URL(baseResource.toString().replaceAll("target/classes", "src/main/resources"));
                 sourceResources.openStream();
                 return new ContentSource(sourceResources);
             } catch (FileNotFoundException ignored) {
@@ -46,7 +50,7 @@ public class ContentSource {
                 throw ExceptionUtil.softenException(e);
             }
         }
-        return new ContentSource(baseResourceTmp);
+        return new ContentSource(baseResource);
     }
 
     public static ContentSource fromWebJar(String webJarName) {
@@ -61,6 +65,9 @@ public class ContentSource {
     }
 
     public URL resolve(String relativeResource) throws MalformedURLException {
+        if (relativeResource.startsWith("/")) {
+            relativeResource = relativeResource.substring(1);
+        }
         URL resource = new URL(resourceBase, relativeResource);
         if (isDirectory(resource)) {
             return new URL(resource, "index.html");

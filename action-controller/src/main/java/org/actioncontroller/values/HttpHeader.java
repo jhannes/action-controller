@@ -1,7 +1,7 @@
 package org.actioncontroller.values;
 
 import org.actioncontroller.ApiControllerContext;
-import org.actioncontroller.exceptions.HttpRequestException;
+import org.actioncontroller.TypeConverterFactory;
 import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpClientReturnMapper;
 import org.actioncontroller.meta.HttpParameterMapper;
@@ -10,6 +10,7 @@ import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpReturnMapper;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
+import org.actioncontroller.util.TypesUtil;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -19,8 +20,8 @@ import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.util.Objects;
 import java.util.Optional;
-
-import static org.actioncontroller.ApiHttpExchange.convertRequestValue;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * When used on a parameter, maps the HTTP Request header to the parameter, converting the type if necessary.
@@ -43,12 +44,15 @@ public @interface HttpHeader {
         @Override
         public HttpParameterMapper create(HttpHeader annotation, Parameter parameter, ApiControllerContext context) {
             String name = annotation.value();
-            return HttpParameterMapperFactory.createMapper(
-                    parameter.getParameterizedType(),
-                    (exchange, type) -> exchange.getHeader(name).map(header -> convertRequestValue(header, type)),
-                    (exchange, o) -> exchange.setResponseHeader(annotation.value(), Objects.toString(o, null)),
-                    () -> { throw new HttpRequestException("Missing required header " + name); }
-            );
+            Class<?> type = TypesUtil.getRawType(parameter.getParameterizedType());
+            if (type == Consumer.class) {
+                return exchange -> (Consumer<?>) o -> {
+                    exchange.setResponseHeader(name, Objects.toString(o, null));
+                };
+            } else {
+                Function<String, ?> converter = TypeConverterFactory.fromSingleString(type, "header " + name);
+                return exchange -> converter.apply(exchange.getHeader(name).orElse(null));
+            }
         }
 
         @Override
@@ -58,12 +62,20 @@ public @interface HttpHeader {
 
         @Override
         public HttpClientParameterMapper clientParameterMapper(HttpHeader annotation, Parameter parameter) {
-            return HttpParameterMapperFactory.createClientMapper(
-                    parameter.getParameterizedType(),
-                    (exchange, o) -> exchange.setHeader(annotation.value(), o),
-                    (exchange, type) -> Optional.ofNullable(exchange.getResponseHeader(annotation.value()))
-                        .map(value -> convertRequestValue(value, type))
-            );
+            Type parameterType = parameter.getParameterizedType();
+            if (TypesUtil.getRawType(parameterType) == Consumer.class) {
+                Type typeParameter = TypesUtil.typeParameter(parameterType);
+                Function<String, ?> converter = TypeConverterFactory.fromSingleString(typeParameter, "header " + annotation.value());
+                return (exchange, arg) -> {
+                    if (arg != null) {
+                        Optional.ofNullable(exchange.getResponseHeader(annotation.value()))
+                                .map(converter)
+                                .ifPresent(((Consumer) arg));
+                    }
+                };
+            } else {
+                return (exchange, o) -> exchange.setHeader(annotation.value(), o);
+            }
         }
 
         @Override

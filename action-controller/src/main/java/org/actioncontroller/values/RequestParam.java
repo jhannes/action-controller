@@ -3,8 +3,8 @@ package org.actioncontroller.values;
 import org.actioncontroller.ApiControllerContext;
 import org.actioncontroller.TypeConverter;
 import org.actioncontroller.TypeConverterFactory;
-import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.ApiHttpExchange;
+import org.actioncontroller.exceptions.HttpRequestException;
 import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapperFactory;
@@ -18,6 +18,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Parameter;
+import java.security.Principal;
+import java.util.Optional;
+import java.util.function.Function;
 
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -33,7 +36,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 public @interface RequestParam {
 
     Logger logger = LoggerFactory.getLogger(RequestParam.class);
-    
+
     String value();
 
     /**
@@ -80,17 +83,32 @@ public @interface RequestParam {
     class RemoteUserParameterMapperFactory implements HttpParameterMapperFactory<RemoteUser> {
         @Override
         public HttpParameterMapper create(RemoteUser annotation, Parameter parameter, ApiControllerContext context) {
-            return ApiHttpExchange
-                    .withOptional(parameter, exchange -> exchange.getUserPrincipal() != null ? exchange.getUserPrincipal().getName() : null);
+            if (parameter.getType() == Optional.class) {
+                return exchange -> exchange.getUserPrincipal() != null ? Optional.of(exchange.getUserPrincipal().getName()) : Optional.empty();
+            } else {
+                return exchange -> Optional.ofNullable(exchange.getUserPrincipal())
+                        .map(Principal::getName)
+                        .orElseThrow(() -> new HttpRequestException("Missing required parameter value"));
+            }
         }
 
         @Override
         public HttpClientParameterMapper clientParameterMapper(RemoteUser annotation, Parameter parameter) {
-            return ApiClientExchange.withOptional(parameter, (exchange, object) -> {
-                if (exchange instanceof FakeApiClient.FakeApiClientExchange && object != null) {
-                    ((FakeApiClient.FakeApiClientExchange)exchange).setRemoteUser(object);
-                }
-            });
+            if (parameter.getType() == Optional.class) {
+                return (exchange, arg) -> {
+                    if (exchange instanceof FakeApiClient.FakeApiClientExchange) {
+                        FakeApiClient.FakeApiClientExchange clientExchange = (FakeApiClient.FakeApiClientExchange) exchange;
+                        Optional.ofNullable((Optional<?>) arg).flatMap(Function.identity())
+                                .ifPresent(clientExchange::setRemoteUser);
+                    }
+                };
+            } else {
+                return (exchange, object) -> {
+                    if (exchange instanceof FakeApiClient.FakeApiClientExchange && object != null) {
+                        ((FakeApiClient.FakeApiClientExchange) exchange).setRemoteUser(object);
+                    }
+                };
+            }
         }
     }
 

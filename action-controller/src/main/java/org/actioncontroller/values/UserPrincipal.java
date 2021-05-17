@@ -4,7 +4,6 @@ import org.actioncontroller.ApiControllerContext;
 import org.actioncontroller.exceptions.HttpForbiddenException;
 import org.actioncontroller.exceptions.HttpUnauthorizedException;
 import org.actioncontroller.util.TypesUtil;
-import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapperFactory;
@@ -18,6 +17,7 @@ import java.lang.annotation.Target;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.util.Optional;
+import java.util.function.Function;
 
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -65,11 +65,21 @@ public @interface UserPrincipal {
 
         @Override
         public HttpClientParameterMapper clientParameterMapper(UserPrincipal annotation, Parameter parameter) {
-            return ApiClientExchange.withOptional(parameter, (exchange, object) -> {
-                if (exchange instanceof FakeApiClient.FakeApiClientExchange && object != null) {
-                    ((FakeApiClient.FakeApiClientExchange)exchange).setRemoteUser(object);
-                }
-            });
+            if (parameter.getType() == Optional.class) {
+                return (exchange, arg) -> {
+                    if (exchange instanceof FakeApiClient.FakeApiClientExchange) {
+                        FakeApiClient.FakeApiClientExchange clientExchange = (FakeApiClient.FakeApiClientExchange) exchange;
+                        Optional.ofNullable((Optional<?>) arg).flatMap(Function.identity())
+                                .ifPresent(clientExchange::setRemoteUser);                         
+                    }
+                };
+            } else {
+                return (exchange, object) -> {
+                    if (exchange instanceof FakeApiClient.FakeApiClientExchange && object != null) {
+                        ((FakeApiClient.FakeApiClientExchange)exchange).setRemoteUser(object);
+                    }
+                };
+            }
         }
     }
 }

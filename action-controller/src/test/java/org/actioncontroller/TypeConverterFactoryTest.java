@@ -99,6 +99,9 @@ public class TypeConverterFactoryTest {
 
     @Test
     public void shouldThrowOnMissingValues() {
+        assertThatThrownBy(() -> TypeConverterFactory.fromSingleString(String.class, "cookie yum").apply(null))
+                .isInstanceOf(HttpRequestException.class)
+                .hasMessage("Missing required cookie yum");
         assertThatThrownBy(() -> TypeConverterFactory.fromStrings(URL.class, "parameter myUrl").apply(null))
                 .isInstanceOf(HttpRequestException.class)
                 .hasMessage("Missing required parameter myUrl");

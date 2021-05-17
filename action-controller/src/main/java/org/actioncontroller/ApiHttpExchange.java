@@ -177,60 +177,6 @@ public interface ApiHttpExchange {
         return getSessionAttribute(name, false);
     }
 
-    /**
-     * Converts the parameter value to the type specified by the parameter. Supports String, int, (long), (short), (byte),
-     * double, (float), UUID, (Instant), (LocalDate) and enums, as well as Optionals of the same.
-     * @param value The string value read from the http value
-     * @return The value converted to a type compatible with parameter
-     * @throws HttpRequestException if the value is null and the parameter is not Optional
-     * @throws HttpRequestException if the value doesn't have a legal representation in the target type
-     */
-    @SuppressWarnings({"rawtypes"})
-    static Object convertRequestValue(String value, Type parameterType) {
-        if (value == null) {
-            return null;
-        }
-        if (parameterType == String.class) {
-            return value;
-        } else if (parameterType == Boolean.class || parameterType == Boolean.TYPE) {
-            return Boolean.parseBoolean(value);
-        } else if (parameterType == Integer.class || parameterType == Integer.TYPE) {
-            return Integer.parseInt(value);
-        } else if (parameterType == UUID.class) {
-            return UUID.fromString(value);
-        } else if (parameterType == Long.class || parameterType == Long.TYPE) {
-            return Long.parseLong(value);
-        } else if (!(parameterType instanceof Class)) {
-            throw new HttpServerErrorException("Unhandled parameter type " + parameterType);
-        } else if (Enum.class.isAssignableFrom((Class<?>)parameterType)) {
-            return enumValue(value, (Class) parameterType);
-        } else if (URI.class.isAssignableFrom((Class<?>)parameterType)) {
-            return IOUtil.asURI(value);
-        } else if (URL.class.isAssignableFrom((Class<?>)parameterType)) {
-            return IOUtil.asURL(value);
-        } else {
-            throw new HttpServerErrorException("Unhandled parameter type " + parameterType);
-        }
-    }
-
-    private static Enum<?> enumValue(String value, Class<?> parameterType) {
-        for (Object enumConstant : parameterType.getEnumConstants()) {
-            if (enumConstant.toString().equals(value)) {
-                return (Enum<?>) enumConstant;
-            }
-        }
-        throw new HttpRequestException("Value '" + value + "' not in " + Arrays.toString(parameterType.getEnumConstants()));
-    }
-
-    static HttpParameterMapper withOptional(Parameter parameter, HttpParameterMapper innerMapping) {
-        if (parameter.getType() == Optional.class) {
-            return exchange -> Optional.ofNullable(innerMapping.apply(exchange));
-        } else {
-            return exchange -> Optional.ofNullable(innerMapping.apply(exchange))
-                    .orElseThrow(() -> new HttpRequestException("Missing required parameter value"));
-        }
-    }
-
     X509Certificate[] getClientCertificate();
 
     Principal getUserPrincipal();

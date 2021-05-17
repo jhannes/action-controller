@@ -85,16 +85,4 @@ public interface ApiClientExchange {
 
     void output(String contentType, OutputStreamConsumer consumer) throws IOException;
 
-    static HttpClientParameterMapper withOptional(Parameter parameter, HttpClientParameterMapper mapper) {
-        if (parameter.getType() == Optional.class) {
-            return (exchange, arg) -> {
-                Optional<?> opt = (Optional<?>) arg;
-                if (opt != null && opt.isPresent()) {
-                    mapper.apply(exchange, opt.get());
-                }
-            };
-        } else {
-            return mapper;
-        }
-    }
 }

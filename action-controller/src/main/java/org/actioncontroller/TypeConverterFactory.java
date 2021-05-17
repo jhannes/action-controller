@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 public class TypeConverterFactory {
@@ -62,7 +63,7 @@ public class TypeConverterFactory {
     );
 
     public static Function<String, ?> fromSingleString(Type targetClass, String description) {
-        return getBaseConverter(targetClass, description);
+        return nonNullConverter(description, getBaseConverter(targetClass, description));
     }
 
     public static TypeConverter fromStrings(Type targetClass) {
@@ -74,6 +75,22 @@ public class TypeConverterFactory {
             return fromStringsToParameterizedType((ParameterizedType) targetClass, description);
         } else {
             return nonNullConverter(targetClass, description, getBaseConverter(targetClass, description));
+        }
+    }
+
+    @SuppressWarnings("SuspiciousMethodCalls")
+    private static TypeConverter fromStringsToParameterizedType(ParameterizedType targetClass, String description) {
+        Type parameterType = targetClass.getActualTypeArguments()[0];
+        if (targetClass.getRawType() == Optional.class) {
+            return optionalStringConverter(parameterType, description);
+        } else if (targetClass.getRawType() == AtomicReference.class) {
+            return atomicReferenceStringConverter(parameterType, description);
+        } else if (List.of(Collection.class, List.class, ArrayList.class).contains(targetClass.getRawType())) {
+            return arrayListConverter(parameterType, description, getBaseConverter(parameterType, description));
+        } else if (List.of(Set.class, HashSet.class).contains(targetClass.getRawType())) {
+            return hashSetConverter(parameterType, description, getBaseConverter(parameterType, description));
+        } else {
+            throw new IllegalArgumentException("Unsupported target " + targetClass + " for " + description);
         }
     }
 
@@ -96,42 +113,40 @@ public class TypeConverterFactory {
         throw new IllegalArgumentException("Unsupported target " + targetClass + " for " + description);
     }
 
-    @SuppressWarnings("SuspiciousMethodCalls")
-    private static TypeConverter fromStringsToParameterizedType(ParameterizedType targetClass, String description) {
-        Type parameterType = targetClass.getActualTypeArguments()[0];
-        if (targetClass.getRawType() == Optional.class) {
-            return optionalStringConverter(description, parameterType, fromStrings(parameterType, description));
-        } else if (List.of(Collection.class, List.class, ArrayList.class).contains(targetClass.getRawType())) {
-            return arrayListConverter(parameterType, description, getBaseConverter(parameterType, description));
-        } else if (List.of(Set.class, HashSet.class).contains(targetClass.getRawType())) {
-            return hashSetConverter(parameterType, description, getBaseConverter(parameterType, description));
-        } else {
-            throw new IllegalArgumentException("Unsupported target " + targetClass + " for " + description);
-        }
+    private static Function<String, ?> nonNullConverter(String description, Function<String, ?> converter) {
+        return value -> {
+            if (value == null) {
+                throw new HttpRequestException("Missing required " + description);
+            }
+            return converter.apply(value);
+        };
     }
 
     private static TypeConverter nonNullConverter(Type targetClass, String description, Function<String, ?> converter) {
         return s -> {
-            String value = s != null && !s.isEmpty() ? s.iterator().next() : null;
-            if (value == null) {
-                throw new HttpRequestException("Missing required " + description);
-            }
-            try {
-                return converter.apply(value);
-            } catch (IllegalArgumentException | DateTimeParseException e) {
-                throw new HttpRequestException("Cannot convert " + description + " to " + targetClass + ": " + e.getMessage());
-            }
+            String value = checkNull(s, description);
+            return tryConvert(value, converter, "Cannot convert " + description + " to " + targetClass);
         };
     }
 
-    private static TypeConverter optionalStringConverter(String description, Type parameterType, TypeConverter converter) {
+    private static TypeConverter optionalStringConverter(Type parameterType, String description) {
+        TypeConverter converter = fromStrings(parameterType, description);
         return s -> {
-            String value = s != null && !s.isEmpty() ? s.iterator().next() : null;
-            if (value == null || value.isEmpty()) {
+            if (isEmpty(s)) {
                 return Optional.empty();
             }
+            return Optional.of(tryConvert(s, converter, "Cannot convert " + description + " to " + parameterType));
+        };
+    }
+
+    private static TypeConverter atomicReferenceStringConverter(Type parameterType, String description) {
+        TypeConverter converter = fromStrings(parameterType, description);
+        return s -> {
+            if (isEmpty(s)) {
+                return new AtomicReference<>();
+            }
             try {
-                return Optional.of(converter.apply(s));
+                return new AtomicReference<>(converter.apply(s));
             } catch (IllegalArgumentException | DateTimeParseException e) {
                 throw new HttpRequestException("Cannot convert " + description + " to " + parameterType + ": " + e.getMessage());
             }
@@ -140,13 +155,9 @@ public class TypeConverterFactory {
 
     private static TypeConverter arrayListConverter(Type parameterType, String description, Function<String, ?> baseConverter) {
         return strings -> {
-            ArrayList<Object> result = new ArrayList<>();
+            List<Object> result = new ArrayList<>();
             for (String string : strings) {
-                try {
-                    result.add(baseConverter.apply(string));
-                } catch (IllegalArgumentException | DateTimeParseException e) {
-                    throw new HttpRequestException("Cannot convert " + description + " to " + parameterType + ": " + e.getMessage());
-                }
+                result.add(tryConvert(string, baseConverter, "Cannot convert " + description + " to " + parameterType));
             }
             return result;
         };
@@ -154,13 +165,9 @@ public class TypeConverterFactory {
 
     private static TypeConverter hashSetConverter(Type parameterType, String description, Function<String, ?> baseConverter) {
         return strings -> {
-            HashSet<Object> result = new HashSet<>();
+            Set<Object> result = new HashSet<>();
             for (String string : strings) {
-                try {
-                    result.add(baseConverter.apply(string));
-                } catch (IllegalArgumentException | DateTimeParseException e) {
-                    throw new HttpRequestException("Cannot convert " + description + " to " + parameterType + ": " + e.getMessage());
-                }
+                result.add(tryConvert(string, baseConverter, "Cannot convert " + description + " to " + parameterType));
             }
             return result;
         };
@@ -179,6 +186,38 @@ public class TypeConverterFactory {
         };
     }
 
+    private static String checkNull(Collection<String> s, String description) {
+        String value = firstValue(s);
+        if (value == null) {
+            throw new HttpRequestException("Missing required " + description);
+        }
+        return value;
+    }
+
+    private static boolean isEmpty(Collection<String> s) {
+        String value = firstValue(s);
+        return value == null || value.isEmpty();
+    }
+
+    private static String firstValue(Collection<String> s) {
+        return s != null && !s.isEmpty() ? s.iterator().next() : null;
+    }
+
+    private static Object tryConvert(Collection<String> s, TypeConverter converter, String errorMessage) {
+        try {
+            return converter.apply(s);
+        } catch (IllegalArgumentException | DateTimeParseException e) {
+            throw new HttpRequestException(errorMessage + ": " + e.getMessage());
+        }
+    }
+
+    private static Object tryConvert(String value, Function<String, ?> converter, String errorMessage) {
+        try {
+            return converter.apply(value);
+        } catch (IllegalArgumentException | DateTimeParseException e) {
+            throw new HttpRequestException(errorMessage + ": " + e.getMessage());
+        }
+    }
 
     private static URI toURI(String s) {
         try {

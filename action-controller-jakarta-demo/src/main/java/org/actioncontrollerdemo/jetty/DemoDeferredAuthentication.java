@@ -22,7 +22,9 @@ public class DemoDeferredAuthentication implements Authentication.Deferred {
     @Override
     public Authentication authenticate(ServletRequest servletRequest) {
         return JakartaServletHttpExchange.getCookie("username", (HttpServletRequest) servletRequest)
+                .stream()
                 .map(s -> getAuthentication(DemoPrincipal.createPrincipal(s)))
+                .findFirst()
                 .orElse(this);
     }
 

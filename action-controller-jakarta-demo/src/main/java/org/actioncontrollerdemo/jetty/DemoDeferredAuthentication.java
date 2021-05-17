@@ -1,17 +1,16 @@
 package org.actioncontrollerdemo.jetty;
 
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.actioncontroller.jakarta.JakartaServletHttpExchange;
-import org.actioncontroller.servlet.ServletHttpExchange;
 import org.actioncontrollerdemo.DemoPrincipal;
 import org.eclipse.jetty.security.DefaultUserIdentity;
 import org.eclipse.jetty.security.UserAuthentication;
 import org.eclipse.jetty.server.Authentication;
 
 import javax.security.auth.Subject;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;

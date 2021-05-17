@@ -34,7 +34,7 @@ public class JettyDemoServerTest {
     }
 
     @Test
-    public void shouldStartSuccessfully() throws Exception {
+    public void shouldReturnWebContent() throws Exception {
         URL url = new URL(server.getUrl() + "/demo");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
@@ -43,6 +43,13 @@ public class JettyDemoServerTest {
                 .isEqualTo(200);
         String body = HttpURLConnectionApiClient.asString(connection.getInputStream());
         assertThat(body).contains("<h1>Hello World</h1>");
+        assertThat(connection.getHeaderField("Content-Type")).isEqualTo("text/html");
+
+        long lastModified = connection.getHeaderFieldDate("Last-Modified", -1);
+        assertThat(lastModified).isNotEqualTo(-1);
+        assertThat(System.currentTimeMillis() - lastModified)
+                .as("last modified should be more than one second ago or something is fishy")
+                .isGreaterThan(1_000);
     }
     
     @Test
@@ -52,6 +59,43 @@ public class JettyDemoServerTest {
         assertThat(connection.getResponseCode())
                 .as(connection.getResponseMessage())
                 .isEqualTo(404);
+    }
+    
+    @Test
+    public void shouldReturnContentFromWebJar() throws IOException {
+        URL url = new URL(server.getUrl() + "/demo/swagger/");
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+        assertThat(connection.getResponseCode())
+                .as(connection.getResponseMessage())
+                .isEqualTo(200);
+        String body = HttpURLConnectionApiClient.asString(connection.getInputStream());
+        assertThat(body).contains("const ui = SwaggerUIBundle");
+        assertThat(connection.getHeaderField("Content-Type")).isEqualTo("text/html");
+        long lastModified = connection.getHeaderFieldDate("Last-Modified", -1);
+        assertThat(lastModified).isNotEqualTo(-1);
+        assertThat(System.currentTimeMillis() - lastModified)
+                .as("last modified should be more than five seconds ago or something is fishy")
+                .isGreaterThan(5000);
+    }
+    
+    @Test
+    public void shouldReturn404OnMissingFileInWebjar() throws IOException {
+        URL url = new URL(server.getUrl() + "/demo/swagger/missing.html");
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        assertThat(connection.getResponseCode())
+                .as(connection.getResponseMessage())
+                .isEqualTo(404);
+    }
+    
+    @Test
+    public void shouldReturn304OnFileNotModified() throws IOException {
+        URL url = new URL(server.getUrl() + "/demo/swagger/");
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestProperty("If-Modified-Since", "Wed, 06 Oct 2010 02:53:46 GMT");
+        assertThat(connection.getResponseCode())
+                .as(connection.getResponseMessage())
+                .isEqualTo(304);
     }
 
     @Test

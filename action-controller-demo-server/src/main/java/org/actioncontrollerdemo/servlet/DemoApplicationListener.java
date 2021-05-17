@@ -21,9 +21,9 @@ import java.util.EnumSet;
 
 public class DemoApplicationListener implements ServletContextListener {
     private final Filter principalFilter;
-    private Runnable updater;
-    private MetricRegistry metricRegistry = new MetricRegistry();
-    private HealthCheckRegistry healthCheckRegistry = new HealthCheckRegistry();
+    private final Runnable updater;
+    private final MetricRegistry metricRegistry = new MetricRegistry();
+    private final HealthCheckRegistry healthCheckRegistry = new HealthCheckRegistry();
 
     public DemoApplicationListener(Runnable updater, Filter principalFilter) {
         this.updater = updater;

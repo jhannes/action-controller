@@ -18,10 +18,10 @@ import java.net.InetSocketAddress;
 public class JettyDemoServer {
 
     private static final Logger logger = LoggerFactory.getLogger(JettyDemoServer.class);
-    private Server server = new Server();
-    private ServerConnector connector = new ServerConnector(server);
-    private String localhostName;
-    private ConfigObserver config = new ConfigObserver("demoserver");
+    private final Server server = new Server();
+    private final ServerConnector connector = new ServerConnector(server);
+    private final String localhostName;
+    private final ConfigObserver config = new ConfigObserver("demoserver");
 
     public JettyDemoServer() throws Exception {
         server.addConnector(connector);

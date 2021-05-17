@@ -11,7 +11,6 @@ import org.slf4j.event.Level;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -38,7 +37,7 @@ public class JettyDemoServerTest {
     public void shouldReturnWebContent() throws Exception {
         URL url = new URL(server.getUrl() + "/demo");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        
+
         assertThat(connection.getResponseCode())
                 .as(connection.getResponseMessage())
                 .isEqualTo(200);

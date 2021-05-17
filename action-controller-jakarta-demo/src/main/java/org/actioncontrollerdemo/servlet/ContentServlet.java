@@ -1,82 +1,46 @@
 package org.actioncontrollerdemo.servlet;
 
-import org.actioncontroller.util.ExceptionUtil;
-
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.actioncontrollerdemo.ContentSource;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.List;
 
 public class ContentServlet extends HttpServlet {
 
-    private final URL baseResource;
+    private final ContentSource contentSource;
 
     public ContentServlet(String resourceBase) {
-        // TODO: If resourceBase doesn't start with /, things go wrong
-        // TODO: If resourceBase doesn't end with /, parent directory is used
-        URL baseResourceTmp = getClass().getResource(resourceBase);
-        if (baseResourceTmp == null) {
-            throw new IllegalArgumentException("Could not find resource " + resourceBase);
-        }
-        if (baseResourceTmp.toString().contains("target/classes")) {
-            try {
-                URL sourceResources = new URL(baseResourceTmp.toString().replaceAll("target/classes", "src/main/resources"));
-                sourceResources.openStream();
-                baseResourceTmp = sourceResources;
-            } catch (FileNotFoundException ignored) {
-            } catch (IOException e) {
-                throw ExceptionUtil.softenException(e);
-            }
-        }
-        baseResource = baseResourceTmp;
+        this(ContentSource.fromClasspath(resourceBase));
+    }
+
+    public ContentServlet(ContentSource contentSource) {
+        this.contentSource = contentSource;
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        URL resource = new URL(baseResource, req.getPathInfo().substring(1));
-        if (isDirectory(resource)) {
-            List<String> welcomeFiles = Collections.singletonList("index.html");
-            for (String welcomeFile : welcomeFiles) {
-                try {
-                    InputStream inputStream = new URL(resource, welcomeFile).openStream();
-                    resp.setContentType(getServletContext().getMimeType(welcomeFile));
-                    inputStream.transferTo(resp.getOutputStream());
+        try {
+            URL resource = contentSource.resolve(req.getPathInfo().substring(1));
+            Long lastModified = contentSource.lastModified(resource);
+            if (lastModified != null) {
+                resp.setDateHeader("Last-Modified", lastModified);
+
+                long ifModifiedSinceHeader = req.getDateHeader("If-Modified-Since");
+                if (ifModifiedSinceHeader > 0 && lastModified >= ifModifiedSinceHeader) {
+                    resp.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
                     return;
-                } catch (FileNotFoundException ignored) {
                 }
             }
-            try {
-                resource.openStream().transferTo(resp.getOutputStream());
-            } catch (IOException e) {
-                resp.sendError(404);
-            }
-        } else {
-            try {
-                resp.setContentType(getServletContext().getMimeType(req.getPathInfo()));
-                resource.openStream().transferTo(resp.getOutputStream());
-            } catch (FileNotFoundException ignored) {
-                resp.sendError(404);
-            }
+            InputStream inputStream = resource.openStream();
+            resp.setContentType(getServletContext().getMimeType(resource.getFile()));
+            inputStream.transferTo(resp.getOutputStream());
+        } catch (FileNotFoundException ignored) {
+            resp.sendError(404);
         }
-    }
-
-    private boolean isDirectory(URL resource) {
-        if (resource.getProtocol().equals("file")) {
-            try {
-                Path path = Paths.get(resource.toURI());
-                return Files.isDirectory(path);
-            } catch (URISyntaxException ignored) {
-            }
-        }
-        return resource.toString().endsWith("/");
     }
 }

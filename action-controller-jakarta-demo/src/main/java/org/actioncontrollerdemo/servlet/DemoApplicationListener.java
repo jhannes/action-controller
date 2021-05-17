@@ -13,7 +13,7 @@ import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import org.actioncontroller.TimerRegistry;
 import org.actioncontroller.jakarta.ApiJakartaServlet;
-import org.actioncontroller.servlet.ApiServlet;
+import org.actioncontrollerdemo.ContentSource;
 import org.actioncontrollerdemo.TestController;
 import org.actioncontrollerdemo.UserController;
 
@@ -21,9 +21,9 @@ import java.util.EnumSet;
 
 public class DemoApplicationListener implements ServletContextListener {
     private final Filter principalFilter;
-    private Runnable updater;
-    private MetricRegistry metricRegistry = new MetricRegistry();
-    private HealthCheckRegistry healthCheckRegistry = new HealthCheckRegistry();
+    private final Runnable updater;
+    private final MetricRegistry metricRegistry = new MetricRegistry();
+    private final HealthCheckRegistry healthCheckRegistry = new HealthCheckRegistry();
 
     public DemoApplicationListener(Runnable updater, Filter principalFilter) {
         this.updater = updater;
@@ -46,7 +46,7 @@ public class DemoApplicationListener implements ServletContextListener {
         apiServlet.registerController(new UserController());
         context.addServlet("api", apiServlet).addMapping("/api/*");
         context.addServlet("dropwizard", new AdminServlet()).addMapping("/status/*");
-        context.addServlet("swagger", new WebJarServlet("swagger-ui"))
+        context.addServlet("swagger", new ContentServlet(ContentSource.fromWebJar("swagger-ui")))
                 .addMapping("/swagger/*");
         context.addServlet("default", new ContentServlet("/webapp-actioncontrollerdemo/"))
                 .addMapping("/*");

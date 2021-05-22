@@ -9,8 +9,8 @@ import java.util.stream.Collectors;
  */
 public class ApiControllerCompositeException extends ActionControllerConfigurationException {
 
-    private List<Exception> exceptions = new ArrayList<>();
-    private Object controller;
+    private final List<Exception> exceptions = new ArrayList<>();
+    private final Object controller;
 
     public ApiControllerCompositeException(Object controller) {
         super(null);

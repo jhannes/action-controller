@@ -6,12 +6,12 @@ import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.exceptions.ActionControllerConfigurationException;
 import org.actioncontroller.exceptions.HttpServerErrorException;
 import org.actioncontroller.meta.HttpClientParameterMapper;
-import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapperFactory;
+import org.actioncontroller.meta.HttpParameterMapping;
+import org.actioncontroller.meta.HttpReturnMapper;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
-import org.actioncontroller.meta.HttpReturnMapper;
 import org.actioncontroller.servlet.ApiServlet;
 import org.actioncontroller.test.FakeApiClient;
 import org.actioncontroller.values.PathParam;
@@ -30,6 +30,7 @@ import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
+import java.util.Optional;
 
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -60,6 +61,18 @@ public class ApiServletConfigurationErrorTest {
 
         expectedLogEventsRule.expect(ApiControllerAction.class, Level.WARN,
                 "Unused path parameters for ControllerWithMismatchedPathParams.actionWithParameterMismatch(String): [myTest]");
+    }
+    
+    @Test
+    public void shouldReportReturnValueTypeWithMissingAnnotation() {
+        expectedLogEventsRule.expectPattern(ApiControllerActionRouter.class, Level.ERROR, "Failed to setup {}");
+        expectedLogEventsRule.expectPattern(ApiControllerActionRouter.class, Level.ERROR, "Failed to setup {}");
+
+        ApiServlet apiServlet = new ApiServlet(List.of(new ControllerWithErrors()));
+
+        assertThatThrownBy(() -> apiServlet.init(null))
+                .hasMessageContaining("return type of type java.util.List<java.lang.Object>")
+                .hasMessageContaining("parameter 0 of type java.util.Optional<java.lang.String>");
     }
 
     @Test
@@ -235,12 +248,12 @@ public class ApiServletConfigurationErrorTest {
     private static class ControllerWithErrors {
 
         @GET("/")
-        public void actionWithUnboundParameter(@SuppressWarnings("unused") String parameter) {
+        public void actionWithUnboundParameter(@SuppressWarnings("unused") Optional<String> parameter) {
 
         }
 
         @POST("/")
-        public Object actionWithUnknownReturnType() {
+        public List<Object> actionWithUnknownReturnType() {
             return null;
         }
 

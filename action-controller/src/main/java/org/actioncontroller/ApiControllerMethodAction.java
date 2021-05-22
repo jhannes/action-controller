@@ -136,7 +136,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
     private HttpReturnMapper createResponseMapper() {
         return HttpReturnMapperFactory.createNewInstance(action)
                 .or(() -> Optional.ofNullable(typebasedResponseMapping.get(action.getReturnType())))
-                .orElseThrow(() -> new ApiActionResponseUnknownMappingException(action, action.getReturnType()));
+                .orElseThrow(() -> new ApiActionResponseUnknownMappingException(action, action.getGenericReturnType()));
     }
 
     private HttpParameterMapper createParameterMapper(int index, ApiControllerContext context) {

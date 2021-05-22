@@ -176,10 +176,10 @@ public class ConfigObserverTest {
         AtomicReference<Optional<Credentials>> credentials = new AtomicReference<>(Optional.empty());
         writeConfigLines("credentials.username=someuser");
         observer.onPrefixedOptionalValue("credentials", Credentials::new, credentials::set);
-        assertThat(credentials.get()).get().isEqualToComparingFieldByField(new Credentials("someuser", null));
+        assertThat(credentials.get()).get().usingRecursiveComparison().isEqualTo(new Credentials("someuser", null));
 
         writeConfigLines("credentials.username=someuser2", "credentials.password=secret");
-        assertThat(credentials.get()).get().isEqualToComparingFieldByField(new Credentials("someuser2", "secret"));
+        assertThat(credentials.get()).get().usingRecursiveComparison().isEqualTo(new Credentials("someuser2", "secret"));
     }
 
     @Test
@@ -205,7 +205,7 @@ public class ConfigObserverTest {
         assertThat(credentials.get()).isEmpty();
 
         writeConfigLines("credentials.username=someuser2", "credentials.password=secret");
-        assertThat(credentials.get()).get().isEqualToComparingFieldByField(new Credentials("someuser2", "secret"));
+        assertThat(credentials.get()).get().usingRecursiveComparison().isEqualTo(new Credentials("someuser2", "secret"));
 
         writeConfigLines("somethingElse.username=someuser");
         assertThat(credentials.get()).isEmpty();
@@ -250,7 +250,7 @@ public class ConfigObserverTest {
                 "my.dataSource",
                 dataSource -> this.dataSource = dataSource
         ));
-        assertThat(dataSource).isEqualToComparingFieldByField(new DummyDataSource(
+        assertThat(dataSource).usingRecursiveComparison().isEqualTo(new DummyDataSource(
                 "jdbc:datamastery:example", "sa", ""
         ));
 
@@ -261,7 +261,7 @@ public class ConfigObserverTest {
         writeConfigLines("my.dataSource.jdbcUrl=jdbc:datamastery:UPDATED",
             "my.dataSource.jdbcUsername=sa",
             "my.dataSource.jdbcPassword=");
-        assertThat(dataSource).isEqualToComparingFieldByField(new DummyDataSource(
+        assertThat(dataSource).usingRecursiveComparison().isEqualTo(new DummyDataSource(
                 "jdbc:datamastery:UPDATED", "sa", ""
         ));
     }

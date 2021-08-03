@@ -5,12 +5,13 @@ import org.junit.Test;
 import org.logevents.extend.junit.ExpectedLogEventsRule;
 import org.slf4j.event.Level;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -36,7 +37,14 @@ public class ConfigObserverTest {
     @Rule
     public ExpectedLogEventsRule expectedLogEvents = new ExpectedLogEventsRule(Level.WARN);
 
-    private final File directory = new File("target/test/dir-" + UUID.randomUUID());
+    private final Path directory = createRandomDirectory();
+
+    private Path createRandomDirectory() throws IOException {
+        Path dir = Paths.get("target/test/dir-" + UUID.randomUUID());
+        Files.createDirectories(dir);
+        return dir;
+    }
+
     private final BlockingQueue<Instant> reloadTimes = new ArrayBlockingQueue<>(10);
     private final ConfigObserver observer = new ConfigObserver(directory, "testApp") {
         @Override
@@ -53,6 +61,9 @@ public class ConfigObserverTest {
     private InetSocketAddress httpListenAddress;
     private DummyDataSource dataSource;
     private Duration daemonPollingInterval;
+
+    public ConfigObserverTest() throws IOException {
+    }
 
     @Test
     public void shouldOnlyUpdateWhenPropertyWasChanged() {
@@ -244,8 +255,8 @@ public class ConfigObserverTest {
     @Test
     public void shouldWatchForFileChanges() {
         writeConfigLines("my.dataSource.jdbcUrl=jdbc:datamastery:example",
-            "my.dataSource.jdbcUsername=sa",
-            "my.dataSource.jdbcPassword=");
+                "my.dataSource.jdbcUsername=sa",
+                "my.dataSource.jdbcPassword=");
         observer.onConfigChange(new DummyDataSourceConfigListener(
                 "my.dataSource",
                 dataSource -> this.dataSource = dataSource
@@ -259,8 +270,8 @@ public class ConfigObserverTest {
         assertThat(dataSource).isNull();
 
         writeConfigLines("my.dataSource.jdbcUrl=jdbc:datamastery:UPDATED",
-            "my.dataSource.jdbcUsername=sa",
-            "my.dataSource.jdbcPassword=");
+                "my.dataSource.jdbcUsername=sa",
+                "my.dataSource.jdbcPassword=");
         assertThat(dataSource).usingRecursiveComparison().isEqualTo(new DummyDataSource(
                 "jdbc:datamastery:UPDATED", "sa", ""
         ));
@@ -285,11 +296,13 @@ public class ConfigObserverTest {
                 "Failed to notify listener while reloading {}");
         writeConfigLine("example.number=123");
 
-        String[] fooValue = { null };
+        String[] fooValue = {null};
         observer.onStringValue("example.foo", null,
                 v -> fooValue[0] = v
         );
-        observer.onStringValue("example.number", "100", s -> { throw new RuntimeException(""); });
+        observer.onStringValue("example.number", "100", s -> {
+            throw new RuntimeException("");
+        });
 
         assertThat(fooValue[0]).isNull();
 
@@ -300,7 +313,7 @@ public class ConfigObserverTest {
     private void writeConfigLines(String... lines) {
         reloadTimes.clear();
         try {
-            Files.write(new File(directory, "testApp.properties").toPath(), Arrays.asList(lines));
+            Files.write(directory.resolve("testApp.properties"), Arrays.asList(lines));
         } catch (IOException e) {
             fail("While writing testApp.properties", e);
         }
@@ -311,7 +324,7 @@ public class ConfigObserverTest {
     private void writeConfigLine(String singleLine) {
         reloadTimes.clear();
         try {
-            Files.write(new File(directory, "testApp.properties").toPath(), singletonList(singleLine));
+            Files.write(directory.resolve("testApp.properties"), singletonList(singleLine));
         } catch (IOException e) {
             fail("While writing testApp.properties", e);
         }

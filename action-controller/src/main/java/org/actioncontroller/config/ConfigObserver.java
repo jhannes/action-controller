@@ -3,9 +3,10 @@ package org.actioncontroller.config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.net.InetSocketAddress;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,14 +42,14 @@ public class ConfigObserver {
     }
 
     public ConfigObserver(String applicationName) {
-        this(new File("."), applicationName, new ArrayList<>());
+        this(Paths.get("."), applicationName, new ArrayList<>());
     }
 
-    public ConfigObserver(File configDirectory, String applicationName) {
+    public ConfigObserver(Path configDirectory, String applicationName) {
         this(configDirectory, applicationName, getProfiles());
     }
 
-    public ConfigObserver(File configDirectory, String applicationName, List<String> profiles) {
+    public ConfigObserver(Path configDirectory, String applicationName, List<String> profiles) {
         this(new ConfigDirectoryLoader(configDirectory, applicationName, profiles));
     }
 
@@ -128,7 +129,7 @@ public class ConfigObserver {
             @Override
             public void onConfigChanged(Set<String> changedKeys, ConfigMap newConfiguration) {
                 if (changeIncludes(changedKeys, prefix)) {
-                    applyConfiguration(listener, newConfiguration.subMap(prefix).orElse(new ConfigMap()));
+                    applyConfiguration(listener, prefix, newConfiguration.subMap(prefix).orElse(createConfigMap("")));
                 }
             }
         });
@@ -141,7 +142,8 @@ public class ConfigObserver {
                 if (changeIncludes(changedKeys, prefix)) {
                     applyConfiguration(
                             listener,
-                            transform(newConfiguration.subMap(prefix).orElse(new ConfigMap(prefix, new HashMap<>())), transformer)
+                            prefix,
+                            transform(newConfiguration.subMap(prefix).orElse(createConfigMap(prefix)), transformer)
                     );
                 }
             }
@@ -156,6 +158,7 @@ public class ConfigObserver {
                 if (changeIncludes(changedKeys, prefix)) {
                     applyConfiguration(
                             listener,
+                            prefix,
                             newConfiguration.subMap(prefix).map(c -> transform(c, transformer))
                     );
                 }
@@ -168,13 +171,13 @@ public class ConfigObserver {
             @Override
             public void onConfigChanged(Set<String> changedKeys, ConfigMap newConfiguration) {
                 if (changeIncludes(changedKeys, prefix)) {
-                    applyConfiguration(listener, newConfiguration.subMap(prefix).map(Function.identity()));
+                    applyConfiguration(listener, prefix, newConfiguration.subMap(prefix).map(Function.identity()));
                 }
             }
         });
     }
 
-    protected <T> T transform(Map<String, String> configuration, ConfigListener.Transformer<T> transformer) {
+    protected <T> T transform(ConfigMap configuration, ConfigListener.Transformer<T> transformer) {
         try {
             return transformer.apply(configuration);
         } catch (Exception e) {
@@ -182,12 +185,12 @@ public class ConfigObserver {
         }
     }
 
-    protected <T> void applyConfiguration(ConfigValueListener<T> listener, T configuration) {
-        logger.info("onConfigChanged config={} value={}", configuration, configuration);
+    protected <T> void applyConfiguration(ConfigValueListener<T> listener, String prefix, T configuration) {
+        logger.info("onConfigChanged config={} value={}", prefix, configuration);
         try {
             listener.apply(configuration);
         } catch (Exception e1) {
-            throw new ConfigException("While applying " + configuration, e1);
+            throw new ConfigException("While applying " + prefix + " " + configuration, e1);
         }
     }
 
@@ -211,6 +214,10 @@ public class ConfigObserver {
         return changedKeys;
     }
 
+    protected void handleConfigurationChanged(Set<String> changedKeys) {
+        handleConfigurationChanged(changedKeys, new ConfigMap(currentConfiguration));
+    }
+
     protected void handleConfigurationChanged(Set<String> changedKeys, ConfigMap newConfiguration) {
         for (ConfigListener listener : listeners) {
             notifyListener(listener, changedKeys, newConfiguration);
@@ -225,4 +232,9 @@ public class ConfigObserver {
             logger.error("Failed to notify listener while reloading {}", configLoader.describe(), e);
         }
     }
+
+    private ConfigMap createConfigMap(String prefix) {
+        return new ConfigMap(prefix, new HashMap<>());
+    }
+
 }

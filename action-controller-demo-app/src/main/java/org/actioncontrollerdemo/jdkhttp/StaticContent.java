@@ -61,8 +61,9 @@ public class StaticContent implements HttpHandler {
         }
     }
 
+    // TODO: Move to ContentSource
     private String getContentType(URL url) {
-        String contentType =  URLConnection.getFileNameMap().getContentTypeFor(url.getPath());
+        String contentType = URLConnection.getFileNameMap().getContentTypeFor(url.getPath());
         if (contentType != null) {
             return contentType;
         } else {

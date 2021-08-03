@@ -12,7 +12,7 @@ import java.util.Set;
 public interface ConfigListener {
     @FunctionalInterface
     interface Transformer<T> {
-        T apply(Map<String, String> configuration) throws Exception;
+        T apply(ConfigMap configuration) throws Exception;
     }
 
     void onConfigChanged(Set<String> changedKeys, ConfigMap newConfiguration) throws Exception;

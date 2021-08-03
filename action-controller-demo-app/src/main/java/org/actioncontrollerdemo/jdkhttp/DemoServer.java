@@ -9,7 +9,6 @@ import org.actioncontrollerdemo.UserController;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
 
 public class DemoServer {
     private HttpServer httpServer;

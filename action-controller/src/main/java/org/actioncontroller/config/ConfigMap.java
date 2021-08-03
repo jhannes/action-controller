@@ -3,6 +3,7 @@ package org.actioncontroller.config;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.HashMap;
@@ -174,4 +175,9 @@ public class ConfigMap extends AbstractMap<String, String> {
         }
         return key + "=" + value;
     }
+
+    public InetSocketAddress getInetSocketAddress(String key, int defaultPort) {
+        return optional(key).map(ConfigListener::asInetSocketAddress).orElse(new InetSocketAddress(defaultPort));
+    }
+
 }

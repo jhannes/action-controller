@@ -3,6 +3,7 @@ package org.actioncontroller.config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.nio.file.Path;
@@ -33,7 +34,7 @@ public class ConfigObserver {
     private Map<String, String> currentConfiguration;
     private final List<ConfigListener> listeners = new ArrayList<>();
 
-    private final ConfigLoader configLoader;
+    private final ConfigDirectoryLoader configLoader;
 
     private static List<String> getProfiles() {
         return Optional.ofNullable(System.getProperty("profile", System.getProperty("profiles")))
@@ -53,10 +54,18 @@ public class ConfigObserver {
         this(new ConfigDirectoryLoader(configDirectory, applicationName, profiles));
     }
 
-    public ConfigObserver(ConfigLoader configLoader) {
+    public ConfigObserver(ConfigDirectoryLoader configLoader) {
         this.configLoader = configLoader;
         currentConfiguration = this.configLoader.loadConfiguration();
-        this.configLoader.watch(this::updateConfiguration);
+        FileSystemWatcher fileSystemWatcher;
+        try {
+            fileSystemWatcher = new FileSystemWatcher();
+        } catch (IOException e) {
+            throw new ConfigException("Failed to initialize FileScanner", e);
+        }
+        fileSystemWatcher.start();
+
+        this.configLoader.watch(fileSystemWatcher, this::updateConfiguration);
     }
 
     /**

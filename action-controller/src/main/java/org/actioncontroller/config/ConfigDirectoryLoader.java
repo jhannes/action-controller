@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * Given a {@link #configDirectory}, applicationName and profiles, monitors
@@ -23,20 +24,16 @@ import java.util.function.Consumer;
  * classpath resources <code>&lt;applicationName&gt;.properties</code> and
  *  <code>&lt;applicationName&gt;-&lt;profile&gt;.properties</code> in the future.
  */
-public class ConfigDirectoryLoader implements ConfigLoader {
+public class ConfigDirectoryLoader {
     private static final Logger logger = LoggerFactory.getLogger(ConfigDirectoryLoader.class);
     private final Path configDirectory;
     private final String applicationName;
     private final List<String> profiles;
-    private final List<String> configurationFileNames;
 
     public ConfigDirectoryLoader(Path configDirectory, String applicationName, List<String> profiles) {
         this.configDirectory = configDirectory;
         this.applicationName = applicationName;
         this.profiles = profiles;
-        this.configurationFileNames = new ArrayList<>();
-        configurationFileNames.add(applicationName + ".properties");
-        profiles.forEach(profile -> configurationFileNames.add(applicationName + "-" + profile + ".properties"));
     }
 
     public Map<String, String> loadConfiguration() {
@@ -80,8 +77,15 @@ public class ConfigDirectoryLoader implements ConfigLoader {
         return "directory=" + configDirectory.toAbsolutePath() + ", profiles=" + profiles + ", files=" + getConfigurationFiles();
     }
 
-    public void watch(Consumer<Map<String, String>> configChangeListener) {
-        new FileScanner(configDirectory, configurationFileNames,
-                config -> configChangeListener.accept(loadConfiguration()));
+    public void watch(FileSystemWatcher fileSystemWatcher, Consumer<Map<String, String>> configChangeListener) {
+        String pattern = applicationName
+                + "{," + profiles.stream().map(s -> "-" + s).collect(Collectors.joining(","))
+                + "}.properties";
+        try {
+            fileSystemWatcher.watch("CONFIG FILES", configDirectory, pattern,
+                    config -> configChangeListener.accept(loadConfiguration()));
+        } catch (IOException e) {
+            throw new ConfigException("Failed to initialize FileScanner", e);
+        }
     }
 }

@@ -1,8 +1,10 @@
 package org.actioncontroller.config;
 
+import org.actioncontroller.util.ExceptionUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URL;
@@ -35,6 +37,7 @@ public class ConfigObserver {
     private final List<ConfigListener> listeners = new ArrayList<>();
 
     private final ConfigDirectoryLoader configLoader;
+    private final FileSystemWatcher fileSystemWatcher;
 
     private static List<String> getProfiles() {
         return Optional.ofNullable(System.getProperty("profile", System.getProperty("profiles")))
@@ -57,7 +60,6 @@ public class ConfigObserver {
     public ConfigObserver(ConfigDirectoryLoader configLoader) {
         this.configLoader = configLoader;
         currentConfiguration = this.configLoader.loadConfiguration();
-        FileSystemWatcher fileSystemWatcher;
         try {
             fileSystemWatcher = new FileSystemWatcher();
         } catch (IOException e) {
@@ -246,4 +248,12 @@ public class ConfigObserver {
         return new ConfigMap(prefix, new HashMap<>());
     }
 
+    public void listenToFileChange(String pathExpression, String key) {
+        File file = new File(pathExpression);
+        try {
+            fileSystemWatcher.watch(key, file.getParentFile().toPath(), file.getName(), k -> handleConfigurationChanged(Set.of(k)));
+        } catch (IOException e) {
+            throw ExceptionUtil.softenException(e);
+        }
+    }
 }

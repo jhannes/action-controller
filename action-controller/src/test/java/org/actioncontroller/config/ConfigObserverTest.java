@@ -1,5 +1,6 @@
 package org.actioncontroller.config;
 
+import org.actioncontroller.util.ExceptionUtil;
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.extend.junit.ExpectedLogEventsRule;
@@ -48,8 +49,8 @@ public class ConfigObserverTest {
     private final BlockingQueue<Instant> reloadTimes = new ArrayBlockingQueue<>(10);
     private final ConfigObserver observer = new ConfigObserver(directory, "testApp") {
         @Override
-        public void updateConfiguration(Map<String, String> newConfiguration) {
-            super.updateConfiguration(newConfiguration);
+        protected void handleConfigurationChanged(Set<String> changedKeys, ConfigMap newConfiguration) {
+            super.handleConfigurationChanged(changedKeys, newConfiguration);
             try {
                 reloadTimes.put(Instant.now());
             } catch (InterruptedException e) {
@@ -308,6 +309,143 @@ public class ConfigObserverTest {
 
         writeConfigLines("example.number=one", "example.foo=real value");
         assertThat(fooValue[0]).isEqualTo("real value");
+    }
+
+    @Test
+    public void shouldReadFile() throws IOException, InterruptedException {
+        AtomicReference<String> fileContent = new AtomicReference<>();
+        observer.onPrefixedValue(
+                "config",
+                config -> config.optionalFile("file", observer).map(this::readFile).orElse("<no file>"),
+                fileContent::set
+        );
+        Path file = directory.resolve("file-" + UUID.randomUUID() + ".txt");
+        Files.write(file, "This is the file content".getBytes());
+        writeConfigLine(("config.file=" + file).replaceAll("\\\\", "/"));
+        //waitForFileWatcher();
+        Thread.sleep(100);
+        assertThat(fileContent).hasValue("This is the file content");
+    }
+
+    @Test
+    public void shouldWatchForNewFile() throws IOException, InterruptedException {
+        Path testDir = Paths.get("target/test/test-" + UUID.randomUUID() + "/subdir");
+        Path file = testDir.resolve("file-" + UUID.randomUUID() + ".txt");
+        writeConfigLine(("config.file=" + file).replaceAll("\\\\", "/"));
+
+        AtomicReference<String> fileContent = new AtomicReference<>();
+        observer.onPrefixedValue(
+                "config",
+                config -> config.optionalFile("file", observer).map(this::readFile).orElse("<no file>"),
+                fileContent::set
+        );
+        assertThat(fileContent).hasValue("<no file>");
+
+        Files.createDirectories(testDir);
+        Thread.sleep(100);
+        Files.write(file, "This is the file content".getBytes());
+        //waitForFileWatcher();
+        Thread.sleep(100);
+        assertThat(fileContent).hasValue("This is the file content");
+    }
+
+    @Test
+    public void shouldWatchForFileChange() throws IOException, InterruptedException {
+        Path file = directory.resolve("file-" + UUID.randomUUID() + ".txt");
+        writeConfigLine(("config.file=" + file).replaceAll("\\\\", "/"));
+        Files.write(file, "Old content".getBytes());
+
+        AtomicReference<String> fileContent = new AtomicReference<>();
+        observer.onPrefixedValue(
+                "config",
+                config -> config.optionalFile("file", observer).map(this::readFile).orElse("<no file>"),
+                fileContent::set
+        );
+        assertThat(fileContent).hasValue("Old content");
+        
+        Files.write(file, "Updated content".getBytes());
+        Thread.sleep(100);
+        assertThat(fileContent).hasValue("Updated content");
+    }
+    
+    /*
+    @Test
+    public void shouldNotWatchOldFile() throws IOException {
+        File oldDirectory = new File("target/test/old-dir-" + UUID.randomUUID());
+        oldDirectory.mkdirs();
+        File oldFile = new File(oldDirectory, "file-" + UUID.randomUUID() + ".txt");
+        Files.write(oldFile.toPath(), "Old content".getBytes());
+        File newDirectory = new File("target/test/new-dir-" + UUID.randomUUID());
+        newDirectory.mkdirs();
+        File newFile = new File(newDirectory, "file-" + UUID.randomUUID() + ".txt");
+        Files.write(newFile.toPath(), "New content".getBytes());
+
+        writeConfigLine(("config.file=" + oldFile).replaceAll("\\\\", "/"));
+
+        AtomicReference<String> fileContent = new AtomicReference<>();
+        AtomicReference<String> otherProperty = new AtomicReference<>();
+        observer.onPrefixedValue(
+                "config",
+                config -> config.optionalFile("file").map(this::readFile).orElse("<no file>"),
+                fileContent::set
+        ).onStringValue("unrelatedProperty", null, otherProperty::set);
+        assertThat(fileContent).hasValue("Old content");
+
+        writeConfigLine(("config.file=" + newFile).replaceAll("\\\\", "/"));
+        assertThat(fileContent).hasValue("New content");
+        
+        fileContent.set("Don't touch");
+        Files.write(oldFile.toPath(), "Changes to old file".getBytes());
+        Files.write(new File(oldDirectory, "file-" + UUID.randomUUID() + ".txt").toPath(), "Other old dir file".getBytes());
+        waitForFileWatcher();
+        writeConfigLines(("config.file=" + newFile).replaceAll("\\\\", "/"), "unrelatedProperty=value");
+        assertThat(otherProperty).hasValue("value");
+        assertThat(fileContent).hasValue("Don't touch");
+    }
+    
+    
+    @Test
+    public void shouldWatchFilePattern() throws IOException, InterruptedException {
+        Path contentDir = Paths.get("target/test/content-dir-" + UUID.randomUUID());
+
+        writeConfigLine(("config.files=" + contentDir + "/*.txt").replaceAll("\\\\", "/"));
+
+        BlockingQueue<Set<String>> file = new ArrayBlockingQueue<>(1);
+        observer.onPrefixedValue(
+                "config",
+                config -> config.listFiles("files").stream().map(this::readFile).collect(Collectors.toSet()),
+                file::add
+        );
+        assertThat(file.poll(100, TimeUnit.MILLISECONDS)).isEqualTo(Set.of());
+
+        Files.createDirectories(contentDir);
+        Files.write(contentDir.resolve("fileOne.txt"), "File one".getBytes());
+        Files.write(contentDir.resolve("otherFile.ignore"), "Should be ignored".getBytes());
+
+        assertThat(file.poll(100, TimeUnit.MILLISECONDS)).isEqualTo(Set.of("File one"));
+
+        Files.write(contentDir.resolve("fileOne.txt"), "File one updated".getBytes());
+        assertThat(file.poll(100, TimeUnit.MILLISECONDS)).isEqualTo(Set.of("File one updated"));
+
+        // For unknown reasons, we don't always get the second file
+        Thread.sleep(100);
+        file.clear();
+        Thread.sleep(100);
+
+        Files.write(contentDir.resolve("fileTwo.txt"), "File two".getBytes());
+        assertThat(file.poll(500, TimeUnit.MILLISECONDS)).isEqualTo(Set.of("File one updated", "File two"));
+
+        Files.write(contentDir.resolve("fileTwo.txt"), "File two updated".getBytes());
+        assertThat(file.poll(500, TimeUnit.MILLISECONDS)).isEqualTo(Set.of("File one updated", "File two updated"));
+    }
+
+     */
+    private String readFile(Path file) {
+        try {
+            return String.join("\n", Files.readAllLines(file));
+        } catch (IOException e) {
+            throw ExceptionUtil.softenException(e);
+        }
     }
 
     private void writeConfigLines(String... lines) {

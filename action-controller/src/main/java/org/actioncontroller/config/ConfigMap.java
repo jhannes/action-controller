@@ -4,6 +4,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.HashMap;
@@ -180,4 +183,9 @@ public class ConfigMap extends AbstractMap<String, String> {
         return optional(key).map(ConfigListener::asInetSocketAddress).orElse(new InetSocketAddress(defaultPort));
     }
 
+    public Optional<Path> optionalFile(String key, ConfigObserver observer) {
+        Optional<String> value = optional(key);
+        value.ifPresent(file -> observer.listenToFileChange(file, getInnerKey(key)));
+        return value.map(Paths::get).filter(Files::isRegularFile);
+    }
 }

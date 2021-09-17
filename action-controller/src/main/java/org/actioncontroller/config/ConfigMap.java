@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
@@ -51,7 +52,8 @@ public class ConfigMap extends AbstractMap<String, String> {
     }
 
     public ConfigMap(String prefix, Map<String, String> innerMap, Map<String, String> environment) {
-        this.environment = environment;
+        this.environment = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        this.environment.putAll(environment);
         if (innerMap instanceof ConfigMap) {
             ConfigMap configMap = (ConfigMap) innerMap;
             this.prefix = configMap.prefix + prefix + ".";
@@ -72,18 +74,17 @@ public class ConfigMap extends AbstractMap<String, String> {
         } else {
             this.innerMap = innerMap;
         }
-        environment = System.getenv();
+        environment = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        environment.putAll(System.getenv());
     }
 
     public ConfigMap() {
         this(new HashMap<>());
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public ConfigMap(Properties properties) {
-        this.prefix = "";
-        this.innerMap = new HashMap<>();
-        properties.forEach((key, value) -> innerMap.put(key.toString(), value.toString()));
-        environment = System.getenv();
+        this((Map)properties);
     }
 
     public Optional<String> optional(Object key) {

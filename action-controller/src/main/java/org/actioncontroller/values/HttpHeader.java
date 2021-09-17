@@ -20,9 +20,7 @@ import java.lang.annotation.Target;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 /**
  * When used on a parameter, maps the HTTP Request header to the parameter, converting the type if necessary.
@@ -55,7 +53,7 @@ public @interface HttpHeader {
         }
 
         @Override
-        public HttpReturnMapper create(HttpHeader annotation, Type returnType) {
+        public HttpReturnMapper create(HttpHeader annotation, Type returnType, ApiControllerContext context) {
             return (result, exchange) -> exchange.setResponseHeader(annotation.value(), Objects.toString(result, null));
         }
 

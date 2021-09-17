@@ -1,5 +1,6 @@
 package org.actioncontroller.values;
 
+import org.actioncontroller.ApiControllerContext;
 import org.actioncontroller.TypeConverter;
 import org.actioncontroller.TypeConverterFactory;
 import org.actioncontroller.meta.HttpClientReturnMapper;
@@ -10,7 +11,6 @@ import org.actioncontroller.meta.HttpReturnMapping;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.lang.reflect.Type;
-import java.util.function.Function;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -29,7 +29,7 @@ public @interface HttpResponseHeader {
 
     class MappingFactory implements HttpReturnMapperFactory<HttpResponseHeader> {
         @Override
-        public HttpReturnMapper create(HttpResponseHeader annotation, Type returnType) {
+        public HttpReturnMapper create(HttpResponseHeader annotation, Type returnType, ApiControllerContext context) {
             String name = annotation.value();
             return (result, exchange) -> exchange.setResponseHeader(name, result.toString());
         }

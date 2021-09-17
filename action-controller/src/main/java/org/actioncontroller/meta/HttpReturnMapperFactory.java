@@ -1,5 +1,6 @@
 package org.actioncontroller.meta;
 
+import org.actioncontroller.ApiControllerContext;
 import org.actioncontroller.values.ContentBody;
 import org.actioncontroller.values.SendRedirect;
 
@@ -15,9 +16,9 @@ import java.util.Optional;
  */
 public interface HttpReturnMapperFactory<ANNOTATION extends Annotation> extends AnnotationFactory {
 
-    static Optional<HttpReturnMapper> createNewInstance(Method action) {
+    static Optional<HttpReturnMapper> createNewInstance(Method action, ApiControllerContext context) {
         return AnnotationFactory.getAnnotatedAnnotation(action, HttpReturnMapping.class)
-                .map(annotation -> createFactory(annotation).create(annotation, action.getGenericReturnType()));
+                .map(annotation -> createFactory(annotation).create(annotation, action.getGenericReturnType(), context));
     }
 
     static Optional<HttpClientReturnMapper> createNewClientInstance(Method action) {
@@ -30,7 +31,7 @@ public interface HttpReturnMapperFactory<ANNOTATION extends Annotation> extends 
         return AnnotationFactory.newInstance(annotation.annotationType().getAnnotation(HttpReturnMapping.class).value());
     }
 
-    HttpReturnMapper create(ANNOTATION annotation, Type returnType);
+    HttpReturnMapper create(ANNOTATION annotation, Type returnType, ApiControllerContext context);
 
     default HttpClientReturnMapper createClientMapper(ANNOTATION annotation, Type returnType) {
         throw new UnsupportedOperationException(getClass() + " does not support " + HttpClientReturnMapper.class);

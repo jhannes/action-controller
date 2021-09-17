@@ -187,7 +187,7 @@ public class ApiServletConfigurationErrorTest {
         }
 
         @Override
-        public HttpReturnMapper create(Annotation annotation, Type returnType) {
+        public HttpReturnMapper create(Annotation annotation, Type returnType, ApiControllerContext context) {
             return null;
         }
     }

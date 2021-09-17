@@ -1,5 +1,6 @@
 package org.actioncontroller.values;
 
+import org.actioncontroller.ApiControllerContext;
 import org.actioncontroller.TypeConverter;
 import org.actioncontroller.exceptions.ActionControllerConfigurationException;
 import org.actioncontroller.TypeConverterFactory;
@@ -11,7 +12,6 @@ import org.actioncontroller.meta.HttpReturnMapping;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.lang.reflect.Type;
-import java.util.function.Function;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -31,7 +31,7 @@ public @interface SendRedirect {
 
     class MappingFactory implements HttpReturnMapperFactory<SendRedirect> {
         @Override
-        public HttpReturnMapper create(SendRedirect annotation, Type returnType) {
+        public HttpReturnMapper create(SendRedirect annotation, Type returnType, ApiControllerContext context) {
             if (!annotation.value().isEmpty()) {
                 if (returnType != Void.TYPE) {
                     throw new ActionControllerConfigurationException("When using " + SendRedirect.class.getName() + " with value(), return value must be void");

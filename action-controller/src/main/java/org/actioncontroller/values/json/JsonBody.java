@@ -66,7 +66,7 @@ public @interface JsonBody {
         private static final Logger logger = LoggerFactory.getLogger(ReturnMapperFactory.class);
 
         @Override
-        public HttpReturnMapper create(JsonBody annotation, Type returnType) {
+        public HttpReturnMapper create(JsonBody annotation, Type returnType, ApiControllerContext context) {
             JsonGenerator jsonGenerator = new JsonGenerator() {
                 @Override
                 protected String getName(Field field) {

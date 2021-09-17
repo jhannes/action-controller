@@ -1,5 +1,6 @@
 package org.actioncontroller.values;
 
+import org.actioncontroller.ApiControllerContext;
 import org.actioncontroller.TypeConverterFactory;
 import org.actioncontroller.meta.HttpClientReturnMapper;
 import org.actioncontroller.meta.HttpReturnMapper;
@@ -33,7 +34,7 @@ public @interface ContentLocationHeader {
 
     class MappingFactory implements HttpReturnMapperFactory<ContentLocationHeader> {
         @Override
-        public HttpReturnMapper create(ContentLocationHeader annotation, Type returnType) {
+        public HttpReturnMapper create(ContentLocationHeader annotation, Type returnType, ApiControllerContext context) {
             if (returnType == URL.class) {
                 return (result, exchange) -> exchange.setResponseHeader(FIELD_NAME, result.toString());
             }

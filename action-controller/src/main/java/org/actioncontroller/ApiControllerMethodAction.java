@@ -85,7 +85,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
             }
         }
 
-        responseMapper = createResponseMapper();
+        responseMapper = createResponseMapper(context);
         verifyPathParameters();
     }
 
@@ -133,8 +133,8 @@ public class ApiControllerMethodAction implements ApiControllerAction {
         typebasedRequestMapping.put(ApiHttpExchange.class, (exchange) -> exchange);
     }
 
-    private HttpReturnMapper createResponseMapper() {
-        return HttpReturnMapperFactory.createNewInstance(action)
+    private HttpReturnMapper createResponseMapper(ApiControllerContext context) {
+        return HttpReturnMapperFactory.createNewInstance(action, context)
                 .or(() -> Optional.ofNullable(typebasedResponseMapping.get(action.getReturnType())))
                 .orElseThrow(() -> new ApiActionResponseUnknownMappingException(action, action.getGenericReturnType()));
     }

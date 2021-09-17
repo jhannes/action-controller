@@ -19,6 +19,28 @@ public interface AnnotationFactory {
         }
     }
 
+    /**
+     * Returns any annotation instance on the annotated element which is itself annotated with the target
+     * annotation. For example, given the annotation and class:
+     * 
+     * <pre>
+     * &#064;Retention(RetentionPolicy.RUNTIME)
+     * &#064;Target(ElementType.ANNOTATION_TYPE)
+     * public &#064;interface MyAnnotation {
+     *
+     *     String value();
+     *
+     * }
+     * 
+     * &#064;MyAnnotation("hello")
+     * public class MyClass {
+     *     
+     * }
+     * </pre>
+     * 
+     * Then <code>getAnnotatedAnnotation(MyClass.class, MyAnnotation.class).value()</code> will return
+     * <code>"hello"</code>.
+     */
     static <T extends Annotation> Optional<Annotation> getAnnotatedAnnotation(AnnotatedElement element, Class<T> targetAnnotation) {
         for (Annotation routingAnnotation : element.getAnnotations()) {
             T routerMapping = routingAnnotation.annotationType().getAnnotation(targetAnnotation);

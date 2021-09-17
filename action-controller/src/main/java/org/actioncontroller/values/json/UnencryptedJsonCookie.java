@@ -68,39 +68,29 @@ public @interface UnencryptedJsonCookie {
     boolean setInResponse() default false;
 
     class MapperFactory implements HttpParameterMapperFactory<UnencryptedJsonCookie> {
+
         @Override
         public HttpParameterMapper create(UnencryptedJsonCookie annotation, Parameter parameter, ApiControllerContext context) {
-            boolean setInResponse = annotation.setInResponse();
-                boolean optional = parameter.getType() == Optional.class;
+            boolean optional = parameter.getType() == Optional.class;
             Type type = optional ? TypesUtil.typeParameter(parameter.getParameterizedType()) : parameter.getParameterizedType();
-            String name;
+            return new Mapper(new PojoMapper(), getCookieName(annotation, type), type, annotation);
+        }
+
+        private String getCookieName(UnencryptedJsonCookie annotation, Type type) {
             if (!annotation.value().equals("")) {
-                name = annotation.value();
+                return annotation.value();
             } else if (Map.class.isAssignableFrom(TypesUtil.getRawType(type)) || JsonNode.class.isAssignableFrom(TypesUtil.getRawType(type))) {
                 throw new ActionControllerConfigurationException("Missing cookie name");
             } else {
-                name = TypesUtil.getRawType(type).getSimpleName();
+                return TypesUtil.getRawType(type).getSimpleName();
             }
-            return new HttpParameterMapper() {
-                @Override
-                public Object apply(ApiHttpExchange exchange) {
-                    return MapperFactory.this.getCookie(exchange, name, type);
-                }
-
-                @Override
-                public void onComplete(ApiHttpExchange exchange, Object argument) {
-                    if (setInResponse) {
-                        exchange.setCookie(name, JsonGenerator.generate(argument).toJson(), annotation.secure(), annotation.isHttpOnly());
-                    }
-                }
-            };
         }
 
         @Override
         public HttpClientParameterMapper clientParameterMapper(UnencryptedJsonCookie annotation, Parameter parameter) {
             boolean optional = parameter.getType() == Optional.class;
             Type type = optional ? TypesUtil.typeParameter(parameter.getParameterizedType()) : parameter.getParameterizedType();
-            String name = annotation.value().equals("") ? ((Class<?>)type).getSimpleName() : annotation.value();
+            String name = getCookieName(annotation, type);
             return (exchange, arg) -> {
                 if (arg != null) {
                     exchange.addRequestCookie(name, JsonGenerator.generate(arg).toJson());
@@ -108,12 +98,37 @@ public @interface UnencryptedJsonCookie {
             };
         }
 
-        protected Object getCookie(ApiHttpExchange exchange, String name, Type type) {
-            return exchange.getCookies(name).stream()
-                    .map(JsonObject::parse).map(json -> PojoMapper.mapType(json, type))
-                    .findFirst()
-                    .orElseGet(() -> PojoMapper.mapType(new JsonObject(), type));
-        }
+        public static class Mapper implements HttpParameterMapper {
+            private final String name;
+            private final Type type;
+            private final UnencryptedJsonCookie annotation;
+            private final PojoMapper pojoMapper;
 
+            public Mapper(PojoMapper pojoMapper, String name, Type type, UnencryptedJsonCookie annotation) {
+                this.name = name;
+                this.type = type;
+                this.annotation = annotation;
+                this.pojoMapper = pojoMapper;
+            }
+
+            @Override
+            public Object apply(ApiHttpExchange exchange) {
+                return getCookie(exchange, name, type);
+            }
+
+            protected Object getCookie(ApiHttpExchange exchange, String name, Type type) {
+                return exchange.getCookies(name).stream()
+                        .map(JsonObject::parse).map(json -> pojoMapper.mapToPojo(json, type))
+                        .findFirst()
+                        .orElseGet(() -> pojoMapper.mapToPojo(new JsonObject(), type));
+            }
+
+            @Override
+            public void onComplete(ApiHttpExchange exchange, Object argument) {
+                if (annotation.setInResponse()) {
+                    exchange.setCookie(name, JsonGenerator.generate(argument).toJson(), annotation.secure(), annotation.isHttpOnly());
+                }
+            }
+        }
     }
 }

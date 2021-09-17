@@ -1,10 +1,8 @@
 package org.actioncontroller.values.json;
 
 import org.actioncontroller.ApiControllerContext;
-import org.actioncontroller.exceptions.HttpRequestException;
-import org.actioncontroller.util.TypesUtil;
-import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.ApiHttpExchange;
+import org.actioncontroller.exceptions.HttpRequestException;
 import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpClientReturnMapper;
 import org.actioncontroller.meta.HttpParameterMapper;
@@ -13,8 +11,8 @@ import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpReturnMapper;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
+import org.actioncontroller.util.TypesUtil;
 import org.jsonbuddy.JsonNode;
-import org.jsonbuddy.JsonNull;
 import org.jsonbuddy.parse.JsonParser;
 import org.jsonbuddy.pojo.JsonGenerator;
 import org.jsonbuddy.pojo.PojoMapper;
@@ -24,8 +22,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.util.Optional;
@@ -53,7 +49,6 @@ public @interface JsonBody {
             }
         };
 
-
         public abstract String transform(String name);
     }
 
@@ -61,29 +56,32 @@ public @interface JsonBody {
 
     boolean buffer() default true;
 
+    boolean useDeclaringClassAsTemplate() default false;
+
+
     class ReturnMapperFactory implements HttpReturnMapperFactory<JsonBody> {
         
         private static final Logger logger = LoggerFactory.getLogger(ReturnMapperFactory.class);
 
         @Override
         public HttpReturnMapper create(JsonBody annotation, Type returnType, ApiControllerContext context) {
-            JsonGenerator jsonGenerator = new JsonGenerator() {
-                @Override
-                protected String getName(Field field) {
-                    return annotation.nameFormat().transform(super.getName(field));
-                }
+            return createMapper(getJsonGenerator(annotation), returnType, annotation.buffer());
+        }
 
-                @Override
-                protected String getName(Method getMethod) {
-                    return annotation.nameFormat().transform(super.getName(getMethod));
-                }
-            };
-            if (annotation.buffer()) {
+        protected JsonGenerator getJsonGenerator(JsonBody annotation) {
+            return new JsonGenerator(annotation.useDeclaringClassAsTemplate())
+                    .withNameTransformer(annotation.nameFormat()::transform);
+        }
+
+        protected HttpReturnMapper createMapper(JsonGenerator jsonGenerator, Type returnType, boolean buffer) {
+            if (buffer) {
                 return (o, exchange) -> exchange.write(
                         "application/json",
                         writer -> {
                             JsonNode json = jsonGenerator.generateNode(o, Optional.of(returnType));
-                            logger.trace("Responding with JSON: {}", json);
+                            if (logger.isTraceEnabled()) {
+                                logger.trace("Responding with JSON: {}", json);
+                            }
                             writer.write(json.toJson());
                         }
                 );
@@ -92,7 +90,9 @@ public @interface JsonBody {
                         "application/json",
                         writer -> {
                             JsonNode json = jsonGenerator.generateNode(o, Optional.of(returnType));
-                            logger.trace("Responding with JSON: {}", json);
+                            if (logger.isTraceEnabled()) {
+                                logger.trace("Responding with JSON: {}", json);
+                            }
                             json.toJson(writer);
                         }
                 );
@@ -101,21 +101,15 @@ public @interface JsonBody {
 
         @Override
         public HttpClientReturnMapper createClientMapper(JsonBody annotation, Type returnType) {
-            return jsonMapper(exchange -> PojoMapper.mapType(JsonParser.parse(exchange.getResponseBodyStream()), returnType));
+            return createClientMapper(returnType, PojoMapper.create());
         }
 
-        private HttpClientReturnMapper jsonMapper(HttpClientReturnMapper mapper) {
-            return new HttpClientReturnMapper() {
-                @Override
-                public Object getReturnValue(ApiClientExchange exchange) throws IOException {
-                    return mapper.getReturnValue(exchange);
-                }
-
-                @Override
-                public void setupExchange(ApiClientExchange exchange) {
-                    exchange.setHeader("Accept", "application/json");
-                }
-            };
+        protected HttpClientReturnMapper createClientMapper(Type returnType, PojoMapper pojoMapper) {
+            return HttpClientReturnMapper.withHeader(
+                    exchange -> pojoMapper.mapToPojo(JsonParser.parse(exchange.getResponseBodyStream()), returnType),
+                    "Accept",
+                    "application/json"
+            );
         }
     }
 
@@ -123,33 +117,36 @@ public @interface JsonBody {
 
         private static final Logger logger = LoggerFactory.getLogger(JsonBody.class);
 
-        private final PojoMapper pojoMapper = PojoMapper.create();
-
         @Override
         public HttpParameterMapper create(JsonBody annotation, Parameter parameter, ApiControllerContext context) {
+            return createMapper(new PojoMapper(), parameter);
+        }
+
+        protected HttpParameterMapper createMapper(PojoMapper pojoMapper, Parameter parameter) {
             Type type = parameter.getParameterizedType();
             if (parameter.getType() == Optional.class) {
-                return exchange -> readPojo(exchange, TypesUtil.typeParameter(type));
+                return exchange -> readPojo(pojoMapper, exchange, TypesUtil.typeParameter(type));
+            } else {
+                return exchange -> readPojo(pojoMapper, exchange, type)
+                        .orElseThrow(() -> new HttpRequestException("Missing required request body"));
             }
-            return exchange -> readPojo(exchange, type).orElseThrow(() -> new HttpRequestException("Missing required request body"));
         }
 
-        private Optional<Object> readPojo(ApiHttpExchange exchange, Type targetType) throws IOException {
+        protected static Optional<Object> readPojo(PojoMapper pojoMapper, ApiHttpExchange exchange, Type targetType) throws IOException {
             JsonNode json = JsonParser.parseNode(exchange.getReader());
-            logger.trace("Received JSON: {}", json);
-            return mapToPojo(json, targetType);
-        }
-
-        private Optional<Object> mapToPojo(JsonNode json, Type targetType) {
-            return json != null && !(json instanceof JsonNull) ? Optional.of(pojoMapper.mapToPojo(json, targetType)) : Optional.empty();
+            if (logger.isTraceEnabled()) {
+                logger.trace("Received JSON: {}", json);
+            }
+            return Optional.ofNullable(pojoMapper.mapToPojo(json, targetType));
         }
 
         @Override
         public HttpClientParameterMapper clientParameterMapper(JsonBody annotation, Parameter parameter) {
-            if (parameter.getType() == Optional.class) {
-                return (exchange, o) -> exchange.write("application/json", writer -> JsonGenerator.generate(((Optional<?>) o).orElse(null)).toJson(writer));
-            }
-            return (exchange, o) -> exchange.write("application/json", writer -> JsonGenerator.generate(o).toJson(writer));
+            JsonGenerator jsonGenerator = new JsonGenerator(annotation.useDeclaringClassAsTemplate());
+            return (exchange, o) -> exchange.write(
+                    "application/json",
+                    writer -> jsonGenerator.generateNode(o).toJson(writer)
+            );
         }
     }
 

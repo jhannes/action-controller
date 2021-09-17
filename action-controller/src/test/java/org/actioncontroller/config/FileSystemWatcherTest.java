@@ -26,7 +26,7 @@ public class FileSystemWatcherTest {
     
     @Test
     public void shouldNotifyWhenFileIsCreated() throws IOException, InterruptedException {
-        observer.watch("key", testDir, "*.txt", queue::add);
+        watch("key", testDir, "*.txt");
         
         queue.assertEmpty();
         Files.write(testDir.resolve("included.txt"), "contents".getBytes());
@@ -39,7 +39,7 @@ public class FileSystemWatcherTest {
         Files.write(testDir.resolve("included.txt"), "original".getBytes());
         Files.write(testDir.resolve("excluded.properties"), "content".getBytes());
 
-        observer.watch("key", testDir, "*.txt", queue::add);
+        watch("key", testDir, "*.txt");
         queue.assertEmpty();
 
         Files.write(testDir.resolve("included.txt"), "new value".getBytes());
@@ -52,7 +52,7 @@ public class FileSystemWatcherTest {
 
     @Test
     public void shouldNotifyWhenFileIsRenamed() throws IOException, InterruptedException {
-        observer.watch("key", testDir, "included.txt", queue::add);
+        watch("key", testDir, "included.txt");
         Files.write(testDir.resolve("excluded.txt"), "content".getBytes());
         queue.assertEmpty();
         Files.move(testDir.resolve("excluded.txt"), testDir.resolve("included.txt"), StandardCopyOption.ATOMIC_MOVE);
@@ -63,7 +63,7 @@ public class FileSystemWatcherTest {
     @Test
     public void shouldNotifyWhenFileIsDeleted() throws IOException, InterruptedException {
         Files.write(testDir.resolve("included.txt"), "contents".getBytes());
-        observer.watch("key", testDir, "*.txt", queue::add);
+        watch("key", testDir, "*.txt");
         queue.assertEmpty();
         Files.delete(testDir.resolve("included.txt"));
         assertThat(queue.take()).isEqualTo("key");
@@ -71,7 +71,7 @@ public class FileSystemWatcherTest {
     
     @Test
     public void shouldNotNotifyOnUnrelatedFile() throws IOException, InterruptedException {
-        observer.watch("key", testDir, "*.txt", queue::add);
+        watch("key", testDir, "*.txt");
         
         queue.assertEmpty();
         Files.write(testDir.resolve("excluded.properties"), "contents".getBytes());
@@ -82,8 +82,8 @@ public class FileSystemWatcherTest {
     public void shouldNotNotifyInWrongDirectory() throws IOException, InterruptedException {
         Path otherDir = Paths.get("target/test/test-" + UUID.randomUUID() + "/subdir");
         Files.createDirectories(otherDir);
-        observer.watch("key", testDir, "{included,other}.txt", queue::add);
-        observer.watch("other", otherDir, "*.txt", queue::add);
+        watch("key", testDir, "{included,other}.txt");
+        watch("other", otherDir, "*.txt");
 
         Files.write(testDir.resolve("included.txt"), "content".getBytes());
         assertThat(queue.take()).isEqualTo("key");
@@ -93,7 +93,7 @@ public class FileSystemWatcherTest {
     @Test
     public void shouldNotifyWhenDirectoryIsCreated() throws IOException, InterruptedException {
         Path newDirectory = Paths.get("target/test/test-" + UUID.randomUUID() + "/dir/subdir");
-        observer.watch("key", newDirectory, "*.txt", queue::add);
+        watch("key", newDirectory, "*.txt");
 
         Files.createDirectories(newDirectory.getParent());
         queue.assertEmpty();
@@ -105,7 +105,7 @@ public class FileSystemWatcherTest {
     
     @Test
     public void shouldNotifyWhenDirectoryIsRecreated() throws IOException, InterruptedException {
-        observer.watch("key", testDir, "*.txt", queue::add);
+        watch("key", testDir, "*.txt");
         Files.delete(testDir);
         Files.delete(testDir.getParent());
         queue.assertEmpty();
@@ -115,14 +115,13 @@ public class FileSystemWatcherTest {
         Files.write(testDir.resolve("included.txt"), "contents".getBytes());
         assertThat(queue.take()).isEqualTo("key");
     }
-    
-    
+
     @Test
     public void shouldUpdateObserversOnKeyChange() throws IOException, InterruptedException {
         Path otherDir = Paths.get("target/test/test-" + UUID.randomUUID() + "/subdir");
         Files.createDirectories(otherDir);
-        observer.watch("key", testDir, "*.txt", queue::add);
-        observer.watch("key", otherDir, "*.txt", queue::add);
+        watch("key", testDir, "*.txt");
+        watch("key", otherDir, "*.txt");
 
         Files.write(testDir.resolve("included.txt"), "content".getBytes());
         queue.assertEmpty();
@@ -150,4 +149,8 @@ public class FileSystemWatcherTest {
         }
     }
 
+
+    private void watch(String key, Path testDir, String s) throws IOException {
+        observer.watch(key, testDir, testDir.getFileSystem().getPathMatcher("glob:" + s)::matches, queue::add);
+    }
 }

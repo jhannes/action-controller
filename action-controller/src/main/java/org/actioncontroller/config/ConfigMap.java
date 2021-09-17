@@ -1,15 +1,20 @@
 package org.actioncontroller.config;
 
+import org.actioncontroller.util.ExceptionUtil;
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -88,12 +93,12 @@ public class ConfigMap extends AbstractMap<String, String> {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     public ConfigMap(Properties properties) {
-        this((Map)properties);
+        this((Map) properties);
     }
 
     public Optional<String> optional(Object key) {
-        return Optional.ofNullable(innerMap.get(getInnerKey(key))).map(String::trim).filter(s -> !s.isEmpty())
-                .or(() -> Optional.ofNullable(environment.get(getEnvironmentKey(getInnerKey(key)))));
+        return Optional.ofNullable(innerMap.get(getPrefixedKey(key))).map(String::trim).filter(s -> !s.isEmpty())
+                .or(() -> Optional.ofNullable(environment.get(getEnvironmentKey(getPrefixedKey(key)))));
     }
 
     private String getEnvironmentKey(String innerKey) {
@@ -106,7 +111,7 @@ public class ConfigMap extends AbstractMap<String, String> {
      */
     @Override
     public String get(Object key) {
-        return optional(key).orElseThrow(() -> new ConfigException("Missing config value " + getInnerKey(key)));
+        return optional(key).orElseThrow(() -> new ConfigException("Missing config value " + getPrefixedKey(key)));
     }
 
     /**
@@ -149,7 +154,7 @@ public class ConfigMap extends AbstractMap<String, String> {
                 .anyMatch(entry -> entry.getKey().toUpperCase().startsWith(getEnvironmentKey(prefix) + "_") && !entry.getValue().isEmpty());
     }
 
-    protected String getInnerKey(Object key) {
+    protected String getPrefixedKey(Object key) {
         return prefix + key;
     }
 
@@ -185,7 +190,36 @@ public class ConfigMap extends AbstractMap<String, String> {
 
     public Optional<Path> optionalFile(String key, ConfigObserver observer) {
         Optional<String> value = optional(key);
-        value.ifPresent(file -> observer.listenToFileChange(file, getInnerKey(key)));
+        value.map(Paths::get).ifPresent(path -> observer.listenToFileChange(
+                getPrefixedKey(key),
+                path.getParent(),
+                f -> f.getFileName().equals(path.getFileName()))
+        );
         return value.map(Paths::get).filter(Files::isRegularFile);
+    }
+
+    public List<Path> listFiles(String key, ConfigObserver observer) {
+        Optional<String> value = optional(key);
+        if (!value.isPresent()) {
+            return List.of();
+        }
+        File file = new File(value.get());
+        Path parent = file.getParentFile().toPath();
+        PathMatcher pathMatcher = parent.getFileSystem().getPathMatcher("glob:" + file.getName());
+
+        return listFiles(key, observer, parent, pathMatcher);
+    }
+
+    public List<Path> listFiles(String key, ConfigObserver observer, Path directory, PathMatcher pathMatcher) {
+        observer.listenToFileChange(getPrefixedKey(key), directory, pathMatcher::matches);
+        try {
+            List<Path> result = new ArrayList<>();
+            if (Files.isDirectory(directory)) {
+                Files.newDirectoryStream(directory, path -> pathMatcher.matches(path.getFileName())).forEach(result::add);
+            }
+            return result;
+        } catch (IOException e) {
+            throw ExceptionUtil.softenException(e);
+        }
     }
 }

@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -78,14 +79,17 @@ public class ConfigDirectoryLoader {
     }
 
     public void watch(FileSystemWatcher fileSystemWatcher, Consumer<Map<String, String>> configChangeListener) {
-        String pattern = applicationName
-                + "{," + profiles.stream().map(s -> "-" + s).collect(Collectors.joining(","))
-                + "}.properties";
         try {
-            fileSystemWatcher.watch("CONFIG FILES", configDirectory, pattern,
-                    config -> configChangeListener.accept(loadConfiguration()));
+            fileSystemWatcher.watch("CONFIG FILES", configDirectory, getConfigurationFilesPattern(), config -> configChangeListener.accept(loadConfiguration()));
         } catch (IOException e) {
             throw new ConfigException("Failed to initialize FileScanner", e);
         }
+    }
+
+    protected Predicate<Path> getConfigurationFilesPattern() {
+        String matchPattern = "glob:" + (applicationName
+                + "{," + profiles.stream().map(s -> "-" + s).collect(Collectors.joining(","))
+                + "}.properties");
+        return configDirectory.getFileSystem().getPathMatcher(matchPattern)::matches;
     }
 }

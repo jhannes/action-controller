@@ -4,7 +4,6 @@ import org.actioncontroller.util.ExceptionUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URL;
@@ -21,6 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -248,10 +248,9 @@ public class ConfigObserver {
         return new ConfigMap(prefix, new HashMap<>());
     }
 
-    public void listenToFileChange(String pathExpression, String key) {
-        File file = new File(pathExpression);
+    public void listenToFileChange(String key, Path directory, Predicate<Path> pathPredicate) {
         try {
-            fileSystemWatcher.watch(key, file.getParentFile().toPath(), file.getName(), k -> handleConfigurationChanged(Set.of(k)));
+            fileSystemWatcher.watch(key, directory, pathPredicate, k -> handleConfigurationChanged(Set.of(k)));
         } catch (IOException e) {
             throw ExceptionUtil.softenException(e);
         }

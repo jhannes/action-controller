@@ -73,10 +73,6 @@ public class FileSystemWatcher {
         thread.start();
     }
 
-    public void watch(String key, Path directory, String filePattern, FileSystemObserver observer) throws IOException {
-        watch(key, directory, directory.getFileSystem().getPathMatcher("glob:" + filePattern)::matches, observer);
-    }
-
     public void watch(String key, Path directory, Predicate<Path> pathPredicate, FileSystemObserver observer) throws IOException {
         if (!Files.isDirectory(directory)) {
             Path missingDirectory = directory;

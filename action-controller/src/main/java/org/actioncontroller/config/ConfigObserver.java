@@ -1,6 +1,5 @@
 package org.actioncontroller.config;
 
-import org.actioncontroller.util.ExceptionUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +30,7 @@ import java.util.stream.Stream;
  * If the system property `profile` or `profiles` is set, additionally scans for all
  * files on the format <code>&lt;applicationName&gt;-&lt;profile&gt;.properties</code>
  */
-public class ConfigObserver {
+public class ConfigObserver implements FileListener {
     private static final Logger logger = LoggerFactory.getLogger(ConfigObserver.class);
     private Map<String, String> currentConfiguration;
     private final List<ConfigListener> listeners = new ArrayList<>();
@@ -76,7 +75,7 @@ public class ConfigObserver {
      */
     public ConfigObserver onConfigChange(ConfigListener listener) {
         this.listeners.add(listener);
-        notifyListener(listener, null, new ConfigMap(currentConfiguration));
+        notifyListener(listener, null, new ConfigMap(this, currentConfiguration));
         return this;
     }
 
@@ -213,7 +212,7 @@ public class ConfigObserver {
         logger.trace("New configuration {}", newConfiguration);
         Set<String> changedKeys = findChangedKeys(newConfiguration, currentConfiguration);
         this.currentConfiguration = newConfiguration;
-        handleConfigurationChanged(changedKeys, new ConfigMap(newConfiguration));
+        handleConfigurationChanged(changedKeys, new ConfigMap(this, newConfiguration));
     }
 
     private Set<String> findChangedKeys(Map<String, String> newConfiguration, Map<String, String> currentConfiguration) {
@@ -226,7 +225,7 @@ public class ConfigObserver {
     }
 
     protected void handleConfigurationChanged(Set<String> changedKeys) {
-        handleConfigurationChanged(changedKeys, new ConfigMap(currentConfiguration));
+        handleConfigurationChanged(changedKeys, new ConfigMap(this, currentConfiguration));
     }
 
     protected void handleConfigurationChanged(Set<String> changedKeys, ConfigMap newConfiguration) {
@@ -245,14 +244,11 @@ public class ConfigObserver {
     }
 
     private ConfigMap createConfigMap(String prefix) {
-        return new ConfigMap(prefix, new HashMap<>());
+        return new ConfigMap(this, prefix, new HashMap<>());
     }
 
+    @Override
     public void listenToFileChange(String key, Path directory, Predicate<Path> pathPredicate) {
-        try {
-            fileSystemWatcher.watch(key, directory, pathPredicate, k -> handleConfigurationChanged(Set.of(k)));
-        } catch (IOException e) {
-            throw ExceptionUtil.softenException(e);
-        }
+        fileSystemWatcher.watch(key, directory, pathPredicate, k -> handleConfigurationChanged(Set.of(k)));
     }
 }

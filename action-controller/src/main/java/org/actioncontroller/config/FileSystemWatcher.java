@@ -1,5 +1,6 @@
 package org.actioncontroller.config;
 
+import org.actioncontroller.util.ExceptionUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +27,7 @@ public class FileSystemWatcher {
     
     @FunctionalInterface
     interface FileSystemObserver {
-        void apply(String key) throws Exception;
+        void apply(String key);
     }
 
     private static class FileObserver {
@@ -73,25 +74,33 @@ public class FileSystemWatcher {
         thread.start();
     }
 
-    public void watch(String key, Path directory, Predicate<Path> pathPredicate, FileSystemObserver observer) throws IOException {
+    public void watch(String key, Path directory, Predicate<Path> pathPredicate, FileSystemObserver observer) {
         if (!Files.isDirectory(directory)) {
             Path missingDirectory = directory;
             while (!Files.isDirectory(missingDirectory.getParent())) {
                 missingDirectory = missingDirectory.getParent();
             }
-            WatchKey watchKey = missingDirectory.getParent().register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+            WatchKey watchKey = registerWatchService(missingDirectory.getParent());
             directoryKeys.put(missingDirectory.getParent(), watchKey);
             Path fileName = missingDirectory.getFileName();
             observers.put(key, new FileObserver(missingDirectory.getParent(), f -> f.equals(fileName), k -> watch(k, directory, pathPredicate, observer), directory, pathPredicate));
             return;
         }
-        WatchKey watchKey = directory.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+        WatchKey watchKey = registerWatchService(directory);
         directoryKeys.put(directory, watchKey);
         FileObserver oldObserver = observers.put(key, new FileObserver(directory, pathPredicate, observer, directory, pathPredicate));
         if (oldObserver != null) {
             if (observers.values().stream().noneMatch(o -> o.getDirectory().equals(oldObserver.getDirectory()))) {
                 directoryKeys.get(oldObserver.getDirectory()).cancel();
             }
+        }
+    }
+
+    private WatchKey registerWatchService(Path parent) {
+        try {
+            return parent.register(watchService, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+        } catch (IOException e) {
+            throw ExceptionUtil.softenException(e);
         }
     }
 
@@ -121,12 +130,8 @@ public class FileSystemWatcher {
             for (Map.Entry<String, FileObserver> observer : new HashSet<>(this.observers.entrySet())) {
                 FileObserver o = observer.getValue();
                 if (o.getDirectory().startsWith(keyDirectory)) {
-                    try {
-                        logger.debug("Registering directory listener for {}", observer.getKey());
-                        watch(observer.getKey(), o.finalDirectory, o.finalPathPredicate, o.observer);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    logger.debug("Registering directory listener for {}", observer.getKey());
+                    watch(observer.getKey(), o.finalDirectory, o.finalPathPredicate, o.observer);
                 }
             }
         } else {

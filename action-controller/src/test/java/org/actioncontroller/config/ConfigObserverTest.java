@@ -322,7 +322,7 @@ public class ConfigObserverTest {
         AtomicReference<String> fileContent = new AtomicReference<>();
         observer.onPrefixedValue(
                 "config",
-                config -> config.optionalFile("file", observer).map(this::readFile).orElse("<no file>"),
+                config -> config.optionalFile("file").map(this::readFile).orElse("<no file>"),
                 fileContent::set
         );
         Path file = createRandomFile(".txt", "This is the file content");
@@ -341,7 +341,7 @@ public class ConfigObserverTest {
         AtomicReference<String> fileContent = new AtomicReference<>();
         observer.onPrefixedValue(
                 "config",
-                config -> config.optionalFile("file", observer).map(this::readFile).orElse("<no file>"),
+                config -> config.optionalFile("file").map(this::readFile).orElse("<no file>"),
                 fileContent::set
         );
         assertThat(fileContent).hasValue("<no file>");
@@ -362,7 +362,7 @@ public class ConfigObserverTest {
         AtomicReference<String> fileContent = new AtomicReference<>();
         observer.onPrefixedValue(
                 "config",
-                config -> config.optionalFile("file", observer).map(this::readFile).orElse("<no file>"),
+                config -> config.optionalFile("file").map(this::readFile).orElse("<no file>"),
                 fileContent::set
         );
         assertThat(fileContent).hasValue("Old content");
@@ -381,7 +381,7 @@ public class ConfigObserverTest {
         Path unrelatedFile = createRandomFile(".ini", "Random data");
 
         AtomicReference<List<Path>> files = new AtomicReference<>();
-        observer.onPrefixedValue("config", config -> config.listFiles("file", observer), files::set);
+        observer.onPrefixedValue("config", config -> config.listFiles("file"), files::set);
         assertThat(files.get()).contains(file1, file2).doesNotContain(unrelatedFile);
     }
 
@@ -391,7 +391,7 @@ public class ConfigObserverTest {
         Path unrelatedFile = createRandomFile(".ini", "Random data");
 
         AtomicReference<List<Path>> files = new AtomicReference<>();
-        observer.onPrefixedValue("config", config -> config.listFiles("file", observer), files::set);
+        observer.onPrefixedValue("config", config -> config.listFiles("file"), files::set);
         assertThat(files.get()).isEmpty();
 
         Path file = createRandomFile(".txt", "new file");
@@ -405,7 +405,7 @@ public class ConfigObserverTest {
         writeConfigLine(("config.file=" + directory + "/*.txt").replaceAll("\\\\", "/"));
 
         AtomicReference<List<Path>> files = new AtomicReference<>();
-        observer.onPrefixedValue("config", config -> config.listFiles("file", observer), files::set);
+        observer.onPrefixedValue("config", config -> config.listFiles("file"), files::set);
         assertThat(files.get()).contains(file);
 
         Files.delete(file);
@@ -418,7 +418,7 @@ public class ConfigObserverTest {
         writeConfigLine(("config.file=" + directory + "/sub/dir/*.txt").replaceAll("\\\\", "/"));
 
         AtomicReference<List<Path>> files = new AtomicReference<>();
-        observer.onPrefixedValue("config", config -> config.listFiles("file", observer), files::set);
+        observer.onPrefixedValue("config", config -> config.listFiles("file"), files::set);
         assertThat(files.get()).isEmpty();
 
         Path file = directory.resolve("sub/dir/file-" + UUID.randomUUID() + ".txt");

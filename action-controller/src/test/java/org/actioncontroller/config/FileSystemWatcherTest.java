@@ -149,8 +149,7 @@ public class FileSystemWatcherTest {
         }
     }
 
-
-    private void watch(String key, Path testDir, String s) throws IOException {
+    private void watch(String key, Path testDir, String s) {
         observer.watch(key, testDir, testDir.getFileSystem().getPathMatcher("glob:" + s)::matches, queue::add);
     }
 }

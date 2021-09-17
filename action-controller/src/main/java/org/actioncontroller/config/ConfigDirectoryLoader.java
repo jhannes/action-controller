@@ -81,7 +81,7 @@ public class ConfigDirectoryLoader {
     public void watch(FileSystemWatcher fileSystemWatcher, Consumer<Map<String, String>> configChangeListener) {
         try {
             fileSystemWatcher.watch("CONFIG FILES", configDirectory, getConfigurationFilesPattern(), config -> configChangeListener.accept(loadConfiguration()));
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new ConfigException("Failed to initialize FileScanner", e);
         }
     }

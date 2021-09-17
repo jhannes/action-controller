@@ -16,6 +16,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -44,23 +45,25 @@ import java.util.stream.Collectors;
  * </ul>
  */
 public class ConfigMap extends AbstractMap<String, String> {
+    private final FileListener observer;
     private final String prefix;
     private final Map<String, String> innerMap;
     private final Map<String, String> environment;
 
-    public static ConfigMap read(File file) throws IOException {
+    public static ConfigMap read(FileListener observer, File file) throws IOException {
         Properties properties = new Properties();
         try (FileReader reader = new FileReader(file)) {
             properties.load(reader);
         }
-        return new ConfigMap(properties);
+        return new ConfigMap(observer, properties);
     }
 
-    public ConfigMap(String prefix, Map<String, String> innerMap) {
-        this(prefix, innerMap, System.getenv());
+    public ConfigMap(FileListener observer, String prefix, Map<String, String> innerMap) {
+        this(observer, prefix, innerMap, System.getenv());
     }
 
-    public ConfigMap(String prefix, Map<String, String> innerMap, Map<String, String> environment) {
+    public ConfigMap(FileListener observer, String prefix, Map<String, String> innerMap, Map<String, String> environment) {
+        this.observer = Objects.requireNonNull(observer);
         this.environment = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         this.environment.putAll(environment);
         if (innerMap instanceof ConfigMap) {
@@ -76,7 +79,8 @@ public class ConfigMap extends AbstractMap<String, String> {
         }
     }
 
-    public ConfigMap(Map<String, String> innerMap) {
+    public ConfigMap(FileListener observer, Map<String, String> innerMap) {
+        this.observer = Objects.requireNonNull(observer);
         this.prefix = "";
         if (innerMap instanceof ConfigMap) {
             this.innerMap = ((ConfigMap) innerMap).innerMap;
@@ -87,13 +91,13 @@ public class ConfigMap extends AbstractMap<String, String> {
         environment.putAll(System.getenv());
     }
 
-    public ConfigMap() {
-        this(new HashMap<>());
+    public ConfigMap(FileListener observer) {
+        this(observer, new HashMap<>());
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public ConfigMap(Properties properties) {
-        this((Map) properties);
+    public ConfigMap(FileListener observer, Properties properties) {
+        this(observer, (Map) properties);
     }
 
     public Optional<String> optional(Object key) {
@@ -142,11 +146,11 @@ public class ConfigMap extends AbstractMap<String, String> {
     }
 
     public ConfigMap getRoot() {
-        return new ConfigMap(this.innerMap);
+        return new ConfigMap(observer, this.innerMap);
     }
 
     public Optional<ConfigMap> subMap(String prefix) {
-        return listSubMaps().contains(prefix) || hasEnvironmentPrefix(this.prefix + prefix) ? Optional.of(new ConfigMap(prefix, this)) : Optional.empty();
+        return listSubMaps().contains(prefix) || hasEnvironmentPrefix(this.prefix + prefix) ? Optional.of(new ConfigMap(observer, prefix, this)) : Optional.empty();
     }
 
     private boolean hasEnvironmentPrefix(String prefix) {
@@ -188,7 +192,7 @@ public class ConfigMap extends AbstractMap<String, String> {
         return optional(key).map(ConfigListener::asInetSocketAddress).orElse(new InetSocketAddress(defaultPort));
     }
 
-    public Optional<Path> optionalFile(String key, ConfigObserver observer) {
+    public Optional<Path> optionalFile(String key) {
         Optional<String> value = optional(key);
         value.map(Paths::get).ifPresent(path -> observer.listenToFileChange(
                 getPrefixedKey(key),
@@ -198,7 +202,7 @@ public class ConfigMap extends AbstractMap<String, String> {
         return value.map(Paths::get).filter(Files::isRegularFile);
     }
 
-    public List<Path> listFiles(String key, ConfigObserver observer) {
+    public List<Path> listFiles(String key) {
         Optional<String> value = optional(key);
         if (!value.isPresent()) {
             return List.of();
@@ -207,10 +211,10 @@ public class ConfigMap extends AbstractMap<String, String> {
         Path parent = file.getParentFile().toPath();
         PathMatcher pathMatcher = parent.getFileSystem().getPathMatcher("glob:" + file.getName());
 
-        return listFiles(key, observer, parent, pathMatcher);
+        return listFiles(key, parent, pathMatcher);
     }
 
-    public List<Path> listFiles(String key, ConfigObserver observer, Path directory, PathMatcher pathMatcher) {
+    public List<Path> listFiles(String key, Path directory, PathMatcher pathMatcher) {
         observer.listenToFileChange(getPrefixedKey(key), directory, pathMatcher::matches);
         try {
             List<Path> result = new ArrayList<>();

@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 public class ConfigMap extends AbstractMap<String, String> {
     private final String prefix;
     private final Map<String, String> innerMap;
+    private final Map<String, String> environment;
 
     public static ConfigMap read(File file) throws IOException {
         Properties properties = new Properties();
@@ -46,6 +47,11 @@ public class ConfigMap extends AbstractMap<String, String> {
     }
 
     public ConfigMap(String prefix, Map<String, String> innerMap) {
+        this(prefix, innerMap, System.getenv());
+    }
+
+    public ConfigMap(String prefix, Map<String, String> innerMap, Map<String, String> environment) {
+        this.environment = environment;
         if (innerMap instanceof ConfigMap) {
             ConfigMap configMap = (ConfigMap) innerMap;
             this.prefix = configMap.prefix + prefix + ".";
@@ -66,6 +72,7 @@ public class ConfigMap extends AbstractMap<String, String> {
         } else {
             this.innerMap = innerMap;
         }
+        environment = System.getenv();
     }
 
     public ConfigMap() {
@@ -76,11 +83,16 @@ public class ConfigMap extends AbstractMap<String, String> {
         this.prefix = "";
         this.innerMap = new HashMap<>();
         properties.forEach((key, value) -> innerMap.put(key.toString(), value.toString()));
+        environment = System.getenv();
     }
 
     public Optional<String> optional(Object key) {
         return Optional.ofNullable(innerMap.get(getInnerKey(key))).map(String::trim).filter(s -> !s.isEmpty())
-                .or(() -> Optional.ofNullable(System.getenv(getInnerKey(key).replace('.', '_').toUpperCase())));
+                .or(() -> Optional.ofNullable(environment.get(getEnvironmentKey(getInnerKey(key)))));
+    }
+
+    private String getEnvironmentKey(String innerKey) {
+        return innerKey.replace('.', '_').toUpperCase();
     }
 
     /**
@@ -128,8 +140,8 @@ public class ConfigMap extends AbstractMap<String, String> {
     }
 
     private boolean hasEnvironmentPrefix(String prefix) {
-        return System.getenv().entrySet().stream()
-                .anyMatch(entry -> entry.getKey().toUpperCase().startsWith(prefix.replace('.', '_').toUpperCase() + "_") && !entry.getValue().isEmpty());
+        return environment.entrySet().stream()
+                .anyMatch(entry -> entry.getKey().toUpperCase().startsWith(getEnvironmentKey(prefix) + "_") && !entry.getValue().isEmpty());
     }
 
     protected String getInnerKey(Object key) {
@@ -138,14 +150,27 @@ public class ConfigMap extends AbstractMap<String, String> {
 
     @Override
     public String toString() {
-        String values = entrySet().stream().map(this::toString).collect(Collectors.joining(", "));
-        return "ConfigMap{prefix=" + prefix + ", values={" + values + "}}";
+        return "ConfigMap{prefix=" + prefix + ", values={" + propertiesToString() + "}, env={" + environmentToString() + "}}";
     }
 
-    private String toString(Entry<String, String> entry) {
-        if (entry.getKey().toLowerCase().contains("password") || entry.getKey().toLowerCase().contains("secret")) {
-            return entry.getKey() + "=*****";
+    private String environmentToString() {
+        return environment.entrySet().stream()
+                .filter(e -> e.getKey().toUpperCase().startsWith(getEnvironmentKey(prefix)))
+                .map(entry -> toString(entry.getKey(), entry.getValue()))
+                .collect(Collectors.joining(", "));
+    }
+
+    private String propertiesToString() {
+        return innerMap.entrySet().stream()
+                .filter(e -> e.getKey().startsWith(prefix))
+                .map(entry -> toString(entry.getKey().substring(prefix.length()), entry.getValue()))
+                .collect(Collectors.joining(", "));
+    }
+
+    private String toString(String key, String value) {
+        if (key.toLowerCase().contains("password") || key.toLowerCase().contains("secret")) {
+            return key + "=*****";
         }
-        return entry.getKey() + "=" + entry.getValue();
+        return key + "=" + value;
     }
 }

@@ -96,6 +96,21 @@ public class ConfigMapTest {
                 .doesNotContain("my-secret")
                 .doesNotContain("xyz");
     }
+    
+    @Test
+    public void shouldGetValuesFromEnvironment() {
+        Map<String, String> environment = new HashMap<>();
+        environment.put("APPS_APPONE_PROP1", "a");
+        environment.put("APPS_APPONE_PROP2", "b");
+        environment.put("UNRELATED_PROP", "b");
+        
+        ConfigMap configMap = new ConfigMap("apps.appOne", Map.of(), environment);
+        
+        assertThat(configMap.get("prop1")).isEqualTo("a");
+        assertThat(configMap.toString())
+                .contains("APPS_APPONE_PROP1=a")
+                .doesNotContain("UNRELATED_PROP");
+    }
 
     @Test
     public void shouldReadFromEnvironment() {

@@ -17,6 +17,7 @@ import org.actioncontroller.values.RequireUserRole;
 import org.jsonbuddy.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -221,16 +222,18 @@ public class ApiControllerMethodAction implements ApiControllerAction {
 
     @Override
     public void invoke(UserContext userContext, ApiHttpExchange exchange) throws IOException {
-        verifyUserAccess(exchange, userContext);
-        calculatePathParams(exchange);
-        HttpParameterMapper[] parameterMappers = createParameterMappers(getAction());
-        Object[] arguments = createArguments(getAction(), exchange, parameterMappers);
-        logger.debug("Invoking {}", this);
-        Object result = invoke(getController(), getAction(), arguments);
-        for (int i = 0; i < parameterMappers.length; i++) {
-            parameterMappers[i].onComplete(exchange, arguments[i]);
+        try (MDC.MDCCloseable ignored = MDC.putCloseable("actionMethod", getMethodName())) {
+            verifyUserAccess(exchange, userContext);
+            calculatePathParams(exchange);
+            HttpParameterMapper[] parameterMappers = createParameterMappers(getAction());
+            Object[] arguments = createArguments(getAction(), exchange, parameterMappers);
+            logger.debug("Invoking {}", this);
+            Object result = invoke(getController(), getAction(), arguments);
+            for (int i = 0; i < parameterMappers.length; i++) {
+                parameterMappers[i].onComplete(exchange, arguments[i]);
+            }
+            convertReturnValue(result, exchange);
         }
-        convertReturnValue(result, exchange);
     }
 
     protected void calculatePathParams(ApiHttpExchange exchange) {

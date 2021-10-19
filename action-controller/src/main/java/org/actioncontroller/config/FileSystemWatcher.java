@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
@@ -75,23 +76,25 @@ public class FileSystemWatcher {
     }
 
     public void watch(String key, Path directory, Predicate<Path> pathPredicate, FileSystemObserver observer) {
-        if (!Files.isDirectory(directory)) {
+        if (directory == null) {
+            watch(key, Paths.get(""), pathPredicate, observer);
+        } else if (!Files.isDirectory(directory)) {
             Path missingDirectory = directory;
-            while (!Files.isDirectory(missingDirectory.getParent())) {
+            while (missingDirectory != null && !Files.isDirectory(missingDirectory.getParent())) {
                 missingDirectory = missingDirectory.getParent();
             }
             WatchKey watchKey = registerWatchService(missingDirectory.getParent());
             directoryKeys.put(missingDirectory.getParent(), watchKey);
             Path fileName = missingDirectory.getFileName();
             observers.put(key, new FileObserver(missingDirectory.getParent(), f -> f.equals(fileName), k -> watch(k, directory, pathPredicate, observer), directory, pathPredicate));
-            return;
-        }
-        WatchKey watchKey = registerWatchService(directory);
-        directoryKeys.put(directory, watchKey);
-        FileObserver oldObserver = observers.put(key, new FileObserver(directory, pathPredicate, observer, directory, pathPredicate));
-        if (oldObserver != null) {
-            if (observers.values().stream().noneMatch(o -> o.getDirectory().equals(oldObserver.getDirectory()))) {
-                directoryKeys.get(oldObserver.getDirectory()).cancel();
+        } else {
+            WatchKey watchKey = registerWatchService(directory);
+            directoryKeys.put(directory, watchKey);
+            FileObserver oldObserver = observers.put(key, new FileObserver(directory, pathPredicate, observer, directory, pathPredicate));
+            if (oldObserver != null) {
+                if (observers.values().stream().noneMatch(o -> o.getDirectory().equals(oldObserver.getDirectory()))) {
+                    directoryKeys.get(oldObserver.getDirectory()).cancel();
+                }
             }
         }
     }

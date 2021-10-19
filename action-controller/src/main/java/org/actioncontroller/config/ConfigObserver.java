@@ -79,7 +79,7 @@ public class ConfigObserver implements FileListener {
         return this;
     }
 
-    public <T> ConfigObserver onSingleConfigValue(String key, ConfigValueTransformer<T> transformer, T defaultValue, ConfigValueListener<T> listener) {
+    public <T> ConfigObserver onSingleConfigValue(String key, ConfigValueTransformer<String, T> transformer, T defaultValue, ConfigValueListener<T> listener) {
         return onConfigChange(new ConfigListener() {
             @Override
             public void onConfigChanged(Set<String> changedKeys, ConfigMap newConfiguration) throws Exception {

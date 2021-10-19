@@ -191,6 +191,15 @@ public class ConfigMap extends AbstractMap<String, String> {
     public InetSocketAddress getInetSocketAddress(String key, int defaultPort) {
         return optional(key).map(ConfigListener::asInetSocketAddress).orElse(new InetSocketAddress(defaultPort));
     }
+    
+    public <T> Optional<T> mapOptionalFile(String key, ConfigValueTransformer<Path, T> transformer) throws Exception {
+        Optional<Path> path = optionalFile(key);
+        if (path.isPresent()) {
+            return Optional.ofNullable(transformer.apply(path.get()));
+        } else {
+            return Optional.empty();
+        }
+    }
 
     public Optional<Path> optionalFile(String key) {
         Optional<String> value = optional(key);

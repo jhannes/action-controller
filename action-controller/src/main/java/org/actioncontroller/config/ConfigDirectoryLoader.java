@@ -67,7 +67,7 @@ public class ConfigDirectoryLoader {
 
     private void loadConfigFile(Properties properties, Path file) {
         try (InputStream propertiesFile = new FileInputStream(file.toFile())) {
-            logger.info("Loading {}", file.toAbsolutePath());
+            logger.info("Loading {}", file.toFile().getCanonicalFile());
             properties.load(propertiesFile);
         } catch (IOException e) {
             logger.info("Failed to load {}", file, e);

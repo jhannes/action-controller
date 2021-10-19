@@ -2,4 +2,9 @@
 *.iml
 target
 pom.xml.releaseBackup
-release.properties
+cert/
+/*.properties
+*.key
+*.pem
+*.p12
+*.crt

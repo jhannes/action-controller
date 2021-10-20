@@ -17,6 +17,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
@@ -44,9 +45,9 @@ public class TypeConverterFactoryTest {
     }
     
     @Test
-    public void shouldConvertStringsToDateTypes() {
+    public void shouldConvertRfc1123StringsToDateTypes() {
         Instant instant = Instant.now().truncatedTo(ChronoUnit.SECONDS);
-        String asString = TypeConverterFactory.DEFAULT_DATE_FORMAT.format(instant.atOffset(ZoneOffset.UTC));
+        String asString = DateTimeFormatter.RFC_1123_DATE_TIME.format(instant.atOffset(ZoneOffset.UTC));
         assertThat(TypeConverterFactory.fromStrings(Instant.class).apply(List.of(asString))).isEqualTo(instant);
         assertThat(TypeConverterFactory.fromStrings(ZonedDateTime.class).apply(List.of(asString)))
                 .isEqualTo(instant.atZone(ZoneId.systemDefault()));
@@ -57,6 +58,28 @@ public class TypeConverterFactoryTest {
         assertThat(TypeConverterFactory.fromStrings(LocalDate.class).apply(List.of(asString)))
                 .isEqualTo(instant.atZone(ZoneId.systemDefault()).toLocalDate());
     }
+    
+    @Test
+    public void shouldConvertIsoStringsToDateTimeTypes() {
+        Instant instant = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+        String asString = DateTimeFormatter.ISO_DATE_TIME.format(instant.atOffset(ZoneOffset.UTC));
+        assertThat(TypeConverterFactory.fromStrings(Instant.class).apply(List.of(asString))).isEqualTo(instant);
+        assertThat(TypeConverterFactory.fromStrings(ZonedDateTime.class).apply(List.of(asString)))
+                .isEqualTo(instant.atZone(ZoneId.systemDefault()));
+        assertThat(TypeConverterFactory.fromStrings(OffsetDateTime.class).apply(List.of(asString)))
+                .isEqualTo(instant.atZone(ZoneId.systemDefault()).toOffsetDateTime());
+        assertThat(TypeConverterFactory.fromStrings(LocalDateTime.class).apply(List.of(asString)))
+                .isEqualTo(instant.atZone(ZoneId.systemDefault()).toLocalDateTime());
+        assertThat(TypeConverterFactory.fromStrings(LocalDate.class).apply(List.of(asString)))
+                .isEqualTo(instant.atZone(ZoneId.systemDefault()).toLocalDate());
+    }
+    
+    @Test
+    public void shouldConvertIsoStringToLocalDate() {
+        assertThat(TypeConverterFactory.fromStrings(LocalDate.class).apply(List.of("2021-12-09")))
+                .isEqualTo(LocalDate.of(2021, 12, 9));
+    }
+    
     
     @Test
     public void shouldConvertStringsToStringyTypes() throws MalformedURLException, URISyntaxException {

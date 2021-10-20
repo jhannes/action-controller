@@ -30,8 +30,6 @@ import java.util.function.Function;
 
 public class TypeConverterFactory {
 
-    public static final DateTimeFormatter DEFAULT_DATE_FORMAT = DateTimeFormatter.RFC_1123_DATE_TIME;
-
     private static final Map<Type, Function<String, ?>> converters = Map.of(
             String.class, String::toString,
             Boolean.class, Boolean::parseBoolean,
@@ -55,12 +53,28 @@ public class TypeConverterFactory {
     );
     
     private static final Map<Type, Function<String, ?>> dateConverters = Map.of(
-            Instant.class, s -> DEFAULT_DATE_FORMAT.parse(s, Instant::from),
-            ZonedDateTime.class, s -> DEFAULT_DATE_FORMAT.parse(s, Instant::from).atZone(ZoneId.systemDefault()),
-            OffsetDateTime.class, s -> DEFAULT_DATE_FORMAT.parse(s, Instant::from).atZone(ZoneId.systemDefault()).toOffsetDateTime(),
-            LocalDateTime.class, s -> DEFAULT_DATE_FORMAT.parse(s, Instant::from).atZone(ZoneId.systemDefault()).toLocalDateTime(),
-            LocalDate.class, s -> DEFAULT_DATE_FORMAT.parse(s, Instant::from).atZone(ZoneId.systemDefault()).toLocalDate()
+            Instant.class, TypeConverterFactory::parseInstant,
+            ZonedDateTime.class, s -> parseInstant(s).atZone(ZoneId.systemDefault()),
+            OffsetDateTime.class, s -> parseInstant(s).atZone(ZoneId.systemDefault()).toOffsetDateTime(),
+            LocalDateTime.class, s -> parseInstant(s).atZone(ZoneId.systemDefault()).toLocalDateTime(),
+            LocalDate.class, TypeConverterFactory::parseLocalDate
     );
+
+    private static LocalDate parseLocalDate(String s) {
+        if (s.matches("\\d{4}-\\d{1,2}-\\d{1,2}")) {
+            return LocalDate.parse(s);
+        } else {
+            return parseInstant(s).atZone(ZoneId.systemDefault()).toLocalDate();
+        }
+    }
+
+    private static Instant parseInstant(String s) {
+        if (s.matches("\\d\\d\\d\\d-.*")) {
+            return DateTimeFormatter.ISO_DATE_TIME.parse(s, Instant::from);
+        } else {
+            return DateTimeFormatter.RFC_1123_DATE_TIME.parse(s, Instant::from);
+        }
+    }
 
     public static Function<String, ?> fromSingleString(Type targetClass, String description) {
         return nonNullConverter(description, getBaseConverter(targetClass, description));

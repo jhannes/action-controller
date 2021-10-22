@@ -36,9 +36,10 @@ public class ContentServlet extends HttpServlet {
                     return;
                 }
             }
-            InputStream inputStream = resource.openStream();
-            resp.setContentType(getServletContext().getMimeType(resource.getFile()));
-            inputStream.transferTo(resp.getOutputStream());
+            try (InputStream inputStream = resource.openStream()) {
+                resp.setContentType(getServletContext().getMimeType(resource.getFile()));
+                inputStream.transferTo(resp.getOutputStream());
+            }
         } catch (FileNotFoundException ignored) {
             resp.sendError(404);
         }

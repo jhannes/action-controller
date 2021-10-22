@@ -11,27 +11,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
-import java.net.URLConnection;
-import java.util.Objects;
-import java.util.Properties;
 
 public class StaticContent implements HttpHandler {
     
     private static final Logger logger = LoggerFactory.getLogger(StaticContent.class);
 
-    private static Properties mimeTypes = new Properties();
-    static {
-        try {
-            mimeTypes.load(Objects.requireNonNull(StaticContent.class.getClassLoader().getResourceAsStream("mime-types.properties")));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     public ContentSource contentSource;
 
     public StaticContent(URL baseResource) {
-        this(ContentSource.fromClasspath(baseResource));
+        this(ContentSource.fromURL(baseResource));
     }
 
     public StaticContent(ContentSource contentSource) {
@@ -43,13 +31,14 @@ public class StaticContent implements HttpHandler {
         try {
             URL resource = contentSource.resolve(uri.getPath().substring(exchange.getHttpContext().getPath().length()));
             Long lastModified = contentSource.lastModified(resource);
-            String contentType = getContentType(resource);
+            String contentType = contentSource.getContentType(resource);
             if (contentType != null) {
                 exchange.getResponseHeaders().set("Content-type", contentType);
             }
             exchange.sendResponseHeaders(200, 0);
-            InputStream inputStream = resource.openStream();
-            inputStream.transferTo(exchange.getResponseBody());
+            try (InputStream inputStream = resource.openStream()) {
+                inputStream.transferTo(exchange.getResponseBody());
+            }
         } catch (FileNotFoundException ignored) {
             exchange.sendResponseHeaders(404, 0);
         } catch (Exception e) {
@@ -61,19 +50,4 @@ public class StaticContent implements HttpHandler {
         }
     }
 
-    // TODO: Move to ContentSource
-    private String getContentType(URL url) {
-        String contentType = URLConnection.getFileNameMap().getContentTypeFor(url.getPath());
-        if (contentType != null) {
-            return contentType;
-        } else {
-            int lastPeriodPos = url.getPath().lastIndexOf('.');
-            int lastSlashPos = url.getPath().lastIndexOf('/');
-            if (lastPeriodPos > 0 && lastPeriodPos > lastSlashPos) {
-                String extension = url.getPath().substring(lastPeriodPos + 1);
-                return mimeTypes.getProperty(extension);
-            }
-        }
-        return null;
-    }
 }

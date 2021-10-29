@@ -18,7 +18,4 @@ public class TypesUtil {
         return targetType instanceof Class && ((Class<?>)targetType).isAssignableFrom(type);
     }
 
-    public static boolean isCollectionType(Type parameterType) {
-        return Collection.class.isAssignableFrom(getRawType(parameterType));
-    }
 }

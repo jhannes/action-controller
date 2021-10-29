@@ -43,11 +43,10 @@ public @interface HttpHeader {
         @Override
         public HttpParameterMapper create(HttpHeader annotation, Parameter parameter, ApiControllerContext context) {
             String name = annotation.value();
-            Class<?> type = TypesUtil.getRawType(parameter.getParameterizedType());
-            if (type == Consumer.class) {
+            if (parameter.getType() == Consumer.class) {
                 return exchange -> (Consumer<?>) o -> exchange.setResponseHeader(name, Objects.toString(o, null));
             } else {
-                TypeConverter converter = TypeConverterFactory.fromStrings(type, "header " + name);
+                TypeConverter converter = TypeConverterFactory.fromStrings(parameter.getParameterizedType(), "header " + name);
                 return exchange -> converter.apply(exchange.getHeaders(name));
             }
         }
@@ -59,9 +58,8 @@ public @interface HttpHeader {
 
         @Override
         public HttpClientParameterMapper clientParameterMapper(HttpHeader annotation, Parameter parameter) {
-            Type parameterType = parameter.getParameterizedType();
-            if (TypesUtil.getRawType(parameterType) == Consumer.class) {
-                Type typeParameter = TypesUtil.typeParameter(parameterType);
+            if (parameter.getType() == Consumer.class) {
+                Type typeParameter = TypesUtil.typeParameter(parameter.getParameterizedType());
                 TypeConverter converter = TypeConverterFactory.fromStrings(typeParameter, "header " + annotation.value());
                 return (exchange, arg) -> {
                     if (arg != null) {

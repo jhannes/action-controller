@@ -201,8 +201,8 @@ public abstract class AbstractApiClientProxyTest {
 
         @GET("/lowercase")
         @HttpHeader("X-Result")
-        public String downcase(@HttpHeader("X-Input") String value) {
-            return value.toLowerCase();
+        public String downcase(@HttpHeader("X-Input") Optional<String> value) {
+            return value.orElse("").toLowerCase();
         }
 
         @GET("/lowercaseAll")
@@ -461,7 +461,7 @@ public abstract class AbstractApiClientProxyTest {
 
     @Test
     public void shouldReadAndWriteHeaders() {
-        assertThat(controllerClient.downcase("VALUE")).isEqualTo("value");
+        assertThat(controllerClient.downcase(Optional.of("VALUE"))).isEqualTo("value");
     }
 
     @Test

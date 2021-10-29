@@ -83,15 +83,14 @@ public @interface UnencryptedCookie {
         public HttpClientParameterMapper clientParameterMapper(UnencryptedCookie annotation, Parameter parameter) {
             String name = annotation.value();
             Type parameterType = parameter.getParameterizedType();
-            Class<?> type = TypesUtil.getRawType(parameterType);
-            if (type == Consumer.class) {
+            if (parameter.getType() == Consumer.class) {
                 TypeConverter converter = TypeConverterFactory.fromStrings(TypesUtil.typeParameter(parameterType), "cookie " + annotation.value());
                 return (exchange, arg) -> {
                     if (arg != null) {
                         ((Consumer) arg).accept(converter.apply(exchange.getResponseCookies(name)));
                     }
                 };
-            } else if (type == AtomicReference.class) {
+            } else if (parameter.getType() == AtomicReference.class) {
                 TypeConverter converter = TypeConverterFactory.fromStrings(parameterType, "cookie " + annotation.value());
                 Type typeParameter = TypesUtil.typeParameter(parameterType);
                 return (exchange, atomicReference) -> {

@@ -7,8 +7,8 @@ import com.codahale.metrics.servlets.AdminServlet;
 import com.codahale.metrics.servlets.HealthCheckServlet;
 import com.codahale.metrics.servlets.MetricsServlet;
 import org.actioncontroller.TimerRegistry;
+import org.actioncontroller.content.ContentSource;
 import org.actioncontroller.servlet.ApiServlet;
-import org.actioncontrollerdemo.ContentSource;
 import org.actioncontrollerdemo.TestController;
 import org.actioncontrollerdemo.UserController;
 

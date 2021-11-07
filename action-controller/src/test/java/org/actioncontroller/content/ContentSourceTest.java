@@ -1,4 +1,4 @@
-package org.actioncontrollerdemo;
+package org.actioncontroller.content;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -40,30 +40,33 @@ public class ContentSourceTest {
         assertThat(content.openStream())
                 .hasContent("Hello World");
     }
-    
+
     @Test
     public void shouldWarnOnInvalidDirectoryName() {
         assertThatThrownBy(() -> ContentSource.fromClasspath(dirResources))
                 .hasMessageContaining("Could not find resource " + dirResources);
     }
-    
+
     @Test
     public void shouldBeHappyEvenIfFileNotFound() {
         assertThatThrownBy(() -> source.lastModified(source.resolve("missing.txt")))
                 .isInstanceOf(FileNotFoundException.class);
     }
-    
+
     @Test
     public void shouldDetermineMimeType() throws IOException {
         Files.write(dir.resolve("test.txt"), List.of("Hello World"));
         Files.write(dir.resolve("index.html"), List.of("<h1>Hello World</h1>"));
         Files.write(dir.resolve("unknown.ext"), List.of("Garble"));
-        
+        Files.write(dir.resolve("no-extension"), List.of("Garble"));
+
         assertThat(source.getContentType(source.resolve("test.txt")))
                 .isEqualTo("text/plain");
         assertThat(source.getContentType(source.resolve("index.html")))
                 .isEqualTo("text/html");
         assertThat(source.getContentType(source.resolve("unknown.ext")))
+                .isNull();
+        assertThat(source.getContentType(source.resolve("no-extension")))
                 .isNull();
     }
 
@@ -74,13 +77,23 @@ public class ContentSourceTest {
         assertThat(source.resolve("subdir/").openStream())
                 .hasContent("<h1>Hello World</h1>");
     }
-    
+
+    @Test
+    public void shouldReadFromSrcDirectory() throws IOException {
+        ContentSource contentSource = ContentSource.fromClasspath("/content-source-test");
+
+        String content = "This is a test: " + UUID.randomUUID();
+        Files.write(Paths.get("src/test/resources/content-source-test/test.txt"), List.of(content));
+        assertThat(contentSource.resolve("test.txt").openStream())
+                .hasContent(content);
+    }
+
     @Test
     public void shouldFindLastModified() throws IOException {
         Files.createDirectories(dir.resolve("subdir"));
         Files.write(dir.resolve("subdir/index.html"), List.of("<h1>Hello World</h1>"));
         Files.setLastModifiedTime(dir.resolve("subdir/index.html"), FileTime.fromMillis(1600000000000L));
-        
+
         assertThat(source.lastModified(source.resolve("subdir/")))
                 .isEqualTo(1600000000000L);
     }
@@ -115,7 +128,7 @@ public class ContentSourceTest {
         Path webJarRoot = Paths.get("target/test-classes", "/META-INF/resources/webjars/" + webJarName + "/" + version);
         Files.createDirectories(webJarRoot);
         Files.write(webJarRoot.resolve("index.html"), "<h1>Hello</h1>".getBytes());
-        
+
         ContentSource source = ContentSource.fromWebJar(webJarName);
         assertThat(source.resolve("index.html").openStream())
                 .hasContent("<h1>Hello</h1>");

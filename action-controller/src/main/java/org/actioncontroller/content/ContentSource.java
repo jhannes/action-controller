@@ -1,14 +1,13 @@
-package org.actioncontrollerdemo;
+package org.actioncontroller.content;
 
 import org.actioncontroller.util.ExceptionUtil;
-import org.actioncontrollerdemo.jdkhttp.StaticContent;
+import org.actioncontroller.util.IOUtil;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.JarURLConnection;
-import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -23,7 +22,7 @@ public class ContentSource {
     private static final Properties mimeTypes = new Properties();
     static {
         try {
-            mimeTypes.load(Objects.requireNonNull(StaticContent.class.getClassLoader().getResourceAsStream("mime-types.properties")));
+            mimeTypes.load(Objects.requireNonNull(ContentSource.class.getClassLoader().getResourceAsStream("mime-types.properties")));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -31,19 +30,19 @@ public class ContentSource {
 
     private final URL resourceBase;
 
-    private ContentSource(URL resourceBase) throws MalformedURLException {
+    private ContentSource(URL resourceBase) {
         if (!resourceBase.getProtocol().equals("file") && !resourceBase.getProtocol().equals("jar")) {
             throw new IllegalArgumentException("Only file and jar resourceBase are supported");
         }
         if (!resourceBase.toString().endsWith("/")) {
-            resourceBase = new URL(resourceBase + "/");
+            resourceBase = IOUtil.asURL(resourceBase + "/");
         }
         this.resourceBase = resourceBase;
     }
 
     public static ContentSource fromClasspath(String resourceBase) {
         // TODO: If resourceBase doesn't start with /, things go wrong
-        // TODO: If resourceBase doesn't end with /, parent directory is used
+        // TODO: If resourceBase doesn't end with /, parent directory is used by accident
         URL baseResourceTmp = ContentSource.class.getResource(resourceBase);
         if (baseResourceTmp == null) {
             throw new IllegalArgumentException("Could not find resource " + resourceBase);
@@ -52,20 +51,30 @@ public class ContentSource {
     }
 
     public static ContentSource fromURL(URL baseResource) {
-        if (baseResource.toString().contains("target/classes")) {
+        ContentSource sourceResources = replacePath(baseResource, "target/classes", "src/main/resources");
+        if (sourceResources != null) {
+            return sourceResources;
+        }
+        ContentSource testSourceResources = replacePath(baseResource, "target/test-classes", "src/test/resources");
+        if (testSourceResources != null) {
+            return testSourceResources;
+        }
+        return new ContentSource(baseResource);
+    }
+
+    private static ContentSource replacePath(URL baseResource, String oldPath, String newPath) {
+        if (baseResource.toString().contains(oldPath)) {
             try {
-                URL sourceResources = new URL(baseResource.toString().replaceAll("target/classes", "src/main/resources"));
+                URL sourceResources = new URL(baseResource.toString().replaceAll(oldPath, newPath));
                 sourceResources.openStream();
                 return new ContentSource(sourceResources);
             } catch (FileNotFoundException ignored) {
+                return null;
             } catch (IOException e) {
                 throw ExceptionUtil.softenException(e);
             }
-        }
-        try {
-            return new ContentSource(baseResource);
-        } catch (MalformedURLException e) {
-            throw ExceptionUtil.softenException(e);
+        } else {
+            return null;
         }
     }
 
@@ -75,7 +84,7 @@ public class ContentSource {
         try (InputStream pomProperties = ContentSource.class.getResourceAsStream("/META-INF/maven/org.webjars/" + webJarName + "/pom.properties")) {
             properties.load(pomProperties);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw ExceptionUtil.softenException(e);
         }
         return fromClasspath(prefix + "/" + properties.get("version") + "/");
     }

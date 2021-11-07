@@ -3,7 +3,7 @@ package org.actioncontrollerdemo.servlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.actioncontrollerdemo.ContentSource;
+import org.actioncontroller.content.ContentSource;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;

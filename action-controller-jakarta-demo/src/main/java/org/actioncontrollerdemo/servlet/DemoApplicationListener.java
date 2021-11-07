@@ -12,8 +12,8 @@ import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import org.actioncontroller.TimerRegistry;
+import org.actioncontroller.content.ContentSource;
 import org.actioncontroller.jakarta.ApiJakartaServlet;
-import org.actioncontrollerdemo.ContentSource;
 import org.actioncontrollerdemo.TestController;
 import org.actioncontrollerdemo.UserController;
 

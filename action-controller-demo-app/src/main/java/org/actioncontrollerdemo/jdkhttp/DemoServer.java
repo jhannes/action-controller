@@ -4,8 +4,8 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
 import org.actioncontroller.config.ConfigObserver;
+import org.actioncontroller.content.ContentSource;
 import org.actioncontroller.httpserver.ApiHandler;
-import org.actioncontrollerdemo.ContentSource;
 import org.actioncontrollerdemo.TestController;
 import org.actioncontrollerdemo.UserController;
 import org.slf4j.Logger;
@@ -21,7 +21,7 @@ import java.util.Optional;
 
 public class DemoServer {
     private static final Logger logger = LoggerFactory.getLogger(DemoServer.class);
-    
+
     private HttpServer httpServer;
 
     private Runnable updater = () -> {
@@ -90,7 +90,7 @@ public class DemoServer {
                 .setAuthenticator(new DemoAuthenticator());
         httpServer.createContext("/demo", staticContent);
         httpServer.createContext("/", redirectHandler);
-      
+
     }
 
     private static String getUrl(HttpServer httpServer) {

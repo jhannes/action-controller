@@ -25,7 +25,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 public class FileSystemWatcher {
-    
+
     @FunctionalInterface
     interface FileSystemObserver {
         void apply(String key);
@@ -66,11 +66,11 @@ public class FileSystemWatcher {
 
     public FileSystemWatcher() throws IOException {
         this.watchService = FileSystems.getDefault().newWatchService();
-        this.thread = new Thread(this::run);
+        this.thread = new Thread(this::repeatUntilInterrupted);
         thread.setName(this + "-Watcher");
         thread.setDaemon(true);
     }
-    
+
     public void start() {
         thread.start();
     }
@@ -107,13 +107,12 @@ public class FileSystemWatcher {
         }
     }
 
-    private void run() {
+    private void repeatUntilInterrupted() {
         try {
             while (!Thread.interrupted()) {
                 loop();
             }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        } catch (InterruptedException ignored) {
         }
         logger.error("{} terminated", this);
     }
@@ -127,7 +126,7 @@ public class FileSystemWatcher {
                 .map(e -> (Path) e.context())
                 .collect(Collectors.toSet());
         key.reset();
-        
+
         if (!Files.exists(keyDirectory)) {
             logger.debug("Directory {} removed. Registering directory listeners", keyDirectory);
             for (Map.Entry<String, FileObserver> observer : new HashSet<>(this.observers.entrySet())) {

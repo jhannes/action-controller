@@ -5,6 +5,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -34,6 +35,15 @@ public class ConfigMapTest {
                 .isInstanceOf(ConfigException.class)
                 .hasMessageContaining("foo.baz");
         assertThat(configMap.getOrDefault("baz", null)).isNull();
+    }
+
+    @Test
+    public void shouldThrowOnMissingSubmap() {
+        ConfigMap configMap = new ConfigMap(observer, Map.of("foo.bar", "value1", "foo.baz", "value2"));
+        assertThat(new ConfigMap(observer, "foo", configMap)).isNotNull();
+        assertThatThrownBy(() -> new ConfigMap(observer, "bar", configMap))
+                .isInstanceOf(ConfigException.class)
+                .hasMessageContaining("Missing key bar");
     }
 
     @Test
@@ -98,16 +108,16 @@ public class ConfigMapTest {
                 .doesNotContain("my-secret")
                 .doesNotContain("xyz");
     }
-    
+
     @Test
     public void shouldGetValuesFromEnvironment() {
         Map<String, String> environment = new HashMap<>();
         environment.put("APPS_APPONE_PROP1", "a");
         environment.put("APPS_APPONE_PROP2", "b");
         environment.put("UNRELATED_PROP", "b");
-        
+
         ConfigMap configMap = new ConfigMap(observer, "apps.appOne", Map.of(), environment);
-        
+
         assertThat(configMap.get("prop1")).isEqualTo("a");
         assertThat(configMap.toString())
                 .contains("APPS_APPONE_PROP1=a")
@@ -145,4 +155,19 @@ public class ConfigMapTest {
         assertThat(configMap.get(key)).isEqualTo(System.getenv(environmentVariableWithUnderscore));
     }
 
+    @Test
+    public void shouldReadInetSocketAddress() {
+        ConfigMap configMap = new ConfigMap(observer, "httpListenAddress", Map.of(
+                "httpListenAddress.one", "127.0.0.1:11080",
+                "httpListenAddress.two", "12080",
+                "httpListenAddress.three", ":13080"
+        ));
+
+        assertThat(configMap.getInetSocketAddress("one", 10080))
+                .isEqualTo(new InetSocketAddress("127.0.0.1", 11080));
+        assertThat(configMap.getInetSocketAddress("two", 10080))
+                .isEqualTo(new InetSocketAddress("0.0.0.0", 12080));
+        assertThat(configMap.getInetSocketAddress("three", 10080))
+                .isEqualTo(new InetSocketAddress("0.0.0.0", 13080));
+    }
 }

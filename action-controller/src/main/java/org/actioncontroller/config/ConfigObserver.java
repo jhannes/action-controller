@@ -134,7 +134,7 @@ public class ConfigObserver implements FileListener {
         return onSingleConfigValue(key, ConfigObserver::parseStringList, defaultValue != null ?  parseStringList(defaultValue) : null, listener);
     }
 
-    public <T> ConfigObserver onPrefixedValue(String prefix, ConfigValueListener<Map<String, String>> listener) {
+    public <T> ConfigObserver onPrefixedValue(String prefix, ConfigValueListener<ConfigMap> listener) {
         return onConfigChange(new ConfigListener() {
             @Override
             public void onConfigChanged(Set<String> changedKeys, ConfigMap newConfiguration) {
@@ -146,19 +146,7 @@ public class ConfigObserver implements FileListener {
     }
 
     public <T> ConfigObserver onPrefixedValue(String prefix, ConfigListener.Transformer<T> transformer, ConfigValueListener<T> listener) {
-        return onConfigChange(new ConfigListener() {
-            @Override
-            public void onConfigChanged(Set<String> changedKeys, ConfigMap newConfiguration) {
-                if (changeIncludes(changedKeys, prefix)) {
-                    applyConfiguration(
-                            listener,
-                            prefix,
-                            transform(newConfiguration.subMap(prefix).orElse(createConfigMap(prefix)), transformer)
-                    );
-                }
-            }
-
-        });
+        return onPrefixedValue(prefix, configMap -> listener.apply(transform(configMap, transformer)));
     }
 
     public <T> ConfigObserver onPrefixedOptionalValue(String prefix, ConfigListener.Transformer<T> transformer, ConfigValueListener<Optional<T>> listener) {

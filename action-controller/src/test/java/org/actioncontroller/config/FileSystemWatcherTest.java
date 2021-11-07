@@ -1,6 +1,9 @@
 package org.actioncontroller.config;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.logevents.extend.junit.ExpectedLogEventsRule;
+import org.slf4j.event.Level;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -19,20 +22,34 @@ public class FileSystemWatcherTest {
     private final Path testDir = Paths.get("target/test/test-" + UUID.randomUUID() + "/subdir");
     private final SingleItemQueue<String> queue = new SingleItemQueue<>();
 
+    @Rule
+    public ExpectedLogEventsRule expectedLogEvents = new ExpectedLogEventsRule(Level.WARN);
+
     public FileSystemWatcherTest() throws IOException {
         observer.start();
         Files.createDirectories(testDir);
     }
-    
+
     @Test
     public void shouldNotifyWhenFileIsCreated() throws IOException, InterruptedException {
         watch("key", testDir, "*.txt");
-        
+
         queue.assertEmpty();
         Files.write(testDir.resolve("included.txt"), "contents".getBytes());
         assertThat(queue.take()).isEqualTo("key");
         queue.assertEmpty();
     }
+
+    @Test
+    public void shouldStopWatcher() throws IOException, InterruptedException {
+        watch("key", testDir, "*.txt");
+        expectedLogEvents.expectPattern(FileSystemWatcher.class, Level.ERROR, "{} terminated");
+        observer.stop();
+
+        Files.write(testDir.resolve("included.txt"), "contents".getBytes());
+        queue.assertEmpty();
+    }
+
 
     @Test
     public void shouldNotifyWhenFileIsModified() throws IOException, InterruptedException {
@@ -68,16 +85,16 @@ public class FileSystemWatcherTest {
         Files.delete(testDir.resolve("included.txt"));
         assertThat(queue.take()).isEqualTo("key");
     }
-    
+
     @Test
     public void shouldNotNotifyOnUnrelatedFile() throws IOException, InterruptedException {
         watch("key", testDir, "*.txt");
-        
+
         queue.assertEmpty();
         Files.write(testDir.resolve("excluded.properties"), "contents".getBytes());
         queue.assertEmpty();
     }
-    
+
     @Test
     public void shouldNotNotifyInWrongDirectory() throws IOException, InterruptedException {
         Path otherDir = Paths.get("target/test/test-" + UUID.randomUUID() + "/subdir");
@@ -102,7 +119,7 @@ public class FileSystemWatcherTest {
         Files.write(newDirectory.resolve("included.txt"), "content".getBytes());
         assertThat(queue.take()).isEqualTo("key");
     }
-    
+
     @Test
     public void shouldNotifyWhenDirectoryIsRecreated() throws IOException, InterruptedException {
         watch("key", testDir, "*.txt");

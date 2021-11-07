@@ -53,7 +53,7 @@ public class ConfigObserverTest {
     }
 
     private final BlockingQueue<Instant> reloadTimes = new ArrayBlockingQueue<>(10);
-    private final ConfigObserver observer = new ConfigObserver(directory, "testApp") {
+    private final ConfigObserver observer = new ConfigObserver(directory, "testApp", List.of("testing")) {
         @Override
         protected void handleConfigurationChanged(Set<String> changedKeys, ConfigMap newConfiguration) {
             super.handleConfigurationChanged(changedKeys, newConfiguration);
@@ -87,6 +87,19 @@ public class ConfigObserverTest {
 
         writeConfigLine("daemonPollingInterval=PT1M");
         assertThat(daemonPollingInterval).isEqualTo(Duration.ofMinutes(1));
+    }
+
+    @Test
+    public void shouldLoadProfiledPropertiesFiles() throws IOException {
+        AtomicReference<String> propertyValue = new AtomicReference<>();
+        observer.onStringValue("example", null, propertyValue::set);
+
+        reloadTimes.clear();
+        Files.write(directory.resolve("testApp.properties"), List.of("example=defaultValue"));
+        Files.write(directory.resolve("testApp-testing.properties"), List.of("example=profileValue"));
+        waitForFileWatcher();
+
+        assertThat(propertyValue).hasValue("profileValue");
     }
 
     @Test
@@ -341,7 +354,9 @@ public class ConfigObserverTest {
         AtomicReference<String> fileContent = new AtomicReference<>();
         observer.onPrefixedValue(
                 "config",
-                config -> config.optionalFile("file").map(this::readFile).orElse("<no file>"),
+                config -> config.mapOptionalFile("file", Files::readAllLines)
+                        .map(lines -> String.join("\n", lines))
+                        .orElse("<no file>"),
                 fileContent::set
         );
         assertThat(fileContent).hasValue("<no file>");
@@ -366,7 +381,7 @@ public class ConfigObserverTest {
                 fileContent::set
         );
         assertThat(fileContent).hasValue("Old content");
-        
+
         Files.write(file, "Updated content".getBytes());
         Thread.sleep(100);
         assertThat(fileContent).hasValue("Updated content");

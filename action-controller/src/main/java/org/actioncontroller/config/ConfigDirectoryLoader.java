@@ -51,7 +51,7 @@ public class ConfigDirectoryLoader {
         return configuration;
     }
 
-    private List<Path> getConfigurationFiles() {
+    protected List<Path> getConfigurationFiles() {
         List<Path> files = new ArrayList<>();
         if (Files.isRegularFile(configDirectory.resolve(applicationName + ".properties"))) {
             files.add(configDirectory.resolve(applicationName + ".properties"));
@@ -65,7 +65,7 @@ public class ConfigDirectoryLoader {
         return files;
     }
 
-    private void loadConfigFile(Properties properties, Path file) {
+    protected void loadConfigFile(Properties properties, Path file) {
         try (InputStream propertiesFile = new FileInputStream(file.toFile())) {
             logger.info("Loading {}", file.toFile().getCanonicalFile());
             properties.load(propertiesFile);

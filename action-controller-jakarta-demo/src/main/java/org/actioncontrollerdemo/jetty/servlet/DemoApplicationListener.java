@@ -1,4 +1,4 @@
-package org.actioncontrollerdemo.servlet;
+package org.actioncontrollerdemo.jetty.servlet;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;

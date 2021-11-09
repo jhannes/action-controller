@@ -58,6 +58,12 @@
             <version>1.11.15</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.github.jhannes</groupId>
+            <artifactId>fake-servlet</artifactId>
+            <version>0.0.34-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 </project>

@@ -11,18 +11,21 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
-public class StaticContent implements HttpHandler {
+public class ContentHandler implements HttpHandler {
 
-    private static final Logger logger = LoggerFactory.getLogger(StaticContent.class);
+    private static final Logger logger = LoggerFactory.getLogger(ContentHandler.class);
 
     public ContentSource contentSource;
 
-    public StaticContent(URL baseResource) {
+    public ContentHandler(URL baseResource) {
         this(ContentSource.fromURL(baseResource));
     }
 
-    public StaticContent(ContentSource contentSource) {
+    public ContentHandler(ContentSource contentSource) {
         this.contentSource = contentSource;
     }
 
@@ -31,6 +34,21 @@ public class StaticContent implements HttpHandler {
         try {
             URL resource = contentSource.resolve(uri.getPath().substring(exchange.getHttpContext().getPath().length()));
             Long lastModified = contentSource.lastModified(resource);
+            if (lastModified != null) {
+                exchange.getResponseHeaders().set(
+                        "Last-Modified",
+                        DateTimeFormatter.RFC_1123_DATE_TIME.format(Instant.ofEpochMilli(lastModified).atZone(ZoneId.systemDefault()))
+                );
+
+                String ifModifiedHeader = exchange.getRequestHeaders().getFirst("If-Modified-Since");
+                long ifModifiedSinceHeader = ifModifiedHeader != null
+                        ? DateTimeFormatter.RFC_1123_DATE_TIME.parse(ifModifiedHeader, Instant::from).toEpochMilli()
+                        : -1;
+                if (ifModifiedSinceHeader > 0 && lastModified >= ifModifiedSinceHeader) {
+                    exchange.sendResponseHeaders(304, 0);
+                    return;
+                }
+            }
             String contentType = contentSource.getContentType(resource);
             if (contentType != null) {
                 exchange.getResponseHeaders().set("Content-type", contentType);

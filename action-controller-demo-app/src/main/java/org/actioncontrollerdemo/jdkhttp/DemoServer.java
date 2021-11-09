@@ -45,8 +45,8 @@ public class DemoServer {
             new TestController(() -> updater.run()),
             new UserController()
     });
-    private final StaticContent swaggerHandler = new StaticContent(ContentSource.fromWebJar("swagger-ui"));
-    private final StaticContent staticContent = new StaticContent(getClass().getResource("/webapp-actioncontrollerdemo/"));
+    private final ContentHandler swaggerHandler = new ContentHandler(ContentSource.fromWebJar("swagger-ui"));
+    private final ContentHandler staticContent = new ContentHandler(getClass().getResource("/webapp-actioncontrollerdemo/"));
     private final RedirectHandler redirectHandler = new RedirectHandler("/demo");
     private HttpsServer httpsServer;
 

@@ -1,10 +1,10 @@
-package org.actioncontrollerdemo.servlet;
+package org.actioncontrollerdemo.jetty.servlet;
 
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.actioncontroller.content.ContentSource;
 
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,9 +36,10 @@ public class ContentServlet extends HttpServlet {
                     return;
                 }
             }
-            InputStream inputStream = resource.openStream();
-            resp.setContentType(getServletContext().getMimeType(resource.getFile()));
-            inputStream.transferTo(resp.getOutputStream());
+            try (InputStream inputStream = resource.openStream()) {
+                resp.setContentType(getServletContext().getMimeType(resource.getFile()));
+                inputStream.transferTo(resp.getOutputStream());
+            }
         } catch (FileNotFoundException ignored) {
             resp.sendError(404);
         }

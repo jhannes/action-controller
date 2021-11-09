@@ -79,6 +79,21 @@ public class ContentSourceTest {
     }
 
     @Test
+    public void shouldUseFallbackFile() throws IOException {
+        Files.write(dir.resolve("index.html"), List.of("Hello Root"));
+        Files.createDirectories(dir.resolve("default"));
+        Files.write(dir.resolve("default/index.html"), List.of("Hello Default"));
+        source.setFallbackPath("default/index.html");
+
+        assertThat(source.resolve("/something/else/entirely").openStream())
+                .hasContent("Hello Default");
+        assertThat(source.getContentType(source.resolve("/something/else/entirely")))
+                .isEqualTo("text/html");
+        assertThat(source.resolve("/").openStream())
+                .hasContent("Hello Root");
+    }
+
+    @Test
     public void shouldReadFromSrcDirectory() throws IOException {
         ContentSource contentSource = ContentSource.fromClasspath("/content-source-test");
 

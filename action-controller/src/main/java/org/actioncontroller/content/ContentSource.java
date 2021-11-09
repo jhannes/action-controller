@@ -29,6 +29,7 @@ public class ContentSource {
     }
 
     private final URL resourceBase;
+    private String fallbackPath;
 
     private ContentSource(URL resourceBase) {
         if (!resourceBase.getProtocol().equals("file") && !resourceBase.getProtocol().equals("jar")) {
@@ -89,15 +90,28 @@ public class ContentSource {
         return fromClasspath(prefix + "/" + properties.get("version") + "/");
     }
 
-    // TODO: Support fallback URL for BrowserRouter strategies
     public URL resolve(String relativeResource) throws IOException {
         if (relativeResource.startsWith("/")) {
             relativeResource = relativeResource.substring(1);
         }
         URL resource = new URL(resourceBase, relativeResource);
         URL resourceUrl = isDirectory(resource) ? new URL(resource, "index.html") : resource;
+        if (isMissing(resourceUrl) && fallbackPath != null) {
+            resourceUrl = new URL(resourceBase, fallbackPath);
+        }
         resourceUrl.openStream().close();
         return resourceUrl;
+    }
+
+    private boolean isMissing(URL resource) {
+        if (resource.getProtocol().equals("file")) {
+            try {
+                Path path = Paths.get(resource.toURI());
+                return !Files.isRegularFile(path);
+            } catch (URISyntaxException ignored) {
+            }
+        }
+        return resource.toString().endsWith("/");
     }
 
     private boolean isDirectory(URL resource) {
@@ -139,5 +153,9 @@ public class ContentSource {
             }
         }
         return null;
+    }
+
+    public void setFallbackPath(String fallbackPath) {
+        this.fallbackPath = fallbackPath;
     }
 }

@@ -1,22 +1,23 @@
-package org.actioncontrollerdemo.servlet;
+package org.actioncontrollerdemo.jetty.servlet;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.codahale.metrics.health.HealthCheckRegistry;
-import io.dropwizard.metrics.servlets.AdminServlet;
-import io.dropwizard.metrics.servlets.HealthCheckServlet;
-import io.dropwizard.metrics.servlets.MetricsServlet;
-import jakarta.servlet.DispatcherType;
-import jakarta.servlet.Filter;
-import jakarta.servlet.ServletContext;
-import jakarta.servlet.ServletContextEvent;
-import jakarta.servlet.ServletContextListener;
+import com.codahale.metrics.servlets.AdminServlet;
+import com.codahale.metrics.servlets.HealthCheckServlet;
+import com.codahale.metrics.servlets.MetricsServlet;
 import org.actioncontroller.TimerRegistry;
-import org.actioncontroller.jakarta.ApiJakartaServlet;
-import org.actioncontrollerdemo.ContentSource;
+import org.actioncontroller.content.ContentSource;
+import org.actioncontroller.servlet.ApiServlet;
+import org.actioncontroller.servlet.ContentServlet;
 import org.actioncontrollerdemo.TestController;
 import org.actioncontrollerdemo.UserController;
 
+import javax.servlet.DispatcherType;
+import javax.servlet.Filter;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
 import java.util.EnumSet;
 
 public class DemoApplicationListener implements ServletContextListener {
@@ -36,7 +37,7 @@ public class DemoApplicationListener implements ServletContextListener {
         context.setAttribute(MetricsServlet.METRICS_REGISTRY, metricRegistry);
         context.setAttribute(HealthCheckServlet.HEALTH_CHECK_REGISTRY, healthCheckRegistry);
 
-        ApiJakartaServlet apiServlet = new ApiJakartaServlet(new TestController(updater));
+        ApiServlet apiServlet = new ApiServlet(new TestController(updater));
         TimerRegistry counterRegistry = action -> {
             String name = action.getController().getClass().getSimpleName() + "/" + action.getMethodName();
             Timer histogram = metricRegistry.timer(name);

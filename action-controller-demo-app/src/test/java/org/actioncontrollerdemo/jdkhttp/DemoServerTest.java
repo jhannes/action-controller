@@ -1,6 +1,5 @@
 package org.actioncontrollerdemo.jdkhttp;
 
-import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.client.HttpURLConnectionApiClient;
@@ -63,7 +62,7 @@ public class DemoServerTest {
         assertThat(testController.getJson())
                 .isEqualTo(new JsonObject().put("product", "Blåbærsyltetøy"));
     }
-    
+
     @Test
     public void shouldCallUpdater() {
         AtomicBoolean called = new AtomicBoolean(false);
@@ -95,7 +94,7 @@ public class DemoServerTest {
                 .isInstanceOf(HttpClientException.class)
                 .hasMessageContaining("Forbidden");
     }
-    
+
     @Test
     public void shouldShowLoginForm() {
         UserController userApi = ApiClientClassProxy.create(UserController.class, client);
@@ -110,7 +109,7 @@ public class DemoServerTest {
         userApi.postLogin("admin", Optional.empty(), new AtomicReference<String>()::set);
         assertThat(userApi.getAdminPage(null)).isEqualTo("Hello - boss, admin");
     }
-    
+
     @Test
     public void shouldChangePort() throws IOException {
         String initialUrl = server.getURL();

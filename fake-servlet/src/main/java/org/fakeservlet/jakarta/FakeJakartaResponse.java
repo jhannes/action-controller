@@ -10,6 +10,9 @@ import java.io.PrintWriter;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -96,20 +99,20 @@ public class FakeJakartaResponse implements HttpServletResponse {
     @Override
     public void sendRedirect(String location) {
         statusCode = 302;
-        
+
         // if location contains scheme, just return it
         // if location starts with / use request root url, append encodeRedirectUrl(location)
         // otherwise use request.getRequestURI() backtrack to "/" if needed and encodeRedirectUrl(location)
         if (location.startsWith("/")) {
             location = request.getAuthority() + request.getContextPath() + location;
         }
-        
+
         setHeader("Location", encodeRedirectURL(location));
     }
 
     @Override
-    public void setDateHeader(String s, long l) {
-        throw unimplemented();
+    public void setDateHeader(String name, long epochMillis) {
+        setHeader(name, DateTimeFormatter.RFC_1123_DATE_TIME.format(Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault())));
     }
 
     @Override
@@ -222,12 +225,11 @@ public class FakeJakartaResponse implements HttpServletResponse {
 
     @Override
     public void setContentLength(int i) {
-        throw unimplemented();
+        setContentLengthLong(i);
     }
 
     @Override
     public void setContentLengthLong(long l) {
-        throw unimplemented();
     }
 
     @Override
@@ -290,7 +292,7 @@ public class FakeJakartaResponse implements HttpServletResponse {
         flushBuffer();
         return outputStream.toByteArray();
     }
-    
+
     public String getBodyString() {
         return new String(getBody());
     }

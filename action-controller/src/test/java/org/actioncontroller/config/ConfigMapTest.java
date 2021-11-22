@@ -5,6 +5,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -17,9 +18,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ConfigMapTest {
 
+    private final FileListener observer = (key, directory, pathPredicate) -> {};
+
     @Test
     public void shouldReturnValue() {
-        ConfigMap configMap = new ConfigMap("foo", new ConfigMap(Map.of("foo.bar", "abc")));
+        ConfigMap configMap = new ConfigMap(observer, "foo", new ConfigMap(observer, Map.of("foo.bar", "abc")));
         assertThat(configMap.get("bar")).isEqualTo("abc");
         assertThat(configMap.getOrDefault("bar", "something")).isEqualTo("abc");
         assertThat(configMap.getOrDefault("baz", "something")).isEqualTo("something");
@@ -27,7 +30,7 @@ public class ConfigMapTest {
 
     @Test
     public void shouldThrowOnMissingValue() {
-        ConfigMap configMap = new ConfigMap("foo", Map.of("foo.bar", "abc"));
+        ConfigMap configMap = new ConfigMap(observer, "foo", Map.of("foo.bar", "abc"));
         assertThatThrownBy(() -> configMap.get("baz"))
                 .isInstanceOf(ConfigException.class)
                 .hasMessageContaining("foo.baz");
@@ -35,8 +38,17 @@ public class ConfigMapTest {
     }
 
     @Test
+    public void shouldThrowOnMissingSubmap() {
+        ConfigMap configMap = new ConfigMap(observer, Map.of("foo.bar", "value1", "foo.baz", "value2"));
+        assertThat(new ConfigMap(observer, "foo", configMap)).isNotNull();
+        assertThatThrownBy(() -> new ConfigMap(observer, "bar", configMap))
+                .isInstanceOf(ConfigException.class)
+                .hasMessageContaining("Missing key bar");
+    }
+
+    @Test
     public void shouldTreatBlankAsMissing() {
-        ConfigMap configMap = new ConfigMap("foo", Map.of("foo.bar", ""));
+        ConfigMap configMap = new ConfigMap(observer, "foo", Map.of("foo.bar", ""));
         assertThat(configMap.getOrDefault("bar", null)).isNull();
         assertThatThrownBy(() -> configMap.get("bar"))
                 .isInstanceOf(ConfigException.class)
@@ -45,7 +57,7 @@ public class ConfigMapTest {
 
     @Test
     public void shouldRemoveWhitespace() {
-        ConfigMap configMap = new ConfigMap("foo", Map.of("foo.bar", "   \t  ", "foo.baz", "  true\t"));
+        ConfigMap configMap = new ConfigMap(observer, "foo", Map.of("foo.bar", "   \t  ", "foo.baz", "  true\t"));
         assertThat(configMap.getOrDefault("bar", null)).isNull();
         assertThat(configMap.get("baz")).isEqualTo("true");
         assertThat(configMap.getBoolean("baz")).isTrue();
@@ -53,12 +65,12 @@ public class ConfigMapTest {
 
     @Test
     public void shouldNestConfigMaps() {
-        ConfigMap configMap = new ConfigMap("apps", Map.of(
+        ConfigMap configMap = new ConfigMap(observer, "apps", Map.of(
                 "apps.appOne.clientId", "abc",
                 "apps.appOne.clientSecret", "secret",
                 "apps.appTwo.clientId", "xyz"
         ));
-        assertThat(new ConfigMap("appOne", configMap).get("clientId")).isEqualTo("abc");
+        assertThat(new ConfigMap(observer, "appOne", configMap).get("clientId")).isEqualTo("abc");
         assertThat(configMap.subMap("appOne").orElseThrow().get("clientId")).isEqualTo("abc");
         assertThat(configMap.listSubMaps()).contains("appOne", "appTwo");
         assertThat(configMap.subMap("missingApp")).isEmpty();
@@ -78,13 +90,13 @@ public class ConfigMapTest {
         File file = new File(directory, "testApp.properties");
         Files.write(file.toPath(), lines);
 
-        ConfigMap configuration = ConfigMap.read(file);
+        ConfigMap configuration = ConfigMap.read(observer, file);
         assertThat(configuration).containsEntry("credentials.username", "someuser2");
     }
 
     @Test
     public void shouldHideSecretsInToString() {
-        ConfigMap configMap = new ConfigMap("apps.appOne", Map.of(
+        ConfigMap configMap = new ConfigMap(observer, "apps.appOne", Map.of(
                 "apps.appOne.clientId", "abc",
                 "apps.appOne.clientSecret", "my-secret",
                 "apps.appTwo.clientId", "xyz"
@@ -96,16 +108,16 @@ public class ConfigMapTest {
                 .doesNotContain("my-secret")
                 .doesNotContain("xyz");
     }
-    
+
     @Test
     public void shouldGetValuesFromEnvironment() {
         Map<String, String> environment = new HashMap<>();
         environment.put("APPS_APPONE_PROP1", "a");
         environment.put("APPS_APPONE_PROP2", "b");
         environment.put("UNRELATED_PROP", "b");
-        
-        ConfigMap configMap = new ConfigMap("apps.appOne", Map.of(), environment);
-        
+
+        ConfigMap configMap = new ConfigMap(observer, "apps.appOne", Map.of(), environment);
+
         assertThat(configMap.get("prop1")).isEqualTo("a");
         assertThat(configMap.toString())
                 .contains("APPS_APPONE_PROP1=a")
@@ -122,7 +134,7 @@ public class ConfigMapTest {
         String prefix = environment.substring(0, environment.indexOf('.'));
         String key = environment.substring(environment.indexOf('.')+1);
 
-        ConfigMap configMap = new ConfigMap().subMap(prefix).orElseThrow();
+        ConfigMap configMap = new ConfigMap(observer).subMap(prefix).orElseThrow();
         assertThat(configMap.get(key)).isEqualTo(System.getenv(environmentVariableWithUnderscore));
     }
 
@@ -139,8 +151,23 @@ public class ConfigMapTest {
         String prefix2 = environment.substring(firstPeriod+1, secondPeriod);
         String key = environment.substring(secondPeriod +1);
 
-        ConfigMap configMap = new ConfigMap().subMap(prefix1).orElseThrow().subMap(prefix2).orElseThrow();
+        ConfigMap configMap = new ConfigMap(observer).subMap(prefix1).orElseThrow().subMap(prefix2).orElseThrow();
         assertThat(configMap.get(key)).isEqualTo(System.getenv(environmentVariableWithUnderscore));
     }
 
+    @Test
+    public void shouldReadInetSocketAddress() {
+        ConfigMap configMap = new ConfigMap(observer, "httpListenAddress", Map.of(
+                "httpListenAddress.one", "127.0.0.1:11080",
+                "httpListenAddress.two", "12080",
+                "httpListenAddress.three", ":13080"
+        ));
+
+        assertThat(configMap.getInetSocketAddress("one", 10080))
+                .isEqualTo(new InetSocketAddress("127.0.0.1", 11080));
+        assertThat(configMap.getInetSocketAddress("two", 10080))
+                .isEqualTo(new InetSocketAddress("0.0.0.0", 12080));
+        assertThat(configMap.getInetSocketAddress("three", 10080))
+                .isEqualTo(new InetSocketAddress("0.0.0.0", 13080));
+    }
 }

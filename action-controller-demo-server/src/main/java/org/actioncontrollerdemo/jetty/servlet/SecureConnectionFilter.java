@@ -1,4 +1,4 @@
-package org.actioncontrollerdemo.servlet;
+package org.actioncontrollerdemo.jetty.servlet;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;

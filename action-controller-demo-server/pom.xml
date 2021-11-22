@@ -28,7 +28,7 @@
         <dependency>
             <groupId>org.logevents</groupId>
             <artifactId>logevents</artifactId>
-            <version>0.2.2</version>
+            <version>0.2.3</version>
         </dependency>
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
@@ -56,6 +56,12 @@
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy</artifactId>
             <version>1.11.15</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.jhannes</groupId>
+            <artifactId>fake-servlet</artifactId>
+            <version>0.0.34-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

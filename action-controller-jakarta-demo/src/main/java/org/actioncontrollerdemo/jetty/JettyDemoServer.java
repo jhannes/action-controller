@@ -1,7 +1,7 @@
 package org.actioncontrollerdemo.jetty;
 
 import org.actioncontroller.config.ConfigObserver;
-import org.actioncontrollerdemo.servlet.DemoApplicationListener;
+import org.actioncontrollerdemo.jetty.servlet.DemoApplicationListener;
 import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;

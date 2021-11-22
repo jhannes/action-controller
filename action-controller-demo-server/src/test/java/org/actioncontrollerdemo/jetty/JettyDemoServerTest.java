@@ -12,6 +12,10 @@ import org.slf4j.event.Level;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -21,7 +25,7 @@ public class JettyDemoServerTest {
 
     private JettyDemoServer server;
     private HttpURLConnectionApiClient client;
-    
+
     @Rule
     public ExpectedLogEventsRule expectedLogEvents = new ExpectedLogEventsRule(Level.WARN);
 
@@ -45,13 +49,11 @@ public class JettyDemoServerTest {
         assertThat(body).contains("<h1>Hello World</h1>");
         assertThat(connection.getHeaderField("Content-Type")).isEqualTo("text/html");
 
-        long lastModified = connection.getHeaderFieldDate("Last-Modified", -1);
-        assertThat(lastModified).isNotEqualTo(-1);
-        assertThat(System.currentTimeMillis() - lastModified)
-                .as("last modified should be more than one second ago or something is fishy")
-                .isGreaterThan(1_000);
+        assertThat(ZonedDateTime.parse(connection.getHeaderField("Last-Modified"), DateTimeFormatter.RFC_1123_DATE_TIME))
+                .isBefore(ZonedDateTime.now().minusSeconds(1))
+                .as("last modified should be more than one second ago or something is fishy");
     }
-    
+
     @Test
     public void shouldReturn404OnUnknownFile() throws IOException {
         URL url = new URL(server.getUrl() + "/demo/missing");
@@ -60,7 +62,7 @@ public class JettyDemoServerTest {
                 .as(connection.getResponseMessage())
                 .isEqualTo(404);
     }
-    
+
     @Test
     public void shouldReturnContentFromWebJar() throws IOException {
         URL url = new URL(server.getUrl() + "/demo/swagger/");
@@ -78,7 +80,7 @@ public class JettyDemoServerTest {
                 .as("last modified should be more than five seconds ago or something is fishy")
                 .isGreaterThan(5000);
     }
-    
+
     @Test
     public void shouldReturn404OnMissingFileInWebjar() throws IOException {
         URL url = new URL(server.getUrl() + "/demo/swagger/missing.html");
@@ -87,12 +89,12 @@ public class JettyDemoServerTest {
                 .as(connection.getResponseMessage())
                 .isEqualTo(404);
     }
-    
+
     @Test
     public void shouldReturn304OnFileNotModified() throws IOException {
         URL url = new URL(server.getUrl() + "/demo/swagger/");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestProperty("If-Modified-Since", "Wed, 06 Oct 2010 02:53:46 GMT");
+        connection.setRequestProperty("If-Modified-Since", "Sun, 06 Oct 2030 02:53:46 GMT");
         assertThat(connection.getResponseCode())
                 .as(connection.getResponseMessage())
                 .isEqualTo(304);
@@ -104,9 +106,9 @@ public class JettyDemoServerTest {
         userApi.postLogin("john doe", Optional.empty(), new AtomicReference<String>()::set);
         assertThat(userApi.getRealUsername(null)).isEqualTo("Hello - required, john doe");
     }
-    
+
     @Test
     public void shouldReturnLastModifiedHeaderForContent() {
-        
+
     }
 }

@@ -1,4 +1,4 @@
-package org.actioncontrollerdemo.servlet;
+package org.actioncontrollerdemo.jetty.servlet;
 
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;

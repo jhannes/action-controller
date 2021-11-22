@@ -3,16 +3,18 @@ package org.actioncontroller.config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -23,24 +25,21 @@ import java.util.stream.Collectors;
  * classpath resources <code>&lt;applicationName&gt;.properties</code> and
  *  <code>&lt;applicationName&gt;-&lt;profile&gt;.properties</code> in the future.
  */
-public class ConfigDirectoryLoader implements ConfigLoader {
+public class ConfigDirectoryLoader {
     private static final Logger logger = LoggerFactory.getLogger(ConfigDirectoryLoader.class);
-    private final File configDirectory;
-    private final List<String> configurationFileNames;
+    private final Path configDirectory;
+    private final String applicationName;
+    private final List<String> profiles;
 
-    public ConfigDirectoryLoader(File configDirectory, String applicationName, List<String> profiles) {
-        configDirectory.mkdirs();
+    public ConfigDirectoryLoader(Path configDirectory, String applicationName, List<String> profiles) {
         this.configDirectory = configDirectory;
-        this.configurationFileNames = new ArrayList<>();
-        configurationFileNames.add(applicationName + ".properties");
-        profiles.forEach(profile -> configurationFileNames.add(applicationName + "-" + profile + ".properties"));
+        this.applicationName = applicationName;
+        this.profiles = profiles;
     }
 
     public Map<String, String> loadConfiguration() {
         Properties properties = new Properties();
-
-        List<File> files = getConfigurationFiles();
-        for (File file : files) {
+        for (Path file : getConfigurationFiles()) {
             loadConfigFile(properties, file);
         }
 
@@ -48,34 +47,49 @@ public class ConfigDirectoryLoader implements ConfigLoader {
         for (Map.Entry<Object, Object> entry : properties.entrySet()) {
             configuration.put((String) entry.getKey(), (String) entry.getValue());
         }
-        logger.debug("Loaded {} properties from {}", configuration.size(), configurationFileNames);
+        logger.debug("Loaded {} properties from files={}", configuration.size(), getConfigurationFiles());
         return configuration;
     }
 
-    private void loadConfigFile(Properties properties, File file) {
-        try (InputStream propertiesFile = new FileInputStream(file)) {
-            logger.info("Loading {}", file.getAbsolutePath());
+    protected List<Path> getConfigurationFiles() {
+        List<Path> files = new ArrayList<>();
+        if (Files.isRegularFile(configDirectory.resolve(applicationName + ".properties"))) {
+            files.add(configDirectory.resolve(applicationName + ".properties"));
+        }
+        for (String profile : profiles) {
+            Path file = configDirectory.resolve(applicationName + "-" + profile + ".properties");
+            if (Files.isRegularFile(file)) {
+                files.add(file);
+            }
+        }
+        return files;
+    }
+
+    protected void loadConfigFile(Properties properties, Path file) {
+        try (InputStream propertiesFile = new FileInputStream(file.toFile())) {
+            logger.info("Loading {}", file.toFile().getCanonicalFile());
             properties.load(propertiesFile);
         } catch (IOException e) {
             logger.info("Failed to load {}", file, e);
         }
     }
 
-    public List<String> getConfigurationFileNames() {
-        return configurationFileNames;
-    }
-
     public String describe() {
-        return "directory=" + configDirectory.getAbsolutePath() + ", fileNames=" + configurationFileNames
-                + ", files=" + getConfigurationFiles();
+        return "directory=" + configDirectory.toAbsolutePath() + ", profiles=" + profiles + ", files=" + getConfigurationFiles();
     }
 
-    public List<File> getConfigurationFiles() {
-        return configurationFileNames.stream().map(f -> new File(configDirectory, f)).filter(File::isFile).collect(Collectors.toList());
+    public void watch(FileSystemWatcher fileSystemWatcher, Consumer<Map<String, String>> configChangeListener) {
+        try {
+            fileSystemWatcher.watch("CONFIG FILES", configDirectory, getConfigurationFilesPattern(), config -> configChangeListener.accept(loadConfiguration()));
+        } catch (Exception e) {
+            throw new ConfigException("Failed to initialize FileScanner", e);
+        }
     }
 
-    public void watch(Consumer<Map<String, String>> configChangeListener) {
-        new FileScanner(configDirectory, getConfigurationFileNames(),
-                config -> configChangeListener.accept(loadConfiguration()));
+    protected Predicate<Path> getConfigurationFilesPattern() {
+        String matchPattern = "glob:" + (applicationName
+                + "{," + profiles.stream().map(s -> "-" + s).collect(Collectors.joining(","))
+                + "}.properties");
+        return configDirectory.getFileSystem().getPathMatcher(matchPattern)::matches;
     }
 }

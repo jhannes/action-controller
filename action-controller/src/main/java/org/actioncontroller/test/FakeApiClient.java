@@ -23,7 +23,6 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
@@ -157,7 +156,7 @@ public class FakeApiClient implements ApiClient {
 
         @Override
         public void addRequestCookie(String name, Object value) {
-            possiblyOptionalToString(value, s -> request.setCookie(name, s));
+            possiblyOptionalToString(value, s -> request.addCookie(name, s));
         }
 
         @Override

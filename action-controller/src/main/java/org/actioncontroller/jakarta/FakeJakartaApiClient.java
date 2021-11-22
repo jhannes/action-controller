@@ -156,7 +156,7 @@ public class FakeJakartaApiClient implements ApiClient {
 
         @Override
         public void addRequestCookie(String name, Object value) {
-            possiblyOptionalToString(value, s -> request.setCookie(name, s));
+            possiblyOptionalToString(value, s -> request.addCookie(name, s));
         }
 
         @Override

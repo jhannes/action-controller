@@ -1,6 +1,6 @@
 package org.actioncontroller.config;
 
 @FunctionalInterface
-public interface ConfigValueTransformer<T> {
-    T apply(String value) throws Exception;
+public interface ConfigValueTransformer<FROM, TO> {
+    TO apply(FROM value) throws Exception;
 }

@@ -16,6 +16,10 @@ public class FakeServletContainer {
         this(asURL(contextRoot), servletPath);
     }
 
+    public FakeServletContainer() {
+        this("http://example.com", "/webapp");
+    }
+
     private static URL asURL(String contextRoot) {
         try {
             return new URL(contextRoot);

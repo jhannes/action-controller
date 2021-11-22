@@ -1,16 +1,18 @@
 package org.actioncontroller.config;
 
+import org.actioncontroller.util.ExceptionUtil;
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.extend.junit.ExpectedLogEventsRule;
 import org.slf4j.event.Level;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -36,12 +38,25 @@ public class ConfigObserverTest {
     @Rule
     public ExpectedLogEventsRule expectedLogEvents = new ExpectedLogEventsRule(Level.WARN);
 
-    private final File directory = new File("target/test/dir-" + UUID.randomUUID());
+    private final Path directory = createRandomDirectory();
+
+    private Path createRandomDirectory() throws IOException {
+        Path dir = Paths.get("target/test/dir-" + UUID.randomUUID());
+        Files.createDirectories(dir);
+        return dir;
+    }
+
+    private Path createRandomFile(String extension, String content) throws IOException {
+        Path file = directory.resolve("file-" + UUID.randomUUID() + extension);
+        Files.write(file, content.getBytes());
+        return file;
+    }
+
     private final BlockingQueue<Instant> reloadTimes = new ArrayBlockingQueue<>(10);
-    private final ConfigObserver observer = new ConfigObserver(directory, "testApp") {
+    private final ConfigObserver observer = new ConfigObserver(directory, "testApp", List.of("testing")) {
         @Override
-        public void updateConfiguration(Map<String, String> newConfiguration) {
-            super.updateConfiguration(newConfiguration);
+        protected void handleConfigurationChanged(Set<String> changedKeys, ConfigMap newConfiguration) {
+            super.handleConfigurationChanged(changedKeys, newConfiguration);
             try {
                 reloadTimes.put(Instant.now());
             } catch (InterruptedException e) {
@@ -53,6 +68,9 @@ public class ConfigObserverTest {
     private InetSocketAddress httpListenAddress;
     private DummyDataSource dataSource;
     private Duration daemonPollingInterval;
+
+    public ConfigObserverTest() throws IOException {
+    }
 
     @Test
     public void shouldOnlyUpdateWhenPropertyWasChanged() {
@@ -69,6 +87,19 @@ public class ConfigObserverTest {
 
         writeConfigLine("daemonPollingInterval=PT1M");
         assertThat(daemonPollingInterval).isEqualTo(Duration.ofMinutes(1));
+    }
+
+    @Test
+    public void shouldLoadProfiledPropertiesFiles() throws IOException {
+        AtomicReference<String> propertyValue = new AtomicReference<>();
+        observer.onStringValue("example", null, propertyValue::set);
+
+        reloadTimes.clear();
+        Files.write(directory.resolve("testApp.properties"), List.of("example=defaultValue"));
+        Files.write(directory.resolve("testApp-testing.properties"), List.of("example=profileValue"));
+        waitForFileWatcher();
+
+        assertThat(propertyValue).hasValue("profileValue");
     }
 
     @Test
@@ -176,10 +207,10 @@ public class ConfigObserverTest {
         AtomicReference<Optional<Credentials>> credentials = new AtomicReference<>(Optional.empty());
         writeConfigLines("credentials.username=someuser");
         observer.onPrefixedOptionalValue("credentials", Credentials::new, credentials::set);
-        assertThat(credentials.get()).get().isEqualToComparingFieldByField(new Credentials("someuser", null));
+        assertThat(credentials.get()).get().usingRecursiveComparison().isEqualTo(new Credentials("someuser", null));
 
         writeConfigLines("credentials.username=someuser2", "credentials.password=secret");
-        assertThat(credentials.get()).get().isEqualToComparingFieldByField(new Credentials("someuser2", "secret"));
+        assertThat(credentials.get()).get().usingRecursiveComparison().isEqualTo(new Credentials("someuser2", "secret"));
     }
 
     @Test
@@ -205,7 +236,7 @@ public class ConfigObserverTest {
         assertThat(credentials.get()).isEmpty();
 
         writeConfigLines("credentials.username=someuser2", "credentials.password=secret");
-        assertThat(credentials.get()).get().isEqualToComparingFieldByField(new Credentials("someuser2", "secret"));
+        assertThat(credentials.get()).get().usingRecursiveComparison().isEqualTo(new Credentials("someuser2", "secret"));
 
         writeConfigLines("somethingElse.username=someuser");
         assertThat(credentials.get()).isEmpty();
@@ -244,13 +275,13 @@ public class ConfigObserverTest {
     @Test
     public void shouldWatchForFileChanges() {
         writeConfigLines("my.dataSource.jdbcUrl=jdbc:datamastery:example",
-            "my.dataSource.jdbcUsername=sa",
-            "my.dataSource.jdbcPassword=");
+                "my.dataSource.jdbcUsername=sa",
+                "my.dataSource.jdbcPassword=");
         observer.onConfigChange(new DummyDataSourceConfigListener(
                 "my.dataSource",
                 dataSource -> this.dataSource = dataSource
         ));
-        assertThat(dataSource).isEqualToComparingFieldByField(new DummyDataSource(
+        assertThat(dataSource).usingRecursiveComparison().isEqualTo(new DummyDataSource(
                 "jdbc:datamastery:example", "sa", ""
         ));
 
@@ -259,9 +290,9 @@ public class ConfigObserverTest {
         assertThat(dataSource).isNull();
 
         writeConfigLines("my.dataSource.jdbcUrl=jdbc:datamastery:UPDATED",
-            "my.dataSource.jdbcUsername=sa",
-            "my.dataSource.jdbcPassword=");
-        assertThat(dataSource).isEqualToComparingFieldByField(new DummyDataSource(
+                "my.dataSource.jdbcUsername=sa",
+                "my.dataSource.jdbcPassword=");
+        assertThat(dataSource).usingRecursiveComparison().isEqualTo(new DummyDataSource(
                 "jdbc:datamastery:UPDATED", "sa", ""
         ));
     }
@@ -285,11 +316,13 @@ public class ConfigObserverTest {
                 "Failed to notify listener while reloading {}");
         writeConfigLine("example.number=123");
 
-        String[] fooValue = { null };
+        String[] fooValue = {null};
         observer.onStringValue("example.foo", null,
                 v -> fooValue[0] = v
         );
-        observer.onStringValue("example.number", "100", s -> { throw new RuntimeException(""); });
+        observer.onStringValue("example.number", "100", s -> {
+            throw new RuntimeException("");
+        });
 
         assertThat(fooValue[0]).isNull();
 
@@ -297,10 +330,135 @@ public class ConfigObserverTest {
         assertThat(fooValue[0]).isEqualTo("real value");
     }
 
+    @Test
+    public void shouldReadFile() throws IOException, InterruptedException {
+        AtomicReference<String> fileContent = new AtomicReference<>();
+        observer.onPrefixedValue(
+                "config",
+                config -> config.optionalFile("file").map(this::readFile).orElse("<no file>"),
+                fileContent::set
+        );
+        Path file = createRandomFile(".txt", "This is the file content");
+        writeConfigLine(("config.file=" + file).replaceAll("\\\\", "/"));
+        //waitForFileWatcher();
+        Thread.sleep(100);
+        assertThat(fileContent).hasValue("This is the file content");
+    }
+
+    @Test
+    public void shouldWatchForNewFile() throws IOException, InterruptedException {
+        Path testDir = Paths.get("target/test/test-" + UUID.randomUUID() + "/subdir");
+        Path file = testDir.resolve("file-" + UUID.randomUUID() + ".txt");
+        writeConfigLine(("config.file=" + file).replaceAll("\\\\", "/"));
+
+        AtomicReference<String> fileContent = new AtomicReference<>();
+        observer.onPrefixedValue(
+                "config",
+                config -> config.mapOptionalFile("file", Files::readAllLines)
+                        .map(lines -> String.join("\n", lines))
+                        .orElse("<no file>"),
+                fileContent::set
+        );
+        assertThat(fileContent).hasValue("<no file>");
+
+        Files.createDirectories(testDir);
+        Thread.sleep(100);
+        Files.write(file, "This is the file content".getBytes());
+        //waitForFileWatcher();
+        Thread.sleep(100);
+        assertThat(fileContent).hasValue("This is the file content");
+    }
+
+    @Test
+    public void shouldWatchForFileChange() throws IOException, InterruptedException {
+        Path file = createRandomFile(".txt", "Old content");
+        writeConfigLine(("config.file=" + file).replaceAll("\\\\", "/"));
+
+        AtomicReference<String> fileContent = new AtomicReference<>();
+        observer.onPrefixedValue(
+                "config",
+                config -> config.optionalFile("file").map(this::readFile).orElse("<no file>"),
+                fileContent::set
+        );
+        assertThat(fileContent).hasValue("Old content");
+
+        Files.write(file, "Updated content".getBytes());
+        Thread.sleep(100);
+        assertThat(fileContent).hasValue("Updated content");
+    }
+
+    @Test
+    public void shouldReadInitialFileList() throws IOException {
+        writeConfigLine(("config.file=" + directory + "/*.txt").replaceAll("\\\\", "/"));
+
+        Path file1 = createRandomFile(".txt", "Random data");
+        Path file2 = createRandomFile(".txt", "Random data");
+        Path unrelatedFile = createRandomFile(".ini", "Random data");
+
+        AtomicReference<List<Path>> files = new AtomicReference<>();
+        observer.onPrefixedValue("config", config -> config.listFiles("file"), files::set);
+        assertThat(files.get()).contains(file1, file2).doesNotContain(unrelatedFile);
+    }
+
+    @Test
+    public void shouldDetectNewFile() throws IOException, InterruptedException {
+        writeConfigLine(("config.file=" + directory + "/*.txt").replaceAll("\\\\", "/"));
+        Path unrelatedFile = createRandomFile(".ini", "Random data");
+
+        AtomicReference<List<Path>> files = new AtomicReference<>();
+        observer.onPrefixedValue("config", config -> config.listFiles("file"), files::set);
+        assertThat(files.get()).isEmpty();
+
+        Path file = createRandomFile(".txt", "new file");
+        Thread.sleep(100);
+        assertThat(files.get()).contains(file);
+    }
+
+    @Test
+    public void shouldDetectRemovedFile() throws IOException, InterruptedException {
+        Path file = createRandomFile(".txt", "new file");
+        writeConfigLine(("config.file=" + directory + "/*.txt").replaceAll("\\\\", "/"));
+
+        AtomicReference<List<Path>> files = new AtomicReference<>();
+        observer.onPrefixedValue("config", config -> config.listFiles("file"), files::set);
+        assertThat(files.get()).contains(file);
+
+        Files.delete(file);
+        Thread.sleep(100);
+        assertThat(files.get()).isEmpty();
+    }
+
+    @Test
+    public void shouldDetectFileInNewDirectory() throws IOException, InterruptedException {
+        writeConfigLine(("config.file=" + directory + "/sub/dir/*.txt").replaceAll("\\\\", "/"));
+
+        AtomicReference<List<Path>> files = new AtomicReference<>();
+        observer.onPrefixedValue("config", config -> config.listFiles("file"), files::set);
+        assertThat(files.get()).isEmpty();
+
+        Path file = directory.resolve("sub/dir/file-" + UUID.randomUUID() + ".txt");
+        Files.createDirectory(file.getParent().getParent());
+        Files.createDirectory(file.getParent());
+        Thread.sleep(100);
+        assertThat(files.get()).isEmpty();
+
+        Files.write(file, "new file".getBytes());
+        Thread.sleep(100);
+        assertThat(files.get()).contains(file);
+    }
+
+    private String readFile(Path file) {
+        try {
+            return String.join("\n", Files.readAllLines(file));
+        } catch (IOException e) {
+            throw ExceptionUtil.softenException(e);
+        }
+    }
+
     private void writeConfigLines(String... lines) {
         reloadTimes.clear();
         try {
-            Files.write(new File(directory, "testApp.properties").toPath(), Arrays.asList(lines));
+            Files.write(directory.resolve("testApp.properties"), Arrays.asList(lines));
         } catch (IOException e) {
             fail("While writing testApp.properties", e);
         }
@@ -311,7 +469,7 @@ public class ConfigObserverTest {
     private void writeConfigLine(String singleLine) {
         reloadTimes.clear();
         try {
-            Files.write(new File(directory, "testApp.properties").toPath(), singletonList(singleLine));
+            Files.write(directory.resolve("testApp.properties"), singletonList(singleLine));
         } catch (IOException e) {
             fail("While writing testApp.properties", e);
         }

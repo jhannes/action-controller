@@ -3,9 +3,10 @@ package org.actioncontroller.config;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -18,17 +19,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class FileScannerTest {
 
-    private File directory;
+    private Path directory;
 
     @Before
-    public void createTemporaryDirectory() {
-        directory = new File("target/test/FileScannerTest/" + UUID.randomUUID());
-        directory.mkdirs();
+    public void createTemporaryDirectory() throws IOException {
+        directory = Paths.get("target/test/FileScannerTest/" + UUID.randomUUID());
+        Files.createDirectories(directory);
 
         assertThat(directory).isDirectory();
     }
 
-    private List<String> configLines = new ArrayList<>(Arrays.asList(
+    private final List<String> configLines = new ArrayList<>(Arrays.asList(
             "my.dataSource.jdbcUrl=jdbc:datamastery:example",
             "my.dataSource.jdbcUsername=sa",
             "my.dataSource.jdbcPassword="
@@ -62,7 +63,7 @@ public class FileScannerTest {
         BlockingQueue<List<String>> callbacks = new LinkedBlockingQueue<>();
         new FileScanner(directory, Arrays.asList("file-one.txt", "file-two.txt"), callbacks::add);
 
-        new File(directory, "file-one.txt").delete();
+        Files.delete(directory.resolve("file-one.txt"));
         List<String> notifiedFiles = callbacks.poll(10, TimeUnit.MILLISECONDS);
         assertThat(notifiedFiles).contains("file-one.txt");
 
@@ -79,6 +80,6 @@ public class FileScannerTest {
     }
 
     private void writeFile(String filename, List<String> configLines) throws IOException {
-        Files.write(new File(directory, filename).toPath(), configLines);
+        Files.write(directory.resolve(filename), configLines);
     }
 }

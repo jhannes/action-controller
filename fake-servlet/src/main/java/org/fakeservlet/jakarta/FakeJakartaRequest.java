@@ -1,8 +1,5 @@
 package org.fakeservlet.jakarta;
 
-import org.fakeservlet.FakeHttpSession;
-import org.fakeservlet.FakeServletResponse;
-
 import jakarta.servlet.AsyncContext;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.ReadListener;
@@ -19,6 +16,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpUpgradeHandler;
 import jakarta.servlet.http.Part;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -27,6 +25,8 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -85,7 +85,7 @@ public class FakeJakartaRequest implements HttpServletRequest {
 
     private List<Cookie> cookies = new ArrayList<>();
 
-    public void setCookie(String key, String value) {
+    public void addCookie(String key, String value) {
         cookies.add(new Cookie(key, value));
     }
 
@@ -99,8 +99,9 @@ public class FakeJakartaRequest implements HttpServletRequest {
     }
 
     @Override
-    public long getDateHeader(String s) {
-        throw unimplemented();
+    public long getDateHeader(String name) {
+        String s = getHeader(name);
+        return s != null ? DateTimeFormatter.RFC_1123_DATE_TIME.parse(s, Instant::from).toEpochMilli() : -1;
     }
 
     @Override
@@ -119,8 +120,8 @@ public class FakeJakartaRequest implements HttpServletRequest {
     }
 
     @Override
-    public int getIntHeader(String s) {
-        return Optional.ofNullable(getHeader(s)).map(Integer::parseInt).orElse(-1);
+    public int getIntHeader(String name) {
+        return Optional.ofNullable(getHeader(name)).map(Integer::parseInt).orElse(-1);
     }
 
     @Override
@@ -479,27 +480,27 @@ public class FakeJakartaRequest implements HttpServletRequest {
 
     @Override
     public AsyncContext startAsync() throws IllegalStateException {
-        throw unimplemented();
+        throw new IllegalStateException("async context not supported");
     }
 
     @Override
     public AsyncContext startAsync(ServletRequest servletRequest, ServletResponse servletResponse) throws IllegalStateException {
-        throw unimplemented();
+        return startAsync();
     }
 
     @Override
     public boolean isAsyncStarted() {
-        throw unimplemented();
+        return false;
     }
 
     @Override
     public boolean isAsyncSupported() {
-        throw unimplemented();
+        return false;
     }
 
     @Override
     public AsyncContext getAsyncContext() {
-        throw unimplemented();
+        throw new IllegalStateException("async context not supported");
     }
 
     @Override

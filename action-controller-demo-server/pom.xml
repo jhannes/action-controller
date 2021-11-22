@@ -3,7 +3,7 @@
     <parent>
         <artifactId>action-controller-project</artifactId>
         <groupId>io.github.jhannes</groupId>
-        <version>0.0.34-SNAPSHOT</version>
+        <version>0.0.34</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -61,7 +61,7 @@
         <dependency>
             <groupId>io.github.jhannes</groupId>
             <artifactId>fake-servlet</artifactId>
-            <version>0.0.34-SNAPSHOT</version>
+            <version>0.0.34</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

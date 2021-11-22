@@ -224,12 +224,11 @@ public class FakeServletResponse implements HttpServletResponse {
 
     @Override
     public void setContentLength(int i) {
-        throw unimplemented();
+        setContentLengthLong(i);
     }
 
     @Override
     public void setContentLengthLong(long l) {
-        throw unimplemented();
     }
 
     @Override

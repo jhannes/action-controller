@@ -9,6 +9,7 @@ import com.codahale.metrics.servlets.MetricsServlet;
 import org.actioncontroller.TimerRegistry;
 import org.actioncontroller.content.ContentSource;
 import org.actioncontroller.servlet.ApiServlet;
+import org.actioncontroller.servlet.ContentServlet;
 import org.actioncontrollerdemo.TestController;
 import org.actioncontrollerdemo.UserController;
 

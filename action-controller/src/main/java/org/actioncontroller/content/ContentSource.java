@@ -3,20 +3,29 @@ package org.actioncontroller.content;
 import org.actioncontroller.util.ExceptionUtil;
 import org.actioncontroller.util.IOUtil;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.JarURLConnection;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 
+/**
+ * Used to serve files from the filesystem or jar-file. In Jetty, this is a replacement for
+ * DefaultServlet with the possibility of catch-everything pages, useful for SPA-applications.
+ * In addition ContentSource supports serving resource-files from src/main/resources for
+ * files loaded from the classpath and supports the webjar-format out of the box.
+ *
+ * <p>Use {@link #fromClasspath(String)}, {@link #fromURL(URL)} or {@link #fromWebJar(String)}
+ * to get started</p>
+ *
+ */
 public class ContentSource {
 
     private static final Properties mimeTypes = new Properties();
@@ -30,8 +39,9 @@ public class ContentSource {
 
     private final URL resourceBase;
     private String fallbackPath;
+    private Map<URL, Content> cache = new HashMap<>();
 
-    private ContentSource(URL resourceBase) {
+    protected ContentSource(URL resourceBase) {
         if (!resourceBase.getProtocol().equals("file") && !resourceBase.getProtocol().equals("jar")) {
             throw new IllegalArgumentException("Only file and jar resourceBase are supported");
         }
@@ -90,72 +100,52 @@ public class ContentSource {
         return fromClasspath(prefix + "/" + properties.get("version") + "/");
     }
 
-    public URL resolve(String relativeResource) throws IOException {
+    public Content getContent(String relativeResource) throws IOException {
         if (relativeResource.startsWith("/")) {
             relativeResource = relativeResource.substring(1);
         }
         URL resource = new URL(resourceBase, relativeResource);
+
+        // TODO: need to cache here
+
         URL resourceUrl = isDirectory(resource) ? new URL(resource, "index.html") : resource;
         if (isMissing(resourceUrl) && fallbackPath != null) {
             resourceUrl = new URL(resourceBase, fallbackPath);
         }
-        resourceUrl.openStream().close();
-        return resourceUrl;
+        // TODO: and here
+        if (!isMissing(resourceUrl)) {
+            return new Content(resourceUrl);
+        }
+        return null;
     }
 
-    private boolean isMissing(URL resource) {
-        if (resource.getProtocol().equals("file")) {
-            try {
-                Path path = Paths.get(resource.toURI());
-                return !Files.isRegularFile(path);
-            } catch (URISyntaxException ignored) {
-            }
+    // touch
+    private boolean isMissing(URL resource) throws IOException {
+        try {
+            resource.openStream().close();
+            return false;
+        } catch (FileNotFoundException e) {
+            return true;
         }
-        return resource.toString().endsWith("/");
     }
 
     private boolean isDirectory(URL resource) {
+        if (resource.toString().endsWith("/")) {
+            return true;
+        }
         if (resource.getProtocol().equals("file")) {
             try {
+                // touch
                 Path path = Paths.get(resource.toURI());
                 return Files.isDirectory(path);
             } catch (URISyntaxException ignored) {
             }
         }
-        return resource.toString().endsWith("/");
+        return false;
     }
 
-    public Long lastModified(URL resource) {
-        try {
-            if (resource.getProtocol().equals("file")) {
-                File file = new File(resource.toURI());
-                return (file.lastModified()/1000)*1000;
-            } else if (resource.getProtocol().equals("jar")) {
-                JarURLConnection connection = (JarURLConnection) resource.openConnection();
-                return (new File(connection.getJarFileURL().toURI()).lastModified()/1000)*1000;
-            }
-            return null;
-        } catch (URISyntaxException | IOException e) {
-            throw ExceptionUtil.softenException(e);
-        }
-    }
-
-    public String getContentType(URL url) {
-        String contentType = URLConnection.getFileNameMap().getContentTypeFor(url.getPath());
-        if (contentType != null) {
-            return contentType;
-        } else {
-            int lastPeriodPos = url.getPath().lastIndexOf('.');
-            int lastSlashPos = url.getPath().lastIndexOf('/');
-            if (lastPeriodPos > 0 && lastPeriodPos > lastSlashPos) {
-                String extension = url.getPath().substring(lastPeriodPos + 1);
-                return mimeTypes.getProperty(extension);
-            }
-        }
-        return null;
-    }
-
-    public void setFallbackPath(String fallbackPath) {
+    public ContentSource withFallbackPath(String fallbackPath) {
         this.fallbackPath = fallbackPath;
+        return this;
     }
 }

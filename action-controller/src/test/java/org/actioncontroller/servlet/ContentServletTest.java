@@ -1,6 +1,7 @@
-package org.actioncontrollerdemo.jetty.servlet;
+package org.actioncontroller.servlet;
 
 import org.actioncontroller.content.ContentSource;
+import org.actioncontroller.servlet.ContentServlet;
 import org.fakeservlet.FakeServletConfig;
 import org.fakeservlet.FakeServletContainer;
 import org.fakeservlet.FakeServletRequest;
@@ -64,7 +65,7 @@ public class ContentServletTest {
         Files.setLastModifiedTime(file, FileTime.from(lastModified.toInstant()));
 
         FakeServletRequest request = container.newRequest("GET", "/index.html");
-        request.addHeader("If-Modified-Since", DateTimeFormatter.RFC_1123_DATE_TIME.format(lastModified.minusHours(1)));
+        request.addHeader("If-Modified-Since", DateTimeFormatter.RFC_1123_DATE_TIME.format(lastModified.plusHours(1)));
         FakeServletResponse response = request.service(servlet);
 
         assertThat(response.getStatus()).isEqualTo(304);

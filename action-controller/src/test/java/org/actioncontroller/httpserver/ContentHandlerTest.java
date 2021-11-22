@@ -1,4 +1,4 @@
-package org.actioncontrollerdemo.jdkhttp;
+package org.actioncontroller.httpserver;
 
 import com.sun.net.httpserver.HttpServer;
 import org.actioncontroller.content.ContentSource;
@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ContentHandlerTest {
 
     private Path dir;
-    private HttpServer server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
+    private final HttpServer server = HttpServer.create(new InetSocketAddress("localhost", 0), 0);
 
     public ContentHandlerTest() throws IOException {
     }
@@ -62,7 +62,7 @@ public class ContentHandlerTest {
         Files.setLastModifiedTime(file, FileTime.from(lastModified.toInstant()));
 
         HttpURLConnection conn = (HttpURLConnection) new URL("http://localhost:" + server.getAddress().getPort()).openConnection();
-        conn.setIfModifiedSince(lastModified.minusHours(1).toEpochSecond()*1000);
+        conn.setIfModifiedSince(lastModified.plusHours(1).toEpochSecond()*1000);
 
         assertThat(conn.getResponseCode()).isEqualTo(304);
         assertThat(conn.getInputStream()).isEmpty();

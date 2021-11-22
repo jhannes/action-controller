@@ -1,8 +1,8 @@
-package org.actioncontrollerdemo.jetty;
+package org.actioncontroller.jakarta;
 
 import jakarta.servlet.ServletException;
 import org.actioncontroller.content.ContentSource;
-import org.actioncontrollerdemo.jetty.servlet.ContentServlet;
+import org.actioncontroller.jakarta.ContentServlet;
 import org.fakeservlet.jakarta.FakeJakartaConfig;
 import org.fakeservlet.jakarta.FakeJakartaContainer;
 import org.fakeservlet.jakarta.FakeJakartaRequest;
@@ -65,7 +65,7 @@ public class ContentServletTest {
         Files.setLastModifiedTime(file, FileTime.from(lastModified.toInstant()));
 
         FakeJakartaRequest request = container.newRequest("GET", "/index.html");
-        request.addHeader("If-Modified-Since", DateTimeFormatter.RFC_1123_DATE_TIME.format(lastModified.minusHours(1)));
+        request.addHeader("If-Modified-Since", DateTimeFormatter.RFC_1123_DATE_TIME.format(lastModified.plusHours(1)));
         FakeJakartaResponse response = request.service(servlet);
 
         assertThat(response.getStatus()).isEqualTo(304);

@@ -6,6 +6,7 @@ import com.sun.net.httpserver.HttpsServer;
 import org.actioncontroller.config.ConfigObserver;
 import org.actioncontroller.content.ContentSource;
 import org.actioncontroller.httpserver.ApiHandler;
+import org.actioncontroller.httpserver.ContentHandler;
 import org.actioncontrollerdemo.TestController;
 import org.actioncontrollerdemo.UserController;
 import org.slf4j.Logger;

@@ -4,7 +4,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
@@ -36,9 +35,8 @@ public class ContentSourceTest {
     public void shouldReadFile() throws IOException {
         Files.write(dir.resolve("test.txt"), List.of("Hello World"));
 
-        URL content = source.resolve("test.txt");
-        assertThat(content.openStream())
-                .hasContent("Hello World");
+        assertThat(new String(source.getContent("test.txt").readContent()))
+                .contains("Hello World");
     }
 
     @Test
@@ -48,9 +46,8 @@ public class ContentSourceTest {
     }
 
     @Test
-    public void shouldBeHappyEvenIfFileNotFound() {
-        assertThatThrownBy(() -> source.lastModified(source.resolve("missing.txt")))
-                .isInstanceOf(FileNotFoundException.class);
+    public void shouldBeHappyEvenIfFileNotFound() throws IOException {
+        assertThat(source.getContent("missing.txt")).isNull();
     }
 
     @Test
@@ -60,22 +57,20 @@ public class ContentSourceTest {
         Files.write(dir.resolve("unknown.ext"), List.of("Garble"));
         Files.write(dir.resolve("no-extension"), List.of("Garble"));
 
-        assertThat(source.getContentType(source.resolve("test.txt")))
+        assertThat(source.getContent("test.txt").getContentType()).get()
                 .isEqualTo("text/plain");
-        assertThat(source.getContentType(source.resolve("index.html")))
+        assertThat(source.getContent("index.html").getContentType()).get()
                 .isEqualTo("text/html");
-        assertThat(source.getContentType(source.resolve("unknown.ext")))
-                .isNull();
-        assertThat(source.getContentType(source.resolve("no-extension")))
-                .isNull();
+        assertThat(source.getContent("unknown.ext").getContentType()).isEmpty();
+        assertThat(source.getContent("no-extension").getContentType()).isEmpty();
     }
 
     @Test
     public void shouldUseIndex() throws IOException {
         Files.createDirectories(dir.resolve("subdir"));
         Files.write(dir.resolve("subdir/index.html"), List.of("<h1>Hello World</h1>"));
-        assertThat(source.resolve("subdir/").openStream())
-                .hasContent("<h1>Hello World</h1>");
+        assertThat(new String(source.getContent("subdir/").readContent()))
+                .contains("<h1>Hello World</h1>");
     }
 
     @Test
@@ -83,14 +78,14 @@ public class ContentSourceTest {
         Files.write(dir.resolve("index.html"), List.of("Hello Root"));
         Files.createDirectories(dir.resolve("default"));
         Files.write(dir.resolve("default/index.html"), List.of("Hello Default"));
-        source.setFallbackPath("default/index.html");
+        source.withFallbackPath("default/index.html");
 
-        assertThat(source.resolve("/something/else/entirely").openStream())
-                .hasContent("Hello Default");
-        assertThat(source.getContentType(source.resolve("/something/else/entirely")))
+        assertThat(new String(source.getContent("/something/else/entirely").readContent()))
+                .contains("Hello Default");
+        assertThat(source.getContent("/something/else/entirely").getContentType()).get()
                 .isEqualTo("text/html");
-        assertThat(source.resolve("/").openStream())
-                .hasContent("Hello Root");
+        assertThat(new String(source.getContent("/").readContent()))
+                .contains("Hello Root");
     }
 
     @Test
@@ -99,8 +94,8 @@ public class ContentSourceTest {
 
         String content = "This is a test: " + UUID.randomUUID();
         Files.write(Paths.get("src/test/resources/content-source-test/test.txt"), List.of(content));
-        assertThat(contentSource.resolve("test.txt").openStream())
-                .hasContent(content);
+        assertThat(new String(contentSource.getContent("test.txt").readContent()))
+                .contains(content);
     }
 
     @Test
@@ -109,7 +104,7 @@ public class ContentSourceTest {
         Files.write(dir.resolve("subdir/index.html"), List.of("<h1>Hello World</h1>"));
         Files.setLastModifiedTime(dir.resolve("subdir/index.html"), FileTime.fromMillis(1600000000000L));
 
-        assertThat(source.lastModified(source.resolve("subdir/")))
+        assertThat(source.getContent("subdir/").lastModified())
                 .isEqualTo(1600000000000L);
     }
 
@@ -125,10 +120,13 @@ public class ContentSourceTest {
         Files.setLastModifiedTime(jarFile, FileTime.fromMillis(1600000000000L));
 
         ContentSource source = ContentSource.fromURL(new URL("jar:" + jarFile.toFile().toURI() + "!/foo/"));
-        assertThat(source.resolve("/").openStream())
-                .hasContent("<h1>Hello World</h1>");
-        assertThat(source.lastModified(source.resolve("index.html")))
+        source.withFallbackPath("index.html");
+        assertThat(new String(source.getContent("/").readContent()))
+                .contains("<h1>Hello World</h1>");
+        assertThat(source.getContent("/").lastModified())
                 .isEqualTo(1600000000000L);
+        assertThat(new String(source.getContent("/no/file/here").readContent()))
+                .contains("<h1>Hello World</h1>");
     }
 
     @Test
@@ -145,7 +143,7 @@ public class ContentSourceTest {
         Files.write(webJarRoot.resolve("index.html"), "<h1>Hello</h1>".getBytes());
 
         ContentSource source = ContentSource.fromWebJar(webJarName);
-        assertThat(source.resolve("index.html").openStream())
-                .hasContent("<h1>Hello</h1>");
+        assertThat(new String(source.getContent("/").readContent()))
+                .contains("<h1>Hello</h1>");
     }
 }

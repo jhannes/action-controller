@@ -65,20 +65,23 @@ public class ConfigMapTest {
 
     @Test
     public void shouldNestConfigMaps() {
-        ConfigMap configMap = new ConfigMap(observer, "apps", Map.of(
+        Map<String, String> properties = Map.of(
                 "apps.appOne.clientId", "abc",
                 "apps.appOne.clientSecret", "secret",
                 "apps.appTwo.clientId", "xyz"
-        ));
+        );
+        ConfigMap configMap = new ConfigMap(observer, "apps", properties);
         assertThat(new ConfigMap(observer, "appOne", configMap).get("clientId")).isEqualTo("abc");
+        assertThat(new ConfigMap(observer, "apps.appOne", properties).get("clientId")).isEqualTo("abc");
+        assertThat(new ConfigMap(observer, properties).subMap("apps.appOne").orElseThrow().get("clientId")).isEqualTo("abc");
         assertThat(configMap.subMap("appOne").orElseThrow().get("clientId")).isEqualTo("abc");
-        assertThat(configMap.listSubMaps()).contains("appOne", "appTwo");
+        assertThat(configMap.listDirectProperties()).contains("appOne", "appTwo");
         assertThat(configMap.subMap("missingApp")).isEmpty();
 
         assertThat(configMap.subMap("appOne").toString()).contains("clientId=abc").contains("prefix=apps.appOne");
         assertThat(configMap.subMap("appTwo").toString()).contains("values={clientId=xyz}");
 
-        assertThat(configMap.subMap("appOne").orElseThrow().getRoot().listSubMaps()).containsExactly("apps");
+        assertThat(configMap.subMap("appOne").orElseThrow().getRoot().listDirectProperties()).containsExactly("apps");
     }
 
     private final File directory = new File("target/test/dir-" + UUID.randomUUID());

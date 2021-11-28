@@ -69,7 +69,7 @@ public class ConfigMap extends AbstractMap<String, String> {
         if (innerMap instanceof ConfigMap) {
             ConfigMap configMap = (ConfigMap) innerMap;
             this.prefix = configMap.prefix + prefix + ".";
-            if (!configMap.listSubMaps().contains(prefix) && !hasEnvironmentPrefix(configMap.prefix + prefix)) {
+            if (!configMap.hasPropertiesPrefix(prefix) && !hasEnvironmentPrefix(configMap.prefix + prefix)) {
                 throw new ConfigException("Missing key " + configMap.prefix + prefix);
             }
             this.innerMap = configMap.innerMap;
@@ -141,7 +141,7 @@ public class ConfigMap extends AbstractMap<String, String> {
         return entries.entrySet();
     }
 
-    public Collection<String> listSubMaps() {
+    public Collection<String> listDirectProperties() {
         return keySet().stream().map(s -> s.split("\\.")[0]).collect(Collectors.toSet());
     }
 
@@ -150,7 +150,12 @@ public class ConfigMap extends AbstractMap<String, String> {
     }
 
     public Optional<ConfigMap> subMap(String prefix) {
-        return listSubMaps().contains(prefix) || hasEnvironmentPrefix(this.prefix + prefix) ? Optional.of(new ConfigMap(observer, prefix, this)) : Optional.empty();
+        touchedProperties.add(prefix);
+        return hasPropertiesPrefix(prefix) || hasEnvironmentPrefix(this.prefix + prefix) ? Optional.of(new ConfigMap(observer, prefix, this)) : Optional.empty();
+    }
+
+    private boolean hasPropertiesPrefix(String prefix) {
+        return keySet().stream().anyMatch(s -> s.startsWith(prefix));
     }
 
     private boolean hasEnvironmentPrefix(String prefix) {

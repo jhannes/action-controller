@@ -3,10 +3,11 @@ package org.actioncontroller;
 import org.actioncontroller.exceptions.ApiActionParameterUnknownMappingException;
 import org.actioncontroller.exceptions.ApiActionResponseUnknownMappingException;
 import org.actioncontroller.exceptions.HttpActionException;
+import org.actioncontroller.exceptions.HttpForbiddenException;
 import org.actioncontroller.exceptions.HttpRedirectException;
 import org.actioncontroller.exceptions.HttpRequestException;
 import org.actioncontroller.exceptions.HttpServerErrorException;
-import org.actioncontroller.values.json.JsonHttpActionException;
+import org.actioncontroller.exceptions.HttpUnauthorizedException;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapper;
@@ -14,7 +15,6 @@ import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.util.ExceptionUtil;
 import org.actioncontroller.values.PathParam;
 import org.actioncontroller.values.RequireUserRole;
-import org.jsonbuddy.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -344,14 +344,10 @@ public class ApiControllerMethodAction implements ApiControllerAction {
             return;
         }
         if (!userContext.isUserLoggedIn(exchange)) {
-            throw new JsonHttpActionException(401,
-                    "User must be logged in for " + action,
-                    new JsonObject().put("message", "Login required"));
+            throw new HttpUnauthorizedException("User must be logged in for " + action);
         }
         if (!userContext.isUserInRole(exchange, role)) {
-            throw new JsonHttpActionException(403,
-                    "User failed to authenticate for " + action + ": Missing role " + role + " for user",
-                    new JsonObject().put("message", "Insufficient permissions"));
+            throw new HttpForbiddenException("User failed to authenticate for " + action + ": Missing role " + role + " for user");
         }
     }
 

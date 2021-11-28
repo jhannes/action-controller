@@ -14,6 +14,7 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -49,6 +50,7 @@ public class ConfigMap extends AbstractMap<String, String> {
     private final String prefix;
     private final Map<String, String> innerMap;
     private final Map<String, String> environment;
+    private final Set<String> touchedProperties = new HashSet<>();
 
     public static ConfigMap read(FileListener observer, File file) throws IOException {
         Properties properties = new Properties();
@@ -101,6 +103,7 @@ public class ConfigMap extends AbstractMap<String, String> {
     }
 
     public Optional<String> optional(Object key) {
+        touchedProperties.add(key.toString());
         return Optional.ofNullable(innerMap.get(getPrefixedKey(key))).map(String::trim).filter(s -> !s.isEmpty())
                 .or(() -> Optional.ofNullable(environment.get(getEnvironmentKey(getPrefixedKey(key)))));
     }
@@ -191,6 +194,12 @@ public class ConfigMap extends AbstractMap<String, String> {
             return key + "=*****";
         }
         return key + "=" + value;
+    }
+
+    public Iterable<String> getUntouchedProperties() {
+        Collection<String> result = new HashSet<>(listDirectProperties());
+        result.removeAll(touchedProperties);
+        return result;
     }
 
     public InetSocketAddress getInetSocketAddress(String key, int defaultPort) {

@@ -115,6 +115,25 @@ public class ConfigMapTest {
     }
 
     @Test
+    public void shouldTrackTouchedProperties() {
+        ConfigMap configMap = new ConfigMap(observer, Map.of(
+                "appOne.clientId", "abc",
+                "appOne.clientSecret", "my-secret",
+                "appTwo.clientId", "xyz",
+                "appTwo.clientSecret", "xyz"
+        ));
+        assertThat(configMap.getUntouchedProperties()).containsOnly("appOne", "appTwo");
+
+        ConfigMap subMap = configMap.subMap("appTwo").orElseThrow();
+        subMap.get("clientId");
+        assertThat(subMap.getUntouchedProperties()).containsExactly("clientSecret");
+        subMap.get("clientSecret");
+        assertThat(subMap.getUntouchedProperties()).isEmpty();
+
+        assertThat(configMap.getUntouchedProperties()).containsOnly("appOne");
+    }
+
+    @Test
     public void shouldGetValuesFromEnvironment() {
         Map<String, String> environment = new HashMap<>();
         environment.put("APPS_APPONE_PROP1", "a");

@@ -28,7 +28,7 @@
         <dependency>
             <groupId>org.logevents</groupId>
             <artifactId>logevents</artifactId>
-            <version>0.2.3</version>
+            <version>0.2.6</version>
         </dependency>
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>

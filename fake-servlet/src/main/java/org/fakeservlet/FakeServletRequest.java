@@ -60,9 +60,6 @@ public class FakeServletRequest implements HttpServletRequest {
     private final String protocol = "HTTP/1.1";
     private List<String> userRoles = new ArrayList<>();
 
-    /**
-     * DANGER! Unfinished class! Implement methods as you go!
-     */
     public FakeServletRequest(String method, URL contextRoot, String servletPath, String pathInfo) {
         setMethod(method);
         this.contextPath = contextRoot.getPath();

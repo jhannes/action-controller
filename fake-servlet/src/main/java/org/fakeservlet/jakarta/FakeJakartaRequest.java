@@ -61,9 +61,6 @@ public class FakeJakartaRequest implements HttpServletRequest {
     private final String protocol = "HTTP/1.1";
     private List<String> userRoles = new ArrayList<>();
 
-    /**
-     * DANGER! Unfinished class! Implement methods as you go!
-     */
     public FakeJakartaRequest(String method, URL contextRoot, String servletPath, String pathInfo) {
         setMethod(method);
         this.contextPath = contextRoot.getPath();

@@ -1,10 +1,15 @@
 org.actioncontroller
+org.actioncontroller.actions
 org.actioncontroller.client
 org.actioncontroller.config
+org.actioncontroller.content
+org.actioncontroller.exceptions
 org.actioncontroller.httpserver
 org.actioncontroller.jakarta
 org.actioncontroller.jmx
-org.actioncontroller.json
 org.actioncontroller.meta
 org.actioncontroller.servlet
 org.actioncontroller.test
+org.actioncontroller.util
+org.actioncontroller.values
+org.actioncontroller.values.json

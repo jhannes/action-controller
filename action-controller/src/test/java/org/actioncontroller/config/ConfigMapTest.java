@@ -7,6 +7,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -172,5 +174,24 @@ public class ConfigMapTest {
                 .isEqualTo(new InetSocketAddress("0.0.0.0", 12080));
         assertThat(configMap.getInetSocketAddress("three", 10080))
                 .isEqualTo(new InetSocketAddress("0.0.0.0", 13080));
+    }
+
+    @Test
+    public void shouldGetRegularFile() throws IOException {
+        assertThatThrownBy(() -> new ConfigMap(observer, Map.of()).getRegularFile("testFile"))
+                .isInstanceOf(ConfigException.class).hasMessageContaining("Missing config value testFile");
+
+        Path testDir = Paths.get("target/test/test-" + UUID.randomUUID() + "/subdir");
+        Path file = testDir.resolve("file.txt");
+        assertThatThrownBy(() -> new ConfigMap(observer, Map.of("testFile", file.toString())).getRegularFile("testFile"))
+                .isInstanceOf(ConfigException.class).hasMessageContaining("File not found: testFile=" + file);
+
+        Files.createDirectories(testDir);
+        assertThatThrownBy(() -> new ConfigMap(observer, Map.of("testFile", testDir.toString())).getRegularFile("testFile"))
+                .isInstanceOf(ConfigException.class).hasMessageContaining("Not a regular file: testFile=" + testDir);
+
+        Files.write(file, List.of("First line"));
+        assertThat(new ConfigMap(observer, Map.of("testFile", file.toString())).getRegularFile("testFile"))
+                .isEqualTo(file);
     }
 }

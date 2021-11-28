@@ -196,7 +196,7 @@ public class ConfigMap extends AbstractMap<String, String> {
     public InetSocketAddress getInetSocketAddress(String key, int defaultPort) {
         return optional(key).map(ConfigListener::asInetSocketAddress).orElse(new InetSocketAddress(defaultPort));
     }
-    
+
     public <T> Optional<T> mapOptionalFile(String key, ConfigValueTransformer<Path, T> transformer) throws Exception {
         Optional<Path> path = optionalFile(key);
         if (path.isPresent()) {
@@ -206,6 +206,22 @@ public class ConfigMap extends AbstractMap<String, String> {
         }
     }
 
+    public Path getRegularFile(String key) {
+        Path file = getFile(key);
+        if (!Files.isRegularFile(file)) {
+            throw new ConfigException("Not a regular file: " + key + "=" + file);
+        }
+        return file;
+    }
+
+    public Path getFile(String key) {
+        Path file = Paths.get(get(key));
+        if (!Files.exists(file)) {
+            throw new ConfigException("File not found: " + key + "=" + file);
+        }
+        return file;
+    }
+
     public Optional<Path> optionalFile(String key) {
         Optional<String> value = optional(key);
         value.map(Paths::get).ifPresent(path -> observer.listenToFileChange(
@@ -213,7 +229,7 @@ public class ConfigMap extends AbstractMap<String, String> {
                 path.getParent(),
                 f -> f.getFileName().equals(path.getFileName()))
         );
-        return value.map(Paths::get).filter(Files::isRegularFile);
+        return value.map(Paths::get).filter(Files::exists);
     }
 
     public List<Path> listFiles(String key) {

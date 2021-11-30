@@ -247,7 +247,9 @@ public class ConfigMap extends AbstractMap<String, String> {
             return List.of();
         }
         File file = new File(value.get());
-        Path parent = file.getParentFile().toPath();
+        Path parent = Optional
+                .ofNullable(file.getParentFile()).map(File::toPath)
+                .orElse(Paths.get("."));
         PathMatcher pathMatcher = parent.getFileSystem().getPathMatcher("glob:" + file.getName());
 
         return listFiles(key, parent, pathMatcher);

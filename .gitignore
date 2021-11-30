@@ -4,6 +4,7 @@ target
 pom.xml.releaseBackup
 cert/
 /*.properties
+*.testfile
 *.key
 *.pem
 *.p12

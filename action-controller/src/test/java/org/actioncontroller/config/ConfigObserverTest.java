@@ -401,6 +401,29 @@ public class ConfigObserverTest {
     }
 
     @Test
+    public void shouldListFilesInCurrentWorkingDirectory() {
+        writeConfigLine(("config.file=*.xml"));
+
+        AtomicReference<List<Path>> files = new AtomicReference<>();
+        observer.onPrefixedValue("config", config -> config.listFiles("file"), files::set);
+        assertThat(files.get()).extracting(Path::getFileName).contains(Paths.get("pom.xml"));
+    }
+
+    @Test
+    public void shouldGetFilesInCurrentWorkingDirectory() throws IOException, InterruptedException {
+        String testFile = "missing.testfile";
+        writeConfigLine(("config.file=" + testFile));
+        AtomicReference<Path> file = new AtomicReference<>();
+        observer.onPrefixedValue("config", config -> config.optionalFile("file").ifPresent(file::set));
+
+        Path file1 = directory.resolve("file-" + UUID.randomUUID() + ".txt");
+        Files.write(Paths.get(testFile), "new file".getBytes());
+        Thread.sleep(100);
+
+        assertThat(file.get()).hasContent("new file");
+    }
+
+    @Test
     public void shouldDetectNewFile() throws IOException, InterruptedException {
         writeConfigLine(("config.file=" + directory + "/*.txt").replaceAll("\\\\", "/"));
         Path unrelatedFile = createRandomFile(".ini", "Random data");

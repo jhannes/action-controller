@@ -12,7 +12,7 @@ import java.io.IOException;
 @FunctionalInterface
 public interface HttpParameterMapper {
 
-    Object apply(ApiHttpExchange exchange) throws IOException;
+    Object apply(ApiHttpExchange exchange) throws Exception;
 
     /**
      * Invoked after the action method was completed successfully

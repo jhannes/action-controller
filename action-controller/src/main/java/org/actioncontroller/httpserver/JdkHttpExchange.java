@@ -8,8 +8,6 @@ import org.actioncontroller.exceptions.HttpActionException;
 import org.actioncontroller.exceptions.HttpServerErrorException;
 import org.actioncontroller.util.IOUtil;
 import org.actioncontroller.ApiHttpExchange;
-import org.actioncontroller.meta.OutputStreamConsumer;
-import org.actioncontroller.meta.WriterConsumer;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import java.io.ByteArrayOutputStream;

@@ -1,12 +1,11 @@
 package org.actioncontroller.test;
 
+import org.actioncontroller.ApiHttpExchange;
 import org.actioncontroller.exceptions.HttpNotModifiedException;
 import org.actioncontroller.util.IOUtil;
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.client.HttpClientException;
-import org.actioncontroller.meta.OutputStreamConsumer;
-import org.actioncontroller.meta.WriterConsumer;
 import org.fakeservlet.FakeServletRequest;
 import org.fakeservlet.FakeServletResponse;
 
@@ -245,7 +244,7 @@ public class FakeApiClient implements ApiClient {
         }
 
         @Override
-        public void write(String contentType, WriterConsumer consumer) throws IOException {
+        public void write(String contentType, ApiHttpExchange.WriterConsumer consumer) throws IOException {
             setHeader("Content-type", contentType);
             StringWriter body = new StringWriter();
             consumer.accept(new PrintWriter(body));
@@ -253,7 +252,7 @@ public class FakeApiClient implements ApiClient {
         }
 
         @Override
-        public void output(String contentType, OutputStreamConsumer consumer) throws IOException {
+        public void output(String contentType, ApiHttpExchange.OutputStreamConsumer consumer) throws IOException {
             setHeader("Content-type", contentType);
             ByteArrayOutputStream body = new ByteArrayOutputStream();
             consumer.accept(body);

@@ -1,7 +1,6 @@
 package org.actioncontroller.client;
 
-import org.actioncontroller.meta.OutputStreamConsumer;
-import org.actioncontroller.meta.WriterConsumer;
+import org.actioncontroller.ApiHttpExchange;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -79,8 +78,8 @@ public interface ApiClientExchange {
 
     void setClientCertificate(X509Certificate[] certificate);
 
-    void write(String contentType, WriterConsumer consumer) throws IOException;
+    void write(String contentType, ApiHttpExchange.WriterConsumer consumer) throws IOException;
 
-    void output(String contentType, OutputStreamConsumer consumer) throws IOException;
+    void output(String contentType, ApiHttpExchange.OutputStreamConsumer consumer) throws IOException;
 
 }

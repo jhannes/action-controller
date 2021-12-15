@@ -17,6 +17,7 @@ import org.actioncontroller.test.FakeApiClient;
 import org.actioncontroller.util.TypesUtil;
 import org.actioncontroller.values.ContentBody;
 import org.actioncontroller.values.RequestParam;
+import org.actioncontroller.values.TypeConverterFactory;
 import org.junit.Rule;
 import org.junit.Test;
 import org.logevents.extend.junit.ExpectedLogEventsRule;

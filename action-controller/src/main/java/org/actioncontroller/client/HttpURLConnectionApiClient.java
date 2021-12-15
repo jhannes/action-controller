@@ -1,9 +1,8 @@
 package org.actioncontroller.client;
 
+import org.actioncontroller.ApiHttpExchange;
 import org.actioncontroller.exceptions.HttpNotModifiedException;
 import org.actioncontroller.util.IOUtil;
-import org.actioncontroller.meta.OutputStreamConsumer;
-import org.actioncontroller.meta.WriterConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -369,7 +368,7 @@ public class HttpURLConnectionApiClient implements ApiClient {
         }
 
         @Override
-        public void write(String contentType, WriterConsumer consumer) throws IOException {
+        public void write(String contentType, ApiHttpExchange.WriterConsumer consumer) throws IOException {
             setContentType(contentType);
             StringWriter body = new StringWriter();
             consumer.accept(new PrintWriter(body));
@@ -377,7 +376,7 @@ public class HttpURLConnectionApiClient implements ApiClient {
         }
 
         @Override
-        public void output(String contentType, OutputStreamConsumer consumer) throws IOException {
+        public void output(String contentType, ApiHttpExchange.OutputStreamConsumer consumer) throws IOException {
             setContentType(contentType);
             ByteArrayOutputStream body = new ByteArrayOutputStream();
             consumer.accept(body);

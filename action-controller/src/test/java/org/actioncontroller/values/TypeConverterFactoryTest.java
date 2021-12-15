@@ -1,4 +1,4 @@
-package org.actioncontroller;
+package org.actioncontroller.values;
 
 import org.actioncontroller.exceptions.HttpRequestException;
 import org.junit.Test;
@@ -29,13 +29,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class TypeConverterFactoryTest {
-    
+
     @Test
     public void shouldConvertStringsToFirstString() {
         assertThat(TypeConverterFactory.fromStrings(String.class).apply(List.of("Hello World")))
                 .isEqualTo("Hello World");
     }
-    
+
     @Test
     public void shouldConvertStringsToFirstNumber() {
         assertThat(TypeConverterFactory.fromStrings(Integer.class).apply(List.of("1001")))
@@ -43,7 +43,7 @@ public class TypeConverterFactoryTest {
         assertThat(TypeConverterFactory.fromStrings(Long.class).apply(List.of("1001")))
                 .isEqualTo(1001L);
     }
-    
+
     @Test
     public void shouldConvertRfc1123StringsToDateTypes() {
         Instant instant = Instant.now().truncatedTo(ChronoUnit.SECONDS);
@@ -58,7 +58,7 @@ public class TypeConverterFactoryTest {
         assertThat(TypeConverterFactory.fromStrings(LocalDate.class).apply(List.of(asString)))
                 .isEqualTo(instant.atZone(ZoneId.systemDefault()).toLocalDate());
     }
-    
+
     @Test
     public void shouldConvertIsoStringsToDateTimeTypes() {
         Instant instant = Instant.now().truncatedTo(ChronoUnit.SECONDS);
@@ -73,14 +73,14 @@ public class TypeConverterFactoryTest {
         assertThat(TypeConverterFactory.fromStrings(LocalDate.class).apply(List.of(asString)))
                 .isEqualTo(instant.atZone(ZoneId.systemDefault()).toLocalDate());
     }
-    
+
     @Test
     public void shouldConvertIsoStringToLocalDate() {
         assertThat(TypeConverterFactory.fromStrings(LocalDate.class).apply(List.of("2021-12-09")))
                 .isEqualTo(LocalDate.of(2021, 12, 9));
     }
-    
-    
+
+
     @Test
     public void shouldConvertStringsToStringyTypes() throws MalformedURLException, URISyntaxException {
         assertThat(TypeConverterFactory.fromStrings(URL.class).apply(List.of("https://example.com:8080/foo")))
@@ -90,7 +90,7 @@ public class TypeConverterFactoryTest {
         UUID uuid = UUID.randomUUID();
         assertThat(TypeConverterFactory.fromStrings(UUID.class).apply(List.of(uuid.toString()))).isEqualTo(uuid);
     }
-    
+
     @Test
     public void shouldConvertStringsToEnumTypes() {
         assertThat(TypeConverterFactory.fromStrings(RetentionPolicy.class).apply(List.of("RUNTIME")))
@@ -99,7 +99,7 @@ public class TypeConverterFactoryTest {
                 .isInstanceOf(HttpRequestException.class)
                 .hasMessage("Cannot convert value to class java.lang.annotation.RetentionPolicy: SILLY not in [SOURCE, CLASS, RUNTIME]");
     }
-    
+
     @Test
     public void shouldThrowExceptionOnIllegalValues() {
         assertThatThrownBy(() -> TypeConverterFactory.fromStrings(URL.class, "parameter myUrl").apply(List.of("Hello James")))
@@ -112,7 +112,7 @@ public class TypeConverterFactoryTest {
                 .isInstanceOf(HttpRequestException.class)
                 .hasMessage("Cannot convert value to long: For input string: \"Hello James\"");
     }
-    
+
     @Test
     public void shouldThrowOnUnsupportedType() {
         assertThatThrownBy(() -> TypeConverterFactory.fromStrings(Object.class, "parameter id"))
@@ -135,7 +135,7 @@ public class TypeConverterFactoryTest {
                 .isInstanceOf(HttpRequestException.class)
                 .hasMessage("Missing required value");
     }
-    
+
     @Test
     public void shouldReturnOptionalValues() {
         assertThat(TypeConverterFactory.fromStrings(parameterized(Optional.class, String.class)).apply(List.of("hello")))
@@ -145,7 +145,7 @@ public class TypeConverterFactoryTest {
         assertThatThrownBy(() -> TypeConverterFactory.fromStrings(parameterized(Optional.class, Short.TYPE)).apply(List.of("100000")))
                 .hasMessage("Cannot convert value to short: Value out of range. Value:\"100000\" Radix:10");
     }
-    
+
     @Test
     public void shouldReturnCollectionValues() {
         assertThat(TypeConverterFactory.fromStrings(parameterized(List.class, Boolean.TYPE)).apply(List.of("true", "false", "false")))

@@ -5,6 +5,7 @@ import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.client.HttpURLConnectionApiClient;
 import org.actioncontroller.servlet.ApiServlet;
+import org.actioncontroller.socket.SocketHttpClient;
 import org.eclipse.jetty.server.HttpChannel;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -17,7 +18,6 @@ import javax.servlet.ServletContextEvent;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.URL;
-import java.util.Collections;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,7 +48,7 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
 
         return new HttpURLConnectionApiClient(server.getURI().toString() + "/api");
     }
-    
+
     @Test
     public void gives404OnUnmappedController() {
         expectedLogEvents.expectMatch(m -> m

@@ -3,7 +3,7 @@ package org.actioncontroller.httpserver;
 import com.sun.net.httpserver.HttpServer;
 import org.actioncontroller.AbstractApiClientProxyTest;
 import org.actioncontroller.ApiControllerRouteMap;
-import org.actioncontroller.SocketHttpClient;
+import org.actioncontroller.socket.SocketHttpClient;
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.HttpClientException;

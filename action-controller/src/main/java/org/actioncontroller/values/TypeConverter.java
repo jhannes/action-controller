@@ -1,4 +1,4 @@
-package org.actioncontroller;
+package org.actioncontroller.values;
 
 import java.util.Collection;
 import java.util.function.Function;

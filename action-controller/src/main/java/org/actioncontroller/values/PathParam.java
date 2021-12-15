@@ -1,7 +1,6 @@
 package org.actioncontroller.values;
 
 import org.actioncontroller.ApiControllerContext;
-import org.actioncontroller.TypeConverterFactory;
 import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.meta.HttpParameterMapper;

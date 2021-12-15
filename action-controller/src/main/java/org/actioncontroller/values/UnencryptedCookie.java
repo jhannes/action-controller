@@ -2,8 +2,6 @@ package org.actioncontroller.values;
 
 import org.actioncontroller.ApiControllerContext;
 import org.actioncontroller.ApiHttpExchange;
-import org.actioncontroller.TypeConverter;
-import org.actioncontroller.TypeConverterFactory;
 import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapperFactory;
@@ -19,7 +17,6 @@ import java.lang.reflect.Type;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 /**
  * Maps the parameter to the specified HTTP request cookie, URL decoding and converting the type if necessary.
@@ -66,7 +63,7 @@ public @interface UnencryptedCookie {
                     public Object apply(ApiHttpExchange exchange) {
                         return converter.apply(exchange.getCookies(name));
                     }
-    
+
                     @Override
                     public void onComplete(ApiHttpExchange exchange, Object argument) {
                         Object o = ((AtomicReference<?>) argument).get();

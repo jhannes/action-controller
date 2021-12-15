@@ -4,12 +4,11 @@ import jakarta.servlet.Servlet;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpSession;
+import org.actioncontroller.ApiHttpExchange;
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.exceptions.HttpNotModifiedException;
-import org.actioncontroller.meta.OutputStreamConsumer;
-import org.actioncontroller.meta.WriterConsumer;
 import org.actioncontroller.util.IOUtil;
 import org.fakeservlet.jakarta.FakeJakartaRequest;
 import org.fakeservlet.jakarta.FakeJakartaResponse;
@@ -245,7 +244,7 @@ public class FakeJakartaApiClient implements ApiClient {
         }
 
         @Override
-        public void write(String contentType, WriterConsumer consumer) throws IOException {
+        public void write(String contentType, ApiHttpExchange.WriterConsumer consumer) throws IOException {
             setHeader("Content-type", contentType);
             StringWriter body = new StringWriter();
             consumer.accept(new PrintWriter(body));
@@ -253,7 +252,7 @@ public class FakeJakartaApiClient implements ApiClient {
         }
 
         @Override
-        public void output(String contentType, OutputStreamConsumer consumer) throws IOException {
+        public void output(String contentType, ApiHttpExchange.OutputStreamConsumer consumer) throws IOException {
             setHeader("Content-type", contentType);
             ByteArrayOutputStream body = new ByteArrayOutputStream();
             consumer.accept(body);

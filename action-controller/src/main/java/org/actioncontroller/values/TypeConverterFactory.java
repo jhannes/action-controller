@@ -1,4 +1,4 @@
-package org.actioncontroller;
+package org.actioncontroller.values;
 
 import org.actioncontroller.exceptions.HttpRequestException;
 
@@ -51,7 +51,7 @@ public class TypeConverterFactory {
             Float.class, Float::valueOf,
             Float.TYPE, Float::valueOf
     );
-    
+
     private static final Map<Type, Function<String, ?>> dateConverters = Map.of(
             Instant.class, TypeConverterFactory::parseInstant,
             ZonedDateTime.class, s -> parseInstant(s).atZone(ZoneId.systemDefault()),

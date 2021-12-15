@@ -3,11 +3,11 @@ package org.actioncontroller;
 import org.actioncontroller.exceptions.HttpActionException;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpReturnMapping;
-import org.actioncontroller.meta.OutputStreamConsumer;
-import org.actioncontroller.meta.WriterConsumer;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.io.Reader;
 import java.net.URL;
 import java.security.Principal;
@@ -96,7 +96,7 @@ public interface ApiHttpExchange {
      * @return the non-empty list of headers matching the name or null if none were provided
      */
     List<String> getHeaders(String name);
-    
+
     /**
      * Returns true if the "Accept" request header matches the argument content type
      */
@@ -167,7 +167,7 @@ public interface ApiHttpExchange {
 
     @SuppressWarnings("rawtypes")
     Optional getSessionAttribute(String name, boolean createIfMissing);
-    
+
     @SuppressWarnings("rawtypes")
     default Optional getSessionAttribute(String name) {
         return getSessionAttribute(name, false);
@@ -187,4 +187,16 @@ public interface ApiHttpExchange {
     Principal getUserPrincipal();
 
     void authenticate() throws IOException;
+
+    @FunctionalInterface
+    interface OutputStreamConsumer {
+        void accept(OutputStream output) throws IOException;
+    }
+
+    @FunctionalInterface
+    interface WriterConsumer {
+
+        void accept(PrintWriter writer) throws IOException;
+
+    }
 }

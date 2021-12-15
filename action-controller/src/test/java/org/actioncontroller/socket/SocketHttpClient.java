@@ -1,11 +1,10 @@
-package org.actioncontroller;
+package org.actioncontroller.socket;
 
+import org.actioncontroller.ApiHttpExchange;
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.exceptions.HttpNotModifiedException;
-import org.actioncontroller.meta.OutputStreamConsumer;
-import org.actioncontroller.meta.WriterConsumer;
 import org.actioncontroller.util.IOUtil;
 
 import java.io.ByteArrayInputStream;
@@ -122,7 +121,7 @@ public class SocketHttpClient implements ApiClient {
         private Integer responseCode;
         private String responseMessage;
         private Map<String, List<String>> responseHeaders;
-        private OutputStreamConsumer consumer;
+        private ApiHttpExchange.OutputStreamConsumer consumer;
         private ByteArrayOutputStream requestBody;
 
         private Socket socket;
@@ -265,7 +264,7 @@ public class SocketHttpClient implements ApiClient {
         public List<String> getResponseHeaders(String name) {
             return responseHeaders.getOrDefault(name, new ArrayList<>());
         }
-        
+
         public String firstResponseHeader(String name) {
             return responseHeaders.containsKey(name) ? responseHeaders.get(name).get(0) : null;
         }
@@ -307,7 +306,7 @@ public class SocketHttpClient implements ApiClient {
                 return null;
             }
         }
-        
+
         private String getResponseBody() throws IOException {
             Reader reader = getResponseBodyReader();
             if (reader == null) {
@@ -354,7 +353,7 @@ public class SocketHttpClient implements ApiClient {
         }
 
         @Override
-        public void write(String contentType, WriterConsumer consumer) throws IOException {
+        public void write(String contentType, ApiHttpExchange.WriterConsumer consumer) throws IOException {
             setHeader("Content-type", contentType);
             requestBody = new ByteArrayOutputStream();
             try (PrintWriter writer = new PrintWriter(new OutputStreamWriter(requestBody))) {
@@ -364,7 +363,7 @@ public class SocketHttpClient implements ApiClient {
         }
 
         @Override
-        public void output(String contentType, OutputStreamConsumer consumer) throws IOException {
+        public void output(String contentType, ApiHttpExchange.OutputStreamConsumer consumer) throws IOException {
             setHeader("Content-type", contentType);
             requestBody = new ByteArrayOutputStream();
             consumer.accept(requestBody);

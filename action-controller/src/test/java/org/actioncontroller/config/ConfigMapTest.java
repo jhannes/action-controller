@@ -9,6 +9,9 @@ import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.Period;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -190,9 +193,45 @@ public class ConfigMapTest {
         assertThat(configMap.getInetSocketAddress("one", 10080))
                 .isEqualTo(new InetSocketAddress("127.0.0.1", 11080));
         assertThat(configMap.getInetSocketAddress("two", 10080))
-                .isEqualTo(new InetSocketAddress("0.0.0.0", 12080));
+                .isEqualTo(InetSocketAddress.createUnresolved("localhost", 12080));
         assertThat(configMap.getInetSocketAddress("three", 10080))
-                .isEqualTo(new InetSocketAddress("0.0.0.0", 13080));
+                .isEqualTo(InetSocketAddress.createUnresolved("localhost", 13080));
+    }
+
+    @Test
+    public void shouldReadDuration() {
+        ConfigMap configMap = new ConfigMap(observer, "testConfig", Map.of(
+                "testConfig.one", "PT1M",
+                "testConfig.two", "PT2H",
+                "testConfig.wrong", "Not a duration"
+        ));
+
+        assertThat(configMap.getDuration("one", Duration.ofSeconds(1)))
+                .isEqualTo(Duration.ofMinutes(1));
+        assertThat(configMap.getDuration("two", Duration.ofSeconds(1)))
+                .isEqualTo(Duration.ofHours(2));
+        assertThat(configMap.getDuration("three", Duration.ofSeconds(1)))
+                .isEqualTo(Duration.ofSeconds(1));
+        assertThatThrownBy(() -> configMap.getDuration("wrong", Duration.ofSeconds(1)))
+                .isInstanceOf(DateTimeParseException.class);
+    }
+
+    @Test
+    public void shouldReadPeriod() {
+        ConfigMap configMap = new ConfigMap(observer, "testConfig", Map.of(
+                "testConfig.one", "P1M",
+                "testConfig.two", "P2Y",
+                "testConfig.wrong", "Not a period"
+        ));
+
+        assertThat(configMap.getPeriod("one", Period.ofDays(1)))
+                .isEqualTo(Period.ofMonths(1));
+        assertThat(configMap.getPeriod("two", Period.ofDays(1)))
+                .isEqualTo(Period.ofYears(2));
+        assertThat(configMap.getPeriod("three", Period.ofDays(1)))
+                .isEqualTo(Period.ofDays(1));
+        assertThatThrownBy(() -> configMap.getPeriod("wrong", Period.ofDays(1)))
+                .isInstanceOf(DateTimeParseException.class);
     }
 
     @Test

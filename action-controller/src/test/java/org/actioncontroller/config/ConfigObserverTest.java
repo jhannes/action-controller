@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -124,14 +125,14 @@ public class ConfigObserverTest {
         observer.onInetSocketAddress("httpListenAddress",
                 10080, address -> this.httpListenAddress = address
         );
-        assertThat(httpListenAddress).isEqualTo(new InetSocketAddress(10080));
+        assertThat(httpListenAddress).isEqualTo(InetSocketAddress.createUnresolved("localhost", 10080));
 
         writeConfigLine("httpListenAddress=127.0.0.1:11080");
         assertThat(httpListenAddress).isEqualTo(new InetSocketAddress("127.0.0.1", 11080));
         writeConfigLine("httpListenAddress=12080");
-        assertThat(httpListenAddress).isEqualTo(new InetSocketAddress("0.0.0.0", 12080));
+        assertThat(httpListenAddress).isEqualTo(InetSocketAddress.createUnresolved("localhost", 12080));
         writeConfigLine("httpListenAddress=:13080");
-        assertThat(httpListenAddress).isEqualTo(new InetSocketAddress("0.0.0.0", 13080));
+        assertThat(httpListenAddress).isEqualTo(InetSocketAddress.createUnresolved("localhost", 13080));
     }
 
     @Test
@@ -164,6 +165,15 @@ public class ConfigObserverTest {
         assertThat(value.get()).isEqualTo(11L);
         writeConfigLine("test = 1337");
         assertThat(value.get()).isEqualTo(1337L);
+    }
+
+    @Test
+    public void shouldReadPeriodValue() {
+        AtomicReference<Period> value = new AtomicReference<>();
+        observer.onPeriodValue("test", Period.ofMonths(4), value::set);
+        assertThat(value.get()).isEqualTo(Period.ofMonths(4));
+        writeConfigLine("test = P2Y");
+        assertThat(value.get()).isEqualTo(Period.ofYears(2));
     }
 
     @Test
@@ -388,6 +398,24 @@ public class ConfigObserverTest {
     }
 
     @Test
+    public void shouldReadNewFileOnConfigChange() throws IOException, InterruptedException {
+        Path oldFile = createRandomFile(".txt", "Old content");
+        Path newFile = createRandomFile(".txt", "New content");
+
+        AtomicReference<String> fileContent = new AtomicReference<>();
+        observer.onPrefixedValue(
+                "config",
+                config -> config.getFile("file", oldFile.toString()).map(this::readFile).orElse("<no file>"),
+                fileContent::set
+        );
+        assertThat(fileContent).hasValue("Old content");
+        writeConfigLine(("config.file=" + newFile).replaceAll("\\\\", "/"));
+        Thread. sleep(100);
+        assertThat(fileContent).hasValue("New content");
+    }
+
+
+    @Test
     public void shouldReadInitialFileList() throws IOException {
         writeConfigLine(("config.file=" + directory + "/*.txt").replaceAll("\\\\", "/"));
 
@@ -402,10 +430,9 @@ public class ConfigObserverTest {
 
     @Test
     public void shouldListFilesInCurrentWorkingDirectory() {
-        writeConfigLine(("config.file=*.xml"));
-
         AtomicReference<List<Path>> files = new AtomicReference<>();
         observer.onPrefixedValue("config", config -> config.listFiles("file"), files::set);
+        writeConfigLine(("config.file=*.xml"));
         assertThat(files.get()).extracting(Path::getFileName).contains(Paths.get("pom.xml"));
     }
 

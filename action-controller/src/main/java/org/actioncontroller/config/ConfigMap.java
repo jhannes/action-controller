@@ -10,6 +10,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.Period;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -203,7 +205,15 @@ public class ConfigMap extends AbstractMap<String, String> {
     }
 
     public InetSocketAddress getInetSocketAddress(String key, int defaultPort) {
-        return optional(key).map(ConfigListener::asInetSocketAddress).orElse(new InetSocketAddress(defaultPort));
+        return optional(key).map(ConfigListener::asInetSocketAddress).orElse(InetSocketAddress.createUnresolved("localhost", defaultPort));
+    }
+
+    public Duration getDuration(String key, Duration defaultValue) {
+        return optional(key).map(Duration::parse).orElse(defaultValue);
+    }
+
+    public Period getPeriod(String key, Period defaultValue) {
+        return optional(key).map(Period::parse).orElse(defaultValue);
     }
 
     public <T> Optional<T> mapOptionalFile(String key, ConfigValueTransformer<Path, T> transformer) throws Exception {
@@ -233,12 +243,22 @@ public class ConfigMap extends AbstractMap<String, String> {
 
     public Optional<Path> optionalFile(String key) {
         Optional<String> value = optional(key);
-        value.map(Paths::get).ifPresent(path -> observer.listenToFileChange(
+        value.map(Paths::get).ifPresent(path -> listenToFileChange(key, path));
+        return value.map(Paths::get).filter(Files::exists);
+    }
+
+    public Optional<Path> getFile(String key, String defaultValue) {
+        Path value = Paths.get(getOrDefault(key, defaultValue));
+        listenToFileChange(key, value);
+        return Optional.of(value).filter(Files::exists);
+    }
+
+    public void listenToFileChange(String key, Path path) {
+        observer.listenToFileChange(
                 getPrefixedKey(key),
                 path.getParent(),
-                f -> f.getFileName().equals(path.getFileName()))
+                f -> f.getFileName().equals(path.getFileName())
         );
-        return value.map(Paths::get).filter(Files::exists);
     }
 
     public List<Path> listFiles(String key) {

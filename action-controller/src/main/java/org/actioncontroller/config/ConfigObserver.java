@@ -9,6 +9,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -119,7 +120,7 @@ public class ConfigObserver implements FileListener {
     }
 
     public ConfigObserver onInetSocketAddress(String key, int defaultPort, ConfigValueListener<InetSocketAddress> listener) {
-        return onInetSocketAddress(key, new InetSocketAddress(defaultPort), listener);
+        return onInetSocketAddress(key, InetSocketAddress.createUnresolved("localhost", defaultPort), listener);
     }
 
     public ConfigObserver onInetSocketAddress(String key, InetSocketAddress defaultAddress, ConfigValueListener<InetSocketAddress> listener) {
@@ -128,6 +129,10 @@ public class ConfigObserver implements FileListener {
 
     public ConfigObserver onDurationValue(String key, Duration defaultValue, ConfigValueListener<Duration> listener) {
         return onSingleConfigValue(key, Duration::parse, defaultValue, listener);
+    }
+
+    public ConfigObserver onPeriodValue(String key, Period defaultValue, ConfigValueListener<Period> listener) {
+        return onSingleConfigValue(key, Period::parse, defaultValue, listener);
     }
 
     public ConfigObserver onStringListValue(String key, String defaultValue, ConfigValueListener<List<String>> listener) {

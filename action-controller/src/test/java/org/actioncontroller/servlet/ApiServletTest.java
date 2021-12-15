@@ -328,9 +328,9 @@ public class ApiServletTest {
 
         FakeServletResponse response = request.service(servlet);
         assertThat(response.getStatus()).isEqualTo(401);
-        assertThat(response.getContentType()).isEqualTo("application/json");
-        assertThat(JsonObject.parse(response.getBodyString()).requiredString("message"))
-                .isEqualTo("Login required");
+        assertThat(response.getStatusMessage()).isEqualTo(
+                "User must be logged in for public org.jsonbuddy.JsonObject org.actioncontroller.servlet.ApiServletTest$ExampleController.restrictedOperation()"
+        );
     }
 
     @Test
@@ -348,9 +348,9 @@ public class ApiServletTest {
         FakeServletRequest request = container.newRequest("GET", "/restricted");
         request.setUser("silly user", Collections.emptyList());
         FakeServletResponse response = request.service(servlet);
-        assertThat(response.getContentType()).isEqualTo("application/json");
-        assertThat(JsonObject.parse(response.getBodyString()).requiredString("message"))
-                .isEqualTo("Insufficient permissions");
+        assertThat(response.getStatusMessage()).isEqualTo(
+                "User failed to authenticate for public org.jsonbuddy.JsonObject org.actioncontroller.servlet.ApiServletTest$ExampleController.restrictedOperation(): Missing role admin for user"
+        );
     }
 
     @Test

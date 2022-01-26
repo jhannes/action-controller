@@ -1,6 +1,7 @@
 package org.actioncontroller;
 
 import org.actioncontroller.exceptions.HttpActionException;
+import org.actioncontroller.exceptions.HttpRequestException;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpReturnMapping;
 
@@ -80,6 +81,16 @@ public interface ApiHttpExchange {
      * @return the non-empty list of parameters matching the name or null if none were provided
      */
     List<String> getParameters(String name);
+
+    default Optional<String> optionalParameter(String name) {
+        List<String> parameters = getParameters(name);
+        return parameters == null ? Optional.empty() : Optional.ofNullable(parameters.get(0));
+    }
+
+    default String requiredParameter(String name) {
+        return optionalParameter(name)
+                .orElseThrow(() -> new HttpRequestException("Missing required " + name));
+    }
 
     default boolean hasParameter(String name) {
         return getParameters(name) != null;

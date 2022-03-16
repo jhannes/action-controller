@@ -46,7 +46,7 @@ public class ConfigObserver implements FileListener {
     }
 
     public ConfigObserver(String applicationName) {
-        this(Paths.get("."), applicationName, new ArrayList<>());
+        this(Paths.get("."), applicationName, getProfiles());
     }
 
     public ConfigObserver(Path configDirectory, String applicationName) {

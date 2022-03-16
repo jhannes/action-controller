@@ -4,6 +4,7 @@ import org.actioncontroller.exceptions.ActionControllerConfigurationException;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Extra initialization variables for the ActionControllers. Attributes can be set on an
@@ -11,7 +12,7 @@ import java.util.Map;
  * read by {@link org.actioncontroller.meta.HttpParameterMapperFactory#create}
  */
 public class ApiControllerContext {
-    private Map<String, Object> attributes = new HashMap<>();
+    private final Map<String, Object> attributes = new HashMap<>();
 
     public ApiControllerContext setAttribute(String name, Object value) {
         attributes.put(name, value);
@@ -29,7 +30,16 @@ public class ApiControllerContext {
         return attributes.get(name);
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T getAttribute(Class<T> className) {
         return (T) getAttribute(className.getName());
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T getAttribute(Class<T> className, Supplier<T> creator) {
+        if (!attributes.containsKey(className.getName())) {
+            return creator.get();
+        }
+        return (T) attributes.get(className.getName());
     }
 }

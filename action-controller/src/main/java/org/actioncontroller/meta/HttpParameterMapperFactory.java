@@ -53,7 +53,7 @@ public interface HttpParameterMapperFactory<ANNOTATION extends Annotation> exten
      * method arguments into HTTP request information.
      */
     default HttpClientParameterMapper clientParameterMapper(ANNOTATION annotation, Parameter parameter) {
-        throw new UnsupportedOperationException(getClass() + " does not support " + HttpClientReturnMapper.class.getName());
+        throw new UnsupportedOperationException(getClass() + " does not support " + HttpClientParameterMapper.class.getName());
     }
 
 

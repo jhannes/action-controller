@@ -170,6 +170,15 @@ public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
     }
 
     @Override
+    public void writeBody(String contentType, String body) throws IOException {
+        exchange.getResponseHeaders().set("Content-type", contentType);
+        sendResponseHeaders(200, 0);
+        PrintWriter writer = new PrintWriter(new OutputStreamWriter(exchange.getResponseBody()));
+        writer.write(body);
+        writer.flush();
+    }
+
+    @Override
     public void output(String contentType, OutputStreamConsumer consumer) throws IOException {
         if (!exchange.getResponseHeaders().containsKey("Content-type")) {
             exchange.getResponseHeaders().set("Content-type", contentType);

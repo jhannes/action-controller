@@ -12,6 +12,9 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -33,6 +36,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class JakartaServletHttpExchange implements ApiHttpExchange {
+
+    private static final Logger logger = LoggerFactory.getLogger(JakartaServletHttpExchange.class);
 
     public static final Charset CHARSET = StandardCharsets.ISO_8859_1;
     private final HttpServletRequest req;
@@ -117,6 +122,17 @@ public class JakartaServletHttpExchange implements ApiHttpExchange {
         PrintWriter writer = resp.getWriter();
         consumer.accept(writer);
         writer.flush();
+    }
+
+    @Override
+    public void writeBody(String contentType, String body) throws IOException {
+        resp.setContentType(contentType);
+        // BUG: Jetty "calculates" UTF-8 for application/json for resp.getWriter, but doesn't explicitly set character encoding in the header
+        resp.setCharacterEncoding(resp.getCharacterEncoding());
+        resp.getWriter().write(body);
+        if (logger.isTraceEnabled()) {
+            logger.trace("Writing response body: {}", body.replaceAll("\\n", " "));
+        }
     }
 
     @Override

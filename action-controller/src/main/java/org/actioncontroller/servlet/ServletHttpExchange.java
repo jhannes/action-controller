@@ -5,6 +5,8 @@ import org.actioncontroller.exceptions.HttpActionException;
 import org.actioncontroller.exceptions.HttpServerErrorException;
 import org.actioncontroller.util.IOUtil;
 import org.actioncontroller.ApiHttpExchange;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
@@ -33,6 +35,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ServletHttpExchange implements ApiHttpExchange {
+    private static final Logger logger = LoggerFactory.getLogger(ServletHttpExchange.class);
 
     public static final Charset CHARSET = StandardCharsets.ISO_8859_1;
     private final HttpServletRequest req;
@@ -117,6 +120,18 @@ public class ServletHttpExchange implements ApiHttpExchange {
         PrintWriter writer = resp.getWriter();
         consumer.accept(writer);
         writer.flush();
+    }
+
+
+    @Override
+    public void writeBody(String contentType, String body) throws IOException {
+        resp.setContentType(contentType);
+        // BUG: Jetty "calculates" UTF-8 for application/json for resp.getWriter, but doesn't explicitly set character encoding in the header
+        resp.setCharacterEncoding(resp.getCharacterEncoding());
+        resp.getWriter().write(body);
+        if (logger.isTraceEnabled()) {
+            logger.trace("Writing response body: {}", body.replaceAll("\\n", " "));
+        }
     }
 
     @Override

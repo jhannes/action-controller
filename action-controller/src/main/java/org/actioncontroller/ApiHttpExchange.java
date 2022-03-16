@@ -96,8 +96,19 @@ public interface ApiHttpExchange {
         return getParameters(name) != null;
     }
 
+    /**
+     * Callback with a Writer to generate response body
+     */
     void write(String contentType, WriterConsumer consumer) throws IOException;
 
+    /**
+     * Output String directory to the response body
+     */
+    void writeBody(String contentType, String body) throws IOException;
+
+    /**
+     * Callback with a OutputStream to generate response body
+     */
     void output(String contentType, OutputStreamConsumer consumer) throws IOException;
 
     /**

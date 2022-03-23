@@ -8,6 +8,7 @@ org.actioncontroller.httpserver
 org.actioncontroller.jakarta
 org.actioncontroller.jmx
 org.actioncontroller.meta
+org.actioncontroller.optional.json
 org.actioncontroller.servlet
 org.actioncontroller.test
 org.actioncontroller.util

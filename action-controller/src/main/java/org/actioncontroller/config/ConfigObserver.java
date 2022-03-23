@@ -144,7 +144,7 @@ public class ConfigObserver implements FileListener {
             @Override
             public void onConfigChanged(Set<String> changedKeys, ConfigMap newConfiguration) {
                 if (changeIncludes(changedKeys, prefix)) {
-                    applyConfiguration(listener, prefix, newConfiguration.subMap(prefix).orElse(createConfigMap("")));
+                    applyConfiguration(listener, prefix, newConfiguration.subMap(prefix).orElse(createConfigMap(prefix)));
                 }
             }
         });

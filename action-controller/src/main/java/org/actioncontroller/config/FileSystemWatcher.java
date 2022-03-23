@@ -80,13 +80,17 @@ public class FileSystemWatcher {
             watch(key, Paths.get(""), pathPredicate, observer);
         } else if (!Files.isDirectory(directory)) {
             Path missingDirectory = directory;
-            while (missingDirectory != null && !Files.isDirectory(missingDirectory.getParent())) {
+            while (missingDirectory != null && missingDirectory.getParent() != null && !Files.isDirectory(missingDirectory.getParent())) {
                 missingDirectory = missingDirectory.getParent();
             }
-            WatchKey watchKey = registerWatchService(missingDirectory.getParent());
-            directoryKeys.put(missingDirectory.getParent(), watchKey);
+            Path parentDirectory = missingDirectory.getParent();
+            if (parentDirectory == null) {
+                parentDirectory = Paths.get(".");
+            }
+            WatchKey watchKey = registerWatchService(parentDirectory);
+            directoryKeys.put(parentDirectory, watchKey);
             Path fileName = missingDirectory.getFileName();
-            observers.put(key, new FileObserver(missingDirectory.getParent(), f -> f.equals(fileName), k -> watch(k, directory, pathPredicate, observer), directory, pathPredicate));
+            observers.put(key, new FileObserver(parentDirectory, f -> f.equals(fileName), k -> watch(k, directory, pathPredicate, observer), directory, pathPredicate));
         } else {
             WatchKey watchKey = registerWatchService(directory);
             directoryKeys.put(directory, watchKey);
@@ -138,7 +142,7 @@ public class FileSystemWatcher {
             }
         } else {
             logger.debug("Notifying observers dir={} files={}", keyDirectory, files);
-            for (Map.Entry<String, FileObserver> observer : observers.entrySet()) {
+            for (Map.Entry<String, FileObserver> observer : new HashSet<>(observers.entrySet())) {
                 try {
                     observer.getValue().apply(keyDirectory, files, observer.getKey());
                 } catch (Exception e) {

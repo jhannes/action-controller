@@ -45,7 +45,7 @@ import java.util.stream.Stream;
  *
  * <pre>
  * JsonGenerator jsonGenerator = new JsonGenerator();
- * jsonGenerator.addMapper(MyClass.class, o -> new JsonObject());
+ * jsonGenerator.addMapper(MyClass.class, o -&gt; new JsonObject());
  * JsonValue json = jsonGenerator.toJson(o);
  * </pre>
  */

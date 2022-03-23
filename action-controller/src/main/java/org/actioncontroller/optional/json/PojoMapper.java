@@ -51,7 +51,7 @@ import java.util.stream.Stream;
  *
  * <pre>
  * PojoMapper pojoMapper = new PojoMapper();
- * pojoMapper.addObjectMapper(MyClass.class, (json, mapper) -> new MyClass());
+ * pojoMapper.addObjectMapper(MyClass.class, (json, mapper) -&gt; new MyClass());
  * MyClass o = pojoMapper.map(json, MyClass.class);
  * </pre>
  */

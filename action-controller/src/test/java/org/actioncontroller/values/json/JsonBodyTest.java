@@ -10,6 +10,8 @@ import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.servlet.ApiServlet;
 import org.actioncontroller.test.FakeApiClient;
+import org.jsonbuddy.JsonArray;
+import org.jsonbuddy.pojo.JsonGenerator;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -68,13 +70,13 @@ public class JsonBodyTest {
         public JsonBodyTest.Person throwError() {
             throw new HttpRequestException("Missing value foo");
         }
-        
+
         @POST("/getName")
         @ContentBody
         public String getName(@JsonBody Person person) {
             return person.getFirstName() + " " + person.getLastName();
         }
-        
+
         @POST("/optionalName")
         @ContentBody
         public String optionalName(@JsonBody Optional<Person> person) {
@@ -109,12 +111,28 @@ public class JsonBodyTest {
     }
 
     @Test
+    public void shouldMapToUnderscore() throws IOException {
+        ApiClientExchange exchange = httpClient.createExchange();
+        exchange.setTarget("POST", "/json");
+        List<Person> people = Arrays.asList(new Person("First", "Woman"), new Person("Second", "Man"));
+        exchange.write(
+                "application/json",
+                writer -> JsonGenerator.generate(people).toJson(writer)
+        );
+        exchange.executeRequest();
+        exchange.checkForError();
+        JsonArray response = JsonArray.read(exchange.getResponseBodyReader());
+        assertThat(response.requiredObject(0).requiredString("first_name")).isEqualTo("FIRST");
+        assertThat(response.requiredObject(1).requiredString("first_name")).isEqualTo("SECOND");
+    }
+
+    @Test
     public void shouldConvertErrorToJson() {
         assertThatThrownBy(() -> client.throwError())
                 .isInstanceOf(HttpClientException.class)
                 .satisfies(e -> assertThat(((HttpClientException)e).getResponseBody()).contains("\"message\":\"Missing value foo\""));
     }
-    
+
     @Test
     public void shouldAcceptMissingOptional() {
         assertThat(client.optionalName(Optional.empty())).isEqualTo("<missing>");

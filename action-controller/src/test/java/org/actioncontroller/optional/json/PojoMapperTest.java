@@ -45,10 +45,7 @@ public class PojoMapperTest {
                 .build();
 
         ExampleInterface pojo = new PojoMapper()
-                .addObjectMapper(
-                        ExampleInterface.class,
-                        (o, mapper) -> mapper.writeFields((JsonObject) o, ExampleInterface.fromType(((JsonObject) o).getString("type")))
-                )
+                .addObjectFactoryMapper(ExampleInterface.class, "type", ExampleInterface::fromType)
                 .map(json, ExampleInterface.class);
         assertThat(pojo)
                 .asInstanceOf(InstanceOfAssertFactories.type(FirstImplementation.class))
@@ -100,10 +97,7 @@ public class PojoMapperTest {
                 ).build();
 
         ExampleClass pojo = new PojoMapper()
-                .addObjectMapper(
-                        ExampleInterface.class,
-                        (o, mapper) -> mapper.writeFields((JsonObject) o, ExampleInterface.fromType(((JsonObject) o).getString("type")))
-                )
+                .addObjectFactoryMapper(ExampleInterface.class, "type", ExampleInterface::fromType)
                 .map(json, ExampleClass.class);
         assertThat((pojo.getChildren().get(id)))
                 .asInstanceOf(InstanceOfAssertFactories.type(FirstImplementation.class))
@@ -127,6 +121,23 @@ public class PojoMapperTest {
         assertThat(pojo.getExampleEnum()).get().isEqualTo(JsonTestModel.ExampleEnum.ONE);
 
         assertThat(new JsonGenerator().toJson(pojo)).isEqualTo(json);
+    }
+
+    @Test
+    public void shouldMapWithUnderscores() {
+        String randomValue = UUID.randomUUID().toString();
+        JsonObject json = Json.createObjectBuilder()
+                .add("example_enum", "ONE")
+                .add("children", Json.createObjectBuilder()
+                        .add(UUID.randomUUID().toString(), Json.createObjectBuilder().add("type", "first").add("other_value", randomValue))
+                ).build();
+
+        ExampleClass pojo = new PojoMapper()
+                .rejectUnknownFields()
+                .addObjectFactoryMapper(ExampleInterface.class, "type", ExampleInterface::fromType)
+                .map(json, ExampleClass.class);
+
+        assertThat(new JsonGenerator().withNameTransformer(JsonGenerator.UNDERSCORE).toJson(pojo)).isEqualTo(json);
     }
 
     @Test

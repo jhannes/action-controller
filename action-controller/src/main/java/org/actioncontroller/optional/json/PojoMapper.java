@@ -10,6 +10,7 @@ import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
+import java.io.Reader;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -78,7 +79,6 @@ public class PojoMapper {
         defaultMappers.put(type, (JsonValue o, PojoMapper mapper) -> numberFunction.apply((JsonNumber)o));
     }
 
-
     private static final Map<Type, ObjectFromJsonMapper<?>> defaultMappers = new HashMap<>();
     static {
         defaultMappers.put(boolean.class, (json, mapper) -> json.equals(JsonValue.TRUE));
@@ -130,11 +130,20 @@ public class PojoMapper {
 
     private final Map<Type, ObjectFromJsonMapper<?>> mappers = new HashMap<>(defaultMappers);
 
+    private boolean rejectUnknownFields = false;
+
     /**
      * Map from json to a object of the specified target class
      */
     public <T> T map(JsonValue json, Class<T> targetType) {
         return map(json, (Type)targetType);
+    }
+
+    /**
+     * Read from json string to a object of the specified target type
+     */
+    public Object read(Reader reader, Type returnType) {
+        return map(Json.createReader(reader).readValue(), returnType);
     }
 
     /**
@@ -272,7 +281,11 @@ public class PojoMapper {
                 throw new RuntimeException("Failed to map " + o.getClass() + "." + property + " " + e);
             } catch (NoSuchFieldException ignored) {
                 if (findGetter(o, property) == null) {
-                    logger.info("Could no map field {} on {}", property, o.getClass());
+                    if (rejectUnknownFields) {
+                        throw new RuntimeException("Unknown property " + o.getClass() + "." + property);
+                    } else {
+                        logger.info("Could no map field {} on {}", property, o.getClass());
+                    }
                 }
             } catch (InvocationTargetException | IllegalAccessException e) {
                 throw ExceptionUtil.softenException(e);
@@ -302,12 +315,17 @@ public class PojoMapper {
     }
 
     private <T> Method findSetter(T o, String property) {
-        String setterName = setterName(property);
+        return findSetterMethod(o, setterName(property))
+                .orElseGet(() -> findSetterMethod(o, property)
+                        .orElseGet(() -> findSetterMethod(o, setterNameCamelCase(property))
+                                .orElse(null)));
+    }
+
+    private <T> Optional<Method> findSetterMethod(T o, String setterName) {
         return Arrays.stream(o.getClass().getMethods())
-                .filter(method -> setterName.equals(method.getName()) || property.equals(method.getName()))
+                .filter(method -> setterName.equals(method.getName()))
                 .filter(method -> method.getParameterCount() == 1)
-                .findAny()
-                .orElse(null);
+                .findAny();
     }
 
     private <T> Method findGetter(T o, String property) {
@@ -327,15 +345,37 @@ public class PojoMapper {
         return "set" + (fieldName.length() > 0 ? Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1) : "");
     }
 
+    protected String setterNameCamelCase(String fieldName) {
+        return "set" + (fieldName.length() > 0 ? fromUnderscoreToCamelCase(Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1)) : "");
+    }
+
+    protected String fromUnderscoreToCamelCase(String key) {
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < key.length(); i++) {
+            if (i < key.length() -1 && key.charAt(i) == '_') {
+                result.append(Character.toUpperCase(key.charAt(++i)));
+            } else {
+                result.append(key.charAt(i));
+            }
+        }
+        return result.toString();
+    }
+
+
     public PojoMapper addMapper(Type type, ObjectFromJsonMapper<?> mapper) {
         mappers.put(type, mapper);
         return this;
     }
 
-    public <T> PojoMapper addObjectMapper(Class<T> type, ObjectFromJsonMapper<T> objectMapper) {
-        return addMapper(type, objectMapper);
+    public <T> PojoMapper addObjectFactoryMapper(Class<T> type, String discriminatorProperty, Function<String, ? extends T> factory) {
+        return addMapper(type, (o, mapper) ->
+                mapper.writeFields((JsonObject) o, factory.apply(((JsonObject)o).getString(discriminatorProperty))));
     }
 
+    public PojoMapper rejectUnknownFields() {
+        rejectUnknownFields = true;
+        return this;
+    }
 
     protected Class<?> getClassType(Type type) {
         if (type instanceof ParameterizedType) {

@@ -65,9 +65,9 @@ public class JsonBodyTest {
         }
 
         @POST("/json")
-        @Json
-        public List<Person> toUpper(@Json Stream<Person> persons) {
-            return persons.map(p -> new Person(p.getFirstName().toUpperCase(), p.getLastName().toUpperCase())).collect(Collectors.toList());
+        @Json(nameFormat = Json.Naming.UNDERSCORE)
+        public Stream<Person> toUpper(@Json Stream<Person> persons) {
+            return persons.map(p -> new Person(p.getFirstName().toUpperCase(), p.getLastName().toUpperCase()));
         }
 
         @GET("/error")
@@ -113,6 +113,22 @@ public class JsonBodyTest {
         assertThat(client.toUpper(Stream.of(new Person("First", "Woman"))))
                 .extracting(Person::getLastName)
                 .contains("WOMAN");
+    }
+
+    @Test
+    public void shouldMapToUnderscore() throws IOException {
+        ApiClientExchange exchange = httpClient.createExchange();
+        exchange.setTarget("POST", "/json");
+        List<Person> people = Arrays.asList(new Person("First", "Woman"), new Person("Second", "Man"));
+        exchange.write(
+                "application/json",
+                writer -> writer.write(new JsonGenerator().toJson(people).toString())
+        );
+        exchange.executeRequest();
+        exchange.checkForError();
+        javax.json.JsonArray response = javax.json.Json.createReader(exchange.getResponseBodyReader()).readArray();
+        assertThat(response.getJsonObject(0).getString("first_name")).isEqualTo("FIRST");
+        assertThat(response.getJsonObject(1).getString("first_name")).isEqualTo("SECOND");
     }
 
     @Test

@@ -51,6 +51,9 @@ import java.util.stream.Stream;
  */
 public class JsonGenerator {
 
+    public static final Function<String, String> UNDERSCORE = name -> name.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase();
+    private Function<String, String> nameTransformer = Function.identity();
+
     @SuppressWarnings("unchecked")
     private static <T> void addDefaultMapper(Class<T> type, Function<T, JsonValue> mapper) {
         defaultMappers.put(type, o -> mapper.apply((T)o));
@@ -93,6 +96,27 @@ public class JsonGenerator {
     }
 
     private final Map<Type, Function<Object, JsonValue>> mappers = new HashMap<>(defaultMappers);
+
+
+    /**
+     * Register a mapper for the specified type
+     */
+    public <T> void addMapper(Class<T> type, Function<T, JsonValue> mapper) {
+        //noinspection unchecked
+        mappers.put(type, (Function<Object, JsonValue>)mapper);
+    }
+
+    /**
+     * Register a mapper for the specified type
+     */
+    public void addMapper(Type type, Function<Object, JsonValue> mapper) {
+        mappers.put(type, mapper);
+    }
+
+    public JsonGenerator withNameTransformer(Function<String, String> transformer) {
+        this.nameTransformer = transformer;
+        return this;
+    }
 
     /**
      * Used to map a Java object to a Json structure
@@ -141,21 +165,6 @@ public class JsonGenerator {
         return objectToJson(pojo);
     }
 
-    /**
-     * Register a mapper for the specified type
-     */
-    public <T> void addMapper(Class<T> type, Function<T, JsonValue> mapper) {
-        //noinspection unchecked
-        mappers.put(type, (Function<Object, JsonValue>)mapper);
-    }
-
-    /**
-     * Register a mapper for the specified type
-     */
-    public void addMapper(Type type, Function<Object, JsonValue> mapper) {
-        mappers.put(type, mapper);
-    }
-
     public JsonObject objectToJson(Object pojo) {
         JsonObjectBuilder builder = Json.createObjectBuilder();
         for (Method method : pojo.getClass().getMethods()) {
@@ -186,9 +195,13 @@ public class JsonGenerator {
         return builder.build();
     }
 
-    private String getFieldName(Method method) {
+    protected String getFieldName(Method method) {
         String methodName = method.getName();
-        return Character.toLowerCase(methodName.charAt(3)) + methodName.substring(4);
+        return transformName(Character.toLowerCase(methodName.charAt(3)) + methodName.substring(4));
+    }
+
+    protected String transformName(String propertyName) {
+        return nameTransformer.apply(propertyName);
     }
 
     private boolean isGetMethod(Method method) {

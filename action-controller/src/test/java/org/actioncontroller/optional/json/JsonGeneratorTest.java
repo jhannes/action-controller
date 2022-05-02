@@ -30,13 +30,7 @@ public class JsonGeneratorTest {
         json = generator.updatePatch("/children/" + childId, updatedChild).apply(json);
 
         PojoMapper pojoMapper = new PojoMapper()
-                .addObjectMapper(
-                        JsonTestModel.ExampleInterface.class,
-                        (o, mapper) -> mapper.writeFields(
-                                (JsonObject) o,
-                                JsonTestModel.ExampleInterface.fromType(((JsonObject) o).getString("type"))
-                        )
-                );
+                .addObjectFactoryMapper(JsonTestModel.ExampleInterface.class, "type", JsonTestModel.ExampleInterface::fromType);
         JsonTestModel.ExampleClass o = pojoMapper.map(json, JsonTestModel.ExampleClass.class);
         JsonTestModel.FirstImplementation actualChild =
                 (JsonTestModel.FirstImplementation) o.getChildren().get(childId);

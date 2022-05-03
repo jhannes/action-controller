@@ -13,6 +13,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
                 <configuration>
                     <compilerArgs>
                         <arg>--add-exports=java.base/sun.security.x509=ALL-UNNAMED</arg>
@@ -47,7 +48,7 @@
         <dependency>
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy</artifactId>
-            <version>1.11.15</version>
+            <version>1.12.9</version>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -94,19 +95,19 @@
         <dependency>
             <groupId>org.logevents</groupId>
             <artifactId>logevents</artifactId>
-            <version>0.2.6</version>
+            <version>0.3.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>3.20.2</version>
+            <version>3.22.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-webapp</artifactId>
-            <version>9.4.44.v20210927</version>
+            <version>9.4.46.v20220331</version>
             <scope>test</scope>
         </dependency>
         <dependency>

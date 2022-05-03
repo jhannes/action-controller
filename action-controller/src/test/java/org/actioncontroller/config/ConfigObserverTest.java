@@ -3,7 +3,7 @@ package org.actioncontroller.config;
 import org.actioncontroller.util.ExceptionUtil;
 import org.junit.Rule;
 import org.junit.Test;
-import org.logevents.extend.junit.ExpectedLogEventsRule;
+import org.logevents.optional.junit.ExpectedLogEventsRule;
 import org.slf4j.event.Level;
 
 import java.io.IOException;

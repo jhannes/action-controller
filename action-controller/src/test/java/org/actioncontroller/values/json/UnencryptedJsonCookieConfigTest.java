@@ -6,7 +6,7 @@ import org.actioncontroller.servlet.ApiServlet;
 import org.jsonbuddy.JsonObject;
 import org.junit.Rule;
 import org.junit.Test;
-import org.logevents.extend.junit.ExpectedLogEventsRule;
+import org.logevents.optional.junit.ExpectedLogEventsRule;
 import org.slf4j.event.Level;
 
 import java.util.Map;

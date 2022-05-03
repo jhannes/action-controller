@@ -23,7 +23,7 @@ import org.actioncontroller.values.UnencryptedCookie;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.logevents.extend.junit.ExpectedLogEventsRule;
+import org.logevents.optional.junit.ExpectedLogEventsRule;
 import org.slf4j.event.Level;
 
 import java.io.BufferedInputStream;
@@ -58,7 +58,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public abstract class AbstractApiClientProxyTest {
 
     protected ApiClient apiClient;
-    
+
     public enum Number {
         ONE("number one", 1),
         TWO("number two", 2),
@@ -71,7 +71,7 @@ public abstract class AbstractApiClientProxyTest {
             this.text = text;
             this.value = value;
         }
-        
+
         public String toString() {
             return text;
         }
@@ -90,13 +90,13 @@ public abstract class AbstractApiClientProxyTest {
         public String first(@RequestParam("greeting") String greeting, ApiHttpExchange exchange) {
             return greeting + " " + exchange.getPathInfo();
         }
-        
+
         @GET("/stream")
         @ContentBody
         public BufferedInputStream getStream() {
             return new BufferedInputStream(new ByteArrayInputStream("hello world".getBytes()));
         }
-        
+
         @GET("/stream/withCache")
         @ContentBody
         public BufferedInputStream getStreamWithTimestamps(
@@ -110,7 +110,7 @@ public abstract class AbstractApiClientProxyTest {
             setLastModified.accept(lastModified);
             return new BufferedInputStream(new ByteArrayInputStream("hello world".getBytes()));
         }
-        
+
         @GET("/reader")
         @ContentBody
         public BufferedReader getReader() {
@@ -345,7 +345,7 @@ public abstract class AbstractApiClientProxyTest {
         controllerClient.sendRedirect(contentLocation::set);
         assertThat(contentLocation.get()).isEqualTo(new URI("https://github.com/jhannes"));
     }
-    
+
     @Test
     public void shouldSupportMultipleArguments() {
         assertThat(controllerClient.downcaseAll(Optional.of(Arrays.asList("A", "B", "c"))))
@@ -501,30 +501,30 @@ public abstract class AbstractApiClientProxyTest {
         assertThat(controllerClient.getTextFile("robots"))
                 .isEqualTo("Hello from robots");
     }
-    
+
     @Test
     public void shouldReadInputStream() throws IOException {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         controllerClient.getStream().transferTo(buffer);
         assertThat(buffer.toString()).isEqualTo("hello world");
     }
-    
+
     @Test
     public void shouldReadReader() throws IOException {
         StringWriter buffer = new StringWriter();
         controllerClient.getReader().transferTo(buffer);
         assertThat(buffer.toString()).isEqualTo("Hello World");
     }
-    
+
     @Test
     public void shouldGetNotModifiedWhenRereading() {
         AtomicReference<ZonedDateTime> lastUpdated = new AtomicReference<>();
         controllerClient.getStreamWithTimestamps(Optional.empty(), lastUpdated::set);
         assertThat(lastUpdated.get())
                 .isEqualTo(ZonedDateTime.of(2020, 1, 12, 11, 12, 15, 0, ZoneId.systemDefault()));
-        
+
         assertThatThrownBy(() -> controllerClient.getStreamWithTimestamps(Optional.of(lastUpdated.get()), lastUpdated::set))
                 .isInstanceOf(HttpNotModifiedException.class);
     }
-    
+
 }

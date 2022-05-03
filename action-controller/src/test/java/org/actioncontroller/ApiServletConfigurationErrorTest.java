@@ -18,7 +18,7 @@ import org.actioncontroller.values.PathParam;
 import org.actioncontroller.values.SendRedirect;
 import org.junit.Rule;
 import org.junit.Test;
-import org.logevents.extend.junit.ExpectedLogEventsRule;
+import org.logevents.optional.junit.ExpectedLogEventsRule;
 import org.slf4j.event.Level;
 
 import javax.servlet.ServletException;
@@ -60,9 +60,9 @@ public class ApiServletConfigurationErrorTest {
                 .hasMessageContaining("incorrect");
 
         expectedLogEventsRule.expect(ApiControllerAction.class, Level.WARN,
-                "Unused path parameters for ControllerWithMismatchedPathParams.actionWithParameterMismatch(String): [myTest]");
+                "Unused path parameters for ControllerWithMismatchedPathParams.actionWithParameterMismatch(String):void: [myTest]");
     }
-    
+
     @Test
     public void shouldReportReturnValueTypeWithMissingAnnotation() {
         expectedLogEventsRule.expectPattern(ApiControllerActionRouter.class, Level.ERROR, "Failed to setup {}");
@@ -155,7 +155,7 @@ public class ApiServletConfigurationErrorTest {
                 .isInstanceOf(ActionControllerConfigurationException.class)
                 .hasMessageContaining("with value(), return value must be void");
     }
-    
+
     @Test
     public void shouldAddControllerMethodToStackTraceOnServerError() throws ServletException, MalformedURLException {
         ApiServlet servlet = new ApiServlet(new ControllerWithRuntimeError());
@@ -240,7 +240,7 @@ public class ApiServletConfigurationErrorTest {
         @GET("/")
         @SendRedirect("/")
         public void doIt(@ThrowServerError String foo) {
-            
+
         }
     }
 

@@ -11,7 +11,7 @@ import org.fakeservlet.FakeServletResponse;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.logevents.extend.junit.ExpectedLogEventsRule;
+import org.logevents.optional.junit.ExpectedLogEventsRule;
 import org.slf4j.event.Level;
 
 import javax.servlet.ServletException;

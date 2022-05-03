@@ -37,13 +37,20 @@ public @interface Json {
     Naming nameFormat() default Naming.CAMEL_CASE;
 
     enum Naming {
-        CAMEL_CASE(Function.identity()),
-        UNDERSCORE(JsonGenerator.UNDERSCORE);
+        CAMEL_CASE {
+            @Override
+            public Function<String, String> getTransformer() {
+                return Function.identity();
+            }
+        },
+        UNDERSCORE {
+            @Override
+            public Function<String, String> getTransformer() {
+                return JsonGenerator.UNDERSCORE;
+            }
+        };
 
-        public final Function<String, String> transformer;
-        Naming(Function<String, String> transformer) {
-            this.transformer = transformer;
-        }
+        public abstract Function<String, String> getTransformer();
     }
 
     class MapperFactory implements HttpParameterMapperFactory<Json>, HttpReturnMapperFactory<Json> {
@@ -63,7 +70,7 @@ public @interface Json {
 
         @Override
         public HttpClientParameterMapper clientParameterMapper(Json annotation, Parameter parameter) {
-            JsonGenerator generator = new JsonGenerator().withNameTransformer(annotation.nameFormat().transformer);
+            JsonGenerator generator = new JsonGenerator().withNameTransformer(annotation.nameFormat().getTransformer());
             return (exchange, o) -> exchange.write(
                     "application/json",
                     writer -> writer.write(generator.toJson(o).toString())
@@ -77,7 +84,7 @@ public @interface Json {
         @Override
         public HttpReturnMapper create(Json annotation, Type returnType, ApiControllerContext context) {
             JsonGenerator generator = context.getAttribute(JsonGenerator.class, JsonGenerator::new)
-                    .withNameTransformer(annotation.nameFormat().transformer);
+                    .withNameTransformer(annotation.nameFormat().getTransformer());
             return (o, exchange) -> exchange.writeBody("application/json", generator.toJson(o).toString());
         }
 

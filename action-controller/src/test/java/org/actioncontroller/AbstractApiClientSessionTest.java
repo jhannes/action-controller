@@ -13,7 +13,7 @@ import org.actioncontroller.values.UserPrincipal;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.logevents.extend.junit.ExpectedLogEventsRule;
+import org.logevents.optional.junit.ExpectedLogEventsRule;
 import org.slf4j.event.Level;
 
 import java.security.Principal;
@@ -25,7 +25,7 @@ import java.util.function.Consumer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SuppressWarnings("OptionalAssignedToNull")
+@SuppressWarnings({"OptionalAssignedToNull", "ConstantConditions"})
 public abstract class AbstractApiClientSessionTest {
 
     protected LoginController controllerClient;
@@ -147,7 +147,7 @@ public abstract class AbstractApiClientSessionTest {
     protected abstract ApiClient createClient(Object controller) throws Exception;
 
     public abstract void doAuthenticate(Principal principal);
-    
+
     @Test
     public void shouldUseSession() {
         controllerClient.addFavorite("first", null);

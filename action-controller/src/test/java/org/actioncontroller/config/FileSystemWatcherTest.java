@@ -2,7 +2,7 @@ package org.actioncontroller.config;
 
 import org.junit.Rule;
 import org.junit.Test;
-import org.logevents.extend.junit.ExpectedLogEventsRule;
+import org.logevents.optional.junit.ExpectedLogEventsRule;
 import org.slf4j.event.Level;
 
 import java.io.IOException;
@@ -32,11 +32,11 @@ public class FileSystemWatcherTest {
 
     @Test
     public void shouldNotifyWhenFileIsCreated() throws IOException, InterruptedException {
-        watch("key", testDir, "*.txt");
+        watch("shouldNotifyWhenFileIsCreated", testDir, "*.txt");
 
         queue.assertEmpty();
         Files.write(testDir.resolve("included.txt"), "contents".getBytes());
-        assertThat(queue.take()).isEqualTo("key");
+        assertThat(queue.take()).isEqualTo("shouldNotifyWhenFileIsCreated");
         queue.assertEmpty();
     }
 

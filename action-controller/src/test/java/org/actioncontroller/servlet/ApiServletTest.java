@@ -24,7 +24,7 @@ import org.jsonbuddy.JsonObject;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.logevents.extend.junit.ExpectedLogEventsRule;
+import org.logevents.optional.junit.ExpectedLogEventsRule;
 import org.slf4j.event.Level;
 
 import javax.management.MBeanServer;
@@ -201,7 +201,7 @@ public class ApiServletTest {
         request.setRequestBody("This is not JSON!");
 
         expectedLogEvents.expect(ApiControllerAction.class, Level.WARN,
-                "While processing ServletHttpExchange[POST " + container.getServletPath() + "/postMethod] arguments for ApiControllerMethodAction{POST /postMethod => ExampleController.postAction(JsonObject)}");
+                "While processing ServletHttpExchange[POST " + container.getServletPath() + "/postMethod] arguments for ApiControllerMethodAction{POST /postMethod => ExampleController.postAction(JsonObject):void}");
         FakeServletResponse response = request.service(servlet);
 
         assertThat(response.getStatus()).isEqualTo(400);
@@ -248,7 +248,7 @@ public class ApiServletTest {
 
         expectedLogEvents.expect(ApiControllerAction.class, Level.DEBUG,
                 "While processing ServletHttpExchange[POST " + container.getServletPath() + "/withUuid?uuid=Not+an+uuid]" +
-                " arguments to ApiControllerMethodAction{POST /withUuid => ControllerWithTypedParameters.methodWithUuid(UUID)}: " +
+                " arguments to ApiControllerMethodAction{POST /withUuid => ControllerWithTypedParameters.methodWithUuid(UUID):void}: " +
                 new HttpRequestException("Cannot convert parameter uuid to class java.util.UUID: Invalid UUID string: Not an uuid"));
         FakeServletResponse response = request.service(servlet);
 
@@ -263,7 +263,7 @@ public class ApiServletTest {
 
         expectedLogEvents.expect(ApiControllerAction.class, Level.DEBUG,
                 "While processing ServletHttpExchange[POST " + container.getServletPath() + "/withLong?longValue=one+hundred] arguments to " +
-                "ApiControllerMethodAction{POST /withLong => ControllerWithTypedParameters.methodWithLong(long)}: " +
+                "ApiControllerMethodAction{POST /withLong => ControllerWithTypedParameters.methodWithLong(long):void}: " +
                 new HttpRequestException("Cannot convert parameter longValue to long: For input string: \"one hundred\""));
         FakeServletResponse response = request.service(servlet);
 
@@ -281,7 +281,7 @@ public class ApiServletTest {
 
         expectedLogEvents.expect(ApiControllerAction.class, Level.DEBUG,
                 "While processing ServletHttpExchange[POST " + container.getServletPath() + "/withEnum?enumValue=unknown] arguments to " +
-                "ApiControllerMethodAction{POST /withEnum => ControllerWithTypedParameters.methodWithEnum(ElementType)}: " +
+                "ApiControllerMethodAction{POST /withEnum => ControllerWithTypedParameters.methodWithEnum(ElementType):void}: " +
                 new HttpRequestException("Cannot convert parameter enumValue to class java.lang.annotation.ElementType: unknown not in [TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE, ANNOTATION_TYPE, PACKAGE, TYPE_PARAMETER, TYPE_USE, MODULE]"));
         FakeServletResponse response = request.service(servlet);
 
@@ -294,7 +294,7 @@ public class ApiServletTest {
         FakeServletRequest request = container.newRequest("GET", "/goodbye");
         expectedLogEvents.expect(ApiControllerAction.class, Level.DEBUG,
                 "While processing ServletHttpExchange[GET " + container.getServletPath() + "/goodbye] arguments to " +
-                "ApiControllerMethodAction{GET /goodbye => ControllerWithTypedParameters.methodWithRequiredInt(int)}: " +
+                "ApiControllerMethodAction{GET /goodbye => ControllerWithTypedParameters.methodWithRequiredInt(int):void}: " +
                 new HttpRequestException("Missing required parameter amount"));
         FakeServletResponse response = request.service(servlet);
         assertThat(response.getStatus()).isEqualTo(400);

@@ -371,6 +371,6 @@ public class ApiControllerMethodAction implements ApiControllerAction {
         String parameters = Stream.of(action.getParameterTypes())
                 .map(Class::getSimpleName)
                 .collect(Collectors.joining(","));
-        return action.getDeclaringClass().getSimpleName() + "." + action.getName() + "(" + parameters + ")";
+        return action.getDeclaringClass().getSimpleName() + "." + action.getName() + "(" + parameters + "):" + action.getReturnType().getSimpleName();
     }
 }

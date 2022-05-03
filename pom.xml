@@ -5,7 +5,7 @@
     <groupId>io.github.jhannes</groupId>
     <artifactId>action-controller-project</artifactId>
     <packaging>pom</packaging>
-    <version>0.0.40</version>
+    <version>0.0.41-SNAPSHOT</version>
     <name>Action Controller</name>
     <description>Action Controller REST micro framework</description>
 
@@ -35,7 +35,7 @@
         <connection>scm:git:https://github.com/jhannes/action-controller.git</connection>
         <developerConnection>scm:git:https://github.com/jhannes/action-controller.git</developerConnection>
         <url>https://github.com/jhannes/action-controller.git</url>
-        <tag>action-controller-project-0.0.40</tag>
+        <tag>HEAD</tag>
     </scm>
     <distributionManagement>
         <snapshotRepository>

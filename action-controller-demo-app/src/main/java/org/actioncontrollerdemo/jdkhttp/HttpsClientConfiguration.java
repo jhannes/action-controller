@@ -17,7 +17,7 @@ public class HttpsClientConfiguration {
     private static SSLSocketFactory createSocketFactory(ConfigMap config, Path keystoreFile) throws GeneralSecurityException, IOException {
         String keyStorePassword = config.getOrDefault("keyStorePassword", "");
         String keyPassword = config.getOrDefault("keyPassword", "");
-        List<Path> trustedCertificates = config.listFiles("trustedCertificates");
+        List<Path> trustedCertificates = config.listFiles("trustedCertificates", "*-ca.crt");
         Boolean includeSystemCaCerts = config.optional("includeSystemCaCerts").map(Boolean::parseBoolean).orElse(false);
 
         return SSLFactory.createSslContext(

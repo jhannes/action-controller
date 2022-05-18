@@ -262,16 +262,21 @@ public class ConfigMap extends AbstractMap<String, String> {
     }
 
     public List<Path> listFiles(String key) {
-        Optional<String> value = optional(key);
-        if (!value.isPresent()) {
-            return List.of();
-        }
-        File file = new File(value.get());
+        return optional(key)
+                .map(s -> listFilesByPattern(s, key))
+                .orElseGet(List::of);
+    }
+
+    public List<Path> listFiles(String key, String defaultPath) {
+        return listFilesByPattern(getOrDefault(key, defaultPath), key);
+    }
+
+    private List<Path> listFilesByPattern(String pattern, String key) {
+        File file = new File(pattern);
         Path parent = Optional
                 .ofNullable(file.getParentFile()).map(File::toPath)
                 .orElse(Paths.get("."));
         PathMatcher pathMatcher = parent.getFileSystem().getPathMatcher("glob:" + file.getName());
-
         return listFiles(key, parent, pathMatcher);
     }
 

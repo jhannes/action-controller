@@ -480,10 +480,8 @@ public class ConfigObserverTest {
 
     @Test
     public void shouldDetectFileInNewDirectory() throws IOException, InterruptedException {
-        writeConfigLine(("config.file=" + directory + "/sub/dir/*.txt").replaceAll("\\\\", "/"));
-
         AtomicReference<List<Path>> files = new AtomicReference<>();
-        observer.onPrefixedValue("config", config -> config.listFiles("file"), files::set);
+        observer.onPrefixedValue("config", config -> config.listFiles("file", directory + "/sub/dir/*.txt"), files::set);
         assertThat(files.get()).isEmpty();
 
         Path file = directory.resolve("sub/dir/file-" + UUID.randomUUID() + ".txt");

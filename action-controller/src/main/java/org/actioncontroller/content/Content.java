@@ -23,7 +23,7 @@ public class Content {
 
     static {
         try {
-            mimeTypes.load(Objects.requireNonNull(ContentSource.class.getClassLoader().getResourceAsStream("mime-types.properties")));
+            mimeTypes.load(Objects.requireNonNull(Content.class.getClassLoader().getResourceAsStream("mime-types.properties")));
         } catch (IOException e) {
             e.printStackTrace();
         }

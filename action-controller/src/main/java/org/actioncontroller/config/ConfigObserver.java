@@ -119,6 +119,10 @@ public class ConfigObserver implements FileListener {
         return onSingleConfigValue(key, Long::parseLong, defaultValue, listener);
     }
 
+    public ConfigObserver onBooleanValue(String key, boolean defaultValue, ConfigValueListener<Boolean> listener) {
+        return onSingleConfigValue(key, Boolean::parseBoolean, defaultValue, listener);
+    }
+
     public ConfigObserver onInetSocketAddress(String key, int defaultPort, ConfigValueListener<InetSocketAddress> listener) {
         return onInetSocketAddress(key, InetSocketAddress.createUnresolved("localhost", defaultPort), listener);
     }

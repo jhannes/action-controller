@@ -26,6 +26,7 @@ import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -165,6 +166,19 @@ public class ConfigObserverTest {
         assertThat(value.get()).isEqualTo(11L);
         writeConfigLine("test = 1337");
         assertThat(value.get()).isEqualTo(1337L);
+    }
+
+    @Test
+    public void shouldReadBooleanValue() {
+        AtomicBoolean value = new AtomicBoolean(false);
+        observer.onBooleanValue("test", true, value::set);
+        assertThat(value.get()).isEqualTo(true);
+        writeConfigLine("test = false");
+        assertThat(value.get()).isEqualTo(false);
+        writeConfigLine("test = yes");
+        assertThat(value.get()).isEqualTo(false);
+        writeConfigLine("test = TRUE");
+        assertThat(value.get()).isEqualTo(true);
     }
 
     @Test

@@ -12,6 +12,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 import java.util.Optional;
@@ -30,9 +31,29 @@ public class Content {
     }
 
     private final URL resourceUrl;
+    private final Long lastModified;
+    private final Optional<String> cacheControl;
 
     public Content(URL resourceUrl) {
         this.resourceUrl = resourceUrl;
+        try {
+            if (resourceUrl.getProtocol().equals("file")) {
+                File file = new File(resourceUrl.toURI());
+                lastModified = (file.lastModified() / 1000) * 1000;
+            } else if (resourceUrl.getProtocol().equals("jar")) {
+                JarURLConnection connection = (JarURLConnection) resourceUrl.openConnection();
+                lastModified = (new File(connection.getJarFileURL().toURI()).lastModified()/1000)*1000;
+            } else {
+                lastModified = null;
+            }
+        } catch (URISyntaxException | IOException e) {
+            throw ExceptionUtil.softenException(e);
+        }
+        if (lastModified == null || lastModified > ZonedDateTime.now().minusDays(1).toInstant().toEpochMilli()) {
+            cacheControl = Optional.of("no-cache");
+        } else {
+            cacheControl = Optional.empty();
+        }
     }
 
     public boolean notModified(String headerInRfc1123) {
@@ -44,21 +65,11 @@ public class Content {
     }
 
     public Long lastModified() {
-        try {
-            if (resourceUrl.getProtocol().equals("file")) {
-                File file = new File(resourceUrl.toURI());
-                return (file.lastModified()/1000)*1000;
-            } else if (resourceUrl.getProtocol().equals("jar")) {
-                JarURLConnection connection = (JarURLConnection) resourceUrl.openConnection();
-                return (new File(connection.getJarFileURL().toURI()).lastModified()/1000)*1000;
-            }
-            return null;
-        } catch (URISyntaxException | IOException e) {
-            throw ExceptionUtil.softenException(e);
-        }
+        return lastModified;
     }
 
     public Optional<String> getContentType() {
+        // TODO UTF-8 for html?
         String contentType = URLConnection.getFileNameMap().getContentTypeFor(resourceUrl.getPath());
         if (contentType != null) {
             return Optional.of(contentType);
@@ -83,5 +94,9 @@ public class Content {
             inputStream.transferTo(buffer);
         }
         return buffer.toByteArray();
+    }
+
+    public Optional<String> getCacheControl() {
+        return cacheControl;
     }
 }

@@ -39,7 +39,7 @@ public class ContentSource {
 
     private final URL resourceBase;
     private String fallbackPath;
-    private Map<URL, Content> cache = new HashMap<>();
+    private final Map<URL, Content> cache = new HashMap<>();
 
     protected ContentSource(URL resourceBase) {
         if (!resourceBase.getProtocol().equals("file") && !resourceBase.getProtocol().equals("jar")) {
@@ -77,7 +77,7 @@ public class ContentSource {
         if (baseResource.toString().contains(oldPath)) {
             try {
                 URL sourceResources = new URL(baseResource.toString().replaceAll(oldPath, newPath));
-                sourceResources.openStream();
+                sourceResources.openStream().close();
                 return new ContentSource(sourceResources);
             } catch (FileNotFoundException ignored) {
                 return null;
@@ -93,6 +93,9 @@ public class ContentSource {
         String prefix = "/META-INF/resources/webjars/" + webJarName;
         Properties properties = new Properties();
         try (InputStream pomProperties = ContentSource.class.getResourceAsStream("/META-INF/maven/org.webjars/" + webJarName + "/pom.properties")) {
+            if (pomProperties == null) {
+                throw new IOException("Missing web jar " + webJarName);
+            }
             properties.load(pomProperties);
         } catch (IOException e) {
             throw ExceptionUtil.softenException(e);

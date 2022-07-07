@@ -6,10 +6,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.actioncontroller.content.Content;
 import org.actioncontroller.content.ContentSource;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
 
 public class ContentServlet extends HttpServlet {
 
@@ -32,6 +29,7 @@ public class ContentServlet extends HttpServlet {
             resp.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
         } else {
             content.getContentType().ifPresent(resp::setContentType);
+            content.getCacheControl().ifPresent(header -> resp.setHeader("Cache-Control", header));
             resp.setHeader("Last-Modified", content.getLastModifiedAsRfc1123());
             byte[] data = content.readContent();
             resp.setContentLength(data.length);

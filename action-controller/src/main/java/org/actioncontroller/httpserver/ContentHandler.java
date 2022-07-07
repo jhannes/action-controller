@@ -36,6 +36,7 @@ public class ContentHandler implements HttpHandler {
                 exchange.sendResponseHeaders(304, -1);
             } else {
                 content.getContentType().ifPresent(contentType -> exchange.getResponseHeaders().set("Content-type", contentType));
+                content.getCacheControl().ifPresent(header -> exchange.getResponseHeaders().set("Cache-Control", header));
                 exchange.getResponseHeaders().set("Last-Modified", content.getLastModifiedAsRfc1123());
                 byte[] data = content.readContent();
                 exchange.sendResponseHeaders(200, data.length);

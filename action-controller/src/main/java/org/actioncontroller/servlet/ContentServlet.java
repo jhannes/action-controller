@@ -29,6 +29,7 @@ public class ContentServlet extends HttpServlet {
             resp.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
         } else {
             content.getContentType().ifPresent(resp::setContentType);
+            content.getCacheControl().ifPresent(header -> resp.setHeader("Cache-Control", header));
             resp.setHeader("Last-Modified", content.getLastModifiedAsRfc1123());
             byte[] data = content.readContent();
             resp.setContentLength(data.length);

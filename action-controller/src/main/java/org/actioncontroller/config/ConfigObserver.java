@@ -124,7 +124,7 @@ public class ConfigObserver implements FileListener {
     }
 
     public ConfigObserver onInetSocketAddress(String key, int defaultPort, ConfigValueListener<InetSocketAddress> listener) {
-        return onInetSocketAddress(key, InetSocketAddress.createUnresolved("localhost", defaultPort), listener);
+        return onInetSocketAddress(key, new InetSocketAddress("localhost", defaultPort), listener);
     }
 
     public ConfigObserver onInetSocketAddress(String key, InetSocketAddress defaultAddress, ConfigValueListener<InetSocketAddress> listener) {

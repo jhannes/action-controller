@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.jar.JarEntry;
@@ -106,6 +107,18 @@ public class ContentSourceTest {
 
         assertThat(source.getContent("subdir/").lastModified())
                 .isEqualTo(1600000000000L);
+        assertThat(source.getContent("subdir/").getCacheControl()).isEmpty();
+    }
+
+    @Test
+    public void shouldNotCacheRecentContent() throws IOException {
+        Files.createDirectories(dir.resolve("subdir"));
+        Files.write(dir.resolve("subdir/index.html"), List.of("<h1>Hello World</h1>"));
+        Files.setLastModifiedTime(dir.resolve("subdir/index.html"), FileTime.from(ZonedDateTime.now().minusHours(1).toInstant()));
+
+        assertThat(source.getContent("subdir/").getCacheControl()).get()
+                .isEqualTo("no-cache");
+
     }
 
     @Test
@@ -145,5 +158,19 @@ public class ContentSourceTest {
         ContentSource source = ContentSource.fromWebJar(webJarName);
         assertThat(new String(source.getContent("/").readContent()))
                 .contains("<h1>Hello</h1>");
+    }
+
+    @Test
+    public void shouldThrowOnUnknownWebJar() {
+        assertThatThrownBy(() -> ContentSource.fromWebJar("missing-webjar"))
+                .isInstanceOf(IOException.class);
+    }
+
+    @Test
+    public void shouldLoadFromWebJarInDependency() throws IOException {
+        ContentSource contentSource = ContentSource.fromWebJar("swagger-ui");
+        assertThat(contentSource.getContent("index.html").getContentType())
+                .get()
+                .isEqualTo("text/html");
     }
 }

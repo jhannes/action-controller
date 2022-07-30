@@ -95,13 +95,13 @@
         <dependency>
             <groupId>org.logevents</groupId>
             <artifactId>logevents</artifactId>
-            <version>0.3.1</version>
+            <version>0.3.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>3.22.0</version>
+            <version>3.23.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -115,6 +115,12 @@
             <artifactId>fake-servlet</artifactId>
             <version>${project.version}</version>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>swagger-ui</artifactId>
+            <version>4.11.1</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

@@ -126,7 +126,7 @@ public class ConfigObserverTest {
         observer.onInetSocketAddress("httpListenAddress",
                 10080, address -> this.httpListenAddress = address
         );
-        assertThat(httpListenAddress).isEqualTo(InetSocketAddress.createUnresolved("localhost", 10080));
+        assertThat(httpListenAddress).isEqualTo(new InetSocketAddress("localhost", 10080));
 
         writeConfigLine("httpListenAddress=127.0.0.1:11080");
         assertThat(httpListenAddress).isEqualTo(new InetSocketAddress("127.0.0.1", 11080));

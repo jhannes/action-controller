@@ -13,7 +13,7 @@ import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapperFactory;
 import org.actioncontroller.meta.HttpParameterMapping;
 import org.actioncontroller.servlet.ApiServlet;
-import org.actioncontroller.test.FakeApiClient;
+import org.actioncontroller.servlet.FakeServletClient;
 import org.actioncontroller.util.TypesUtil;
 import org.actioncontroller.values.ContentBody;
 import org.actioncontroller.values.RequestParam;
@@ -151,7 +151,7 @@ public class AnnotationConfigurationTest {
         servlet.getContext().setAttribute(keySpec);
         servlet.init(null);
 
-        Controller client = ApiClientClassProxy.create(Controller.class, new FakeApiClient(contextRoot, "/api", servlet));
+        Controller client = ApiClientClassProxy.create(Controller.class, new FakeServletClient(contextRoot, "/api", servlet));
 
         client.setCookie("Hello", v -> returnedCookieValue = v);
         assertThat(decrypt(returnedCookieValue, keySpec)).isEqualTo("Hello");

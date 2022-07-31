@@ -9,7 +9,7 @@ import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.servlet.ApiServlet;
-import org.actioncontroller.test.FakeApiClient;
+import org.actioncontroller.servlet.FakeServletClient;
 import org.jsonbuddy.JsonArray;
 import org.jsonbuddy.pojo.JsonGenerator;
 import org.junit.Before;
@@ -93,7 +93,7 @@ public class JsonBodyTest {
     protected ApiClient createHttpClient(Object controller) throws Exception {
         final ApiServlet servlet = new ApiServlet(controller);
         servlet.init(null);
-        return new FakeApiClient(new URL("http://example.com/test"), "/api", servlet);
+        return new FakeServletClient(new URL("http://example.com/test"), "/api", servlet);
     }
 
     @Test

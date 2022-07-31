@@ -7,7 +7,7 @@ import org.actioncontroller.meta.HttpClientParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpParameterMapperFactory;
 import org.actioncontroller.meta.HttpParameterMapping;
-import org.actioncontroller.test.FakeApiClient;
+import org.actioncontroller.servlet.FakeServletClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,16 +94,16 @@ public @interface RequestParam {
         public HttpClientParameterMapper clientParameterMapper(RemoteUser annotation, Parameter parameter) {
             if (parameter.getType() == Optional.class) {
                 return (exchange, arg) -> {
-                    if (exchange instanceof FakeApiClient.FakeApiClientExchange) {
-                        FakeApiClient.FakeApiClientExchange clientExchange = (FakeApiClient.FakeApiClientExchange) exchange;
+                    if (exchange instanceof FakeServletClient.FakeApiClientExchange) {
+                        FakeServletClient.FakeApiClientExchange clientExchange = (FakeServletClient.FakeApiClientExchange) exchange;
                         Optional.ofNullable((Optional<?>) arg).flatMap(Function.identity())
                                 .ifPresent(clientExchange::setRemoteUser);
                     }
                 };
             } else {
                 return (exchange, object) -> {
-                    if (exchange instanceof FakeApiClient.FakeApiClientExchange && object != null) {
-                        ((FakeApiClient.FakeApiClientExchange) exchange).setRemoteUser(object);
+                    if (exchange instanceof FakeServletClient.FakeApiClientExchange && object != null) {
+                        ((FakeServletClient.FakeApiClientExchange) exchange).setRemoteUser(object);
                     }
                 };
             }

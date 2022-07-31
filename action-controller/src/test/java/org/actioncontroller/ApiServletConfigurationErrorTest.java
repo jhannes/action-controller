@@ -13,7 +13,7 @@ import org.actioncontroller.meta.HttpReturnMapper;
 import org.actioncontroller.meta.HttpReturnMapperFactory;
 import org.actioncontroller.meta.HttpReturnMapping;
 import org.actioncontroller.servlet.ApiServlet;
-import org.actioncontroller.test.FakeApiClient;
+import org.actioncontroller.servlet.FakeServletClient;
 import org.actioncontroller.values.PathParam;
 import org.actioncontroller.values.SendRedirect;
 import org.junit.Rule;
@@ -161,7 +161,7 @@ public class ApiServletConfigurationErrorTest {
         ApiServlet servlet = new ApiServlet(new ControllerWithRuntimeError());
         servlet.init(null);
 
-        ControllerWithRuntimeError clientController = ApiClientClassProxy.create(ControllerWithRuntimeError.class, new FakeApiClient(new URL("http://example.org"), "/", servlet));
+        ControllerWithRuntimeError clientController = ApiClientClassProxy.create(ControllerWithRuntimeError.class, new FakeServletClient(new URL("http://example.org"), "/", servlet));
         expectedLogEventsRule.expectMatch(expect -> {
             if (expect.getEvent().getLevel() == Level.WARN && expect.getEvent().getLoggerName().equals(ApiControllerAction.class.getName())) {
                 assertThat(expect.getEvent().getThrowable().getStackTrace()[0].getClassName()).isEqualTo(ControllerWithRuntimeError.class.getName());

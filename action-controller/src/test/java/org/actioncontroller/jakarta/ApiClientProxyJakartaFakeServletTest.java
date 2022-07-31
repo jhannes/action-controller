@@ -2,8 +2,6 @@ package org.actioncontroller.jakarta;
 
 import org.actioncontroller.AbstractApiClientProxyTest;
 import org.actioncontroller.client.ApiClient;
-import org.actioncontroller.servlet.ApiServlet;
-import org.actioncontroller.test.FakeApiClient;
 
 import java.net.URL;
 
@@ -18,7 +16,7 @@ public class ApiClientProxyJakartaFakeServletTest extends AbstractApiClientProxy
 
     @Override
     public void shouldRethrowRuntimeExceptions() {
-        
+
     }
 
 }

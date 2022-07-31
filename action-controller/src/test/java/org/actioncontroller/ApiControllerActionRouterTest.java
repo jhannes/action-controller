@@ -8,7 +8,7 @@ import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.meta.ApiControllerActionFactory;
 import org.actioncontroller.meta.HttpRouterMapping;
 import org.actioncontroller.servlet.ApiServlet;
-import org.actioncontroller.test.FakeApiClient;
+import org.actioncontroller.servlet.FakeServletClient;
 import org.actioncontroller.values.ContentBody;
 import org.actioncontroller.values.PathParam;
 import org.actioncontroller.values.RequestParam;
@@ -45,22 +45,22 @@ public class ApiControllerActionRouterTest {
             }
         }
     }
-    
+
 
     public static class TestController {
-        
+
         @POST("/path")
         @ContentBody
         public String postToPath() {
             return "post";
         }
-        
+
         @GET("/path")
         @ContentBody
         public String getToPath() {
             return "get";
         }
-        
+
         @GET("/path?param")
         @ContentBody
         public String getWithParam(@RequestParam("param") String param) {
@@ -84,13 +84,13 @@ public class ApiControllerActionRouterTest {
         public String getDefault() {
             return "getDefault";
         }
-        
+
         @GET("/path/{param}")
         @ContentBody
         public String getWithPathParam(@PathParam("param") String param) {
             return "getWithPathParam " + param;
         }
-        
+
         @GET("/path/{param}/otherConstant")
         @ContentBody
         public String getOtherConstant(@PathParam("param") String param) {
@@ -108,7 +108,7 @@ public class ApiControllerActionRouterTest {
         public String getParamAtEnd(@PathParam("param") String param, @PathParam("otherParam") String otherParam) {
             return "getParamAtEnd(" + param + "," + otherParam + ")";
         }
-        
+
         @BOTTOM("/path")
         @ContentBody
         public String getBottom() {
@@ -119,7 +119,7 @@ public class ApiControllerActionRouterTest {
     protected ApiClient createClient(TestController controller) throws Exception {
         final ApiServlet servlet = new ApiServlet(controller);
         servlet.init(null);
-        return new FakeApiClient(new URL("http://example.com/test"), "/api", servlet);
+        return new FakeServletClient(new URL("http://example.com/test"), "/api", servlet);
     }
 
 
@@ -134,13 +134,13 @@ public class ApiControllerActionRouterTest {
         assertThat(controllerClient.getToPath()).isEqualTo("get");
         assertThat(controllerClient.postToPath()).isEqualTo("post");
     }
-    
+
     @Test
     public void shouldRouteOnParameter() {
         assertThat(controllerClient.getToPath()).isEqualTo("get");
         assertThat(controllerClient.getWithParam("value")).isEqualTo("get with param=value");
     }
-    
+
     @Test
     public void shouldPreferParamWithConstantValue() {
         assertThat(controllerClient.getDefault()).isEqualTo("getDefault");
@@ -149,7 +149,7 @@ public class ApiControllerActionRouterTest {
                 .as("Router will prefer path with constant value")
                 .isEqualTo("getDefault");
     }
-    
+
     @Test
     public void shouldPreferEarlierConstant() {
         assertThat(controllerClient.getParamAtEnd("foo", "bar")).isEqualTo("getParamAtEnd(foo,bar)");
@@ -160,13 +160,13 @@ public class ApiControllerActionRouterTest {
                 .as("should route to getParamAtEnd since the middle variable matches an early constant")
                 .isEqualTo("getParamAtEnd(constant,otherConstant)");
     }
-    
+
     @Test
     public void shouldPickCorrectSubconstantUnderPathVariable() {
         assertThat(controllerClient.getParamInTheMiddle("foo")).isEqualTo("getParamInTheMiddle(foo)");
         assertThat(controllerClient.getOtherConstant("foo")).isEqualTo("getOtherConstant(foo)");
     }
-    
+
     @Test
     public void shouldThrowOnNoMatchingParameterRoute() throws IOException {
         ApiClientExchange exchange = client.createExchange();
@@ -174,7 +174,7 @@ public class ApiControllerActionRouterTest {
         exchange.executeRequest();
         assertThat(exchange.getResponseCode()).isEqualTo(404);
     }
-    
+
     @Test
     public void shouldThrowOnNoLeafRoute() throws IOException {
         ApiClientExchange exchange = client.createExchange();
@@ -182,7 +182,7 @@ public class ApiControllerActionRouterTest {
         exchange.executeRequest();
         assertThat(exchange.getResponseCode()).isEqualTo(404);
     }
-    
+
     @Test
     public void shouldReturn404OnUnknownHttpMethod() throws IOException {
         ApiClientExchange exchange = client.createExchange();
@@ -190,7 +190,7 @@ public class ApiControllerActionRouterTest {
         exchange.executeRequest();
         assertThat(exchange.getResponseCode()).isEqualTo(404);
     }
-    
+
     @Test
     public void shouldSupportCustomHttpMethods() throws IOException {
         ApiClientExchange exchange = client.createExchange();

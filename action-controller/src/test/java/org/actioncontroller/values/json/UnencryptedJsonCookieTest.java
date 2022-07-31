@@ -6,7 +6,7 @@ import org.actioncontroller.values.RequestParam;
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.servlet.ApiServlet;
-import org.actioncontroller.test.FakeApiClient;
+import org.actioncontroller.servlet.FakeServletClient;
 import org.jsonbuddy.JsonObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -127,7 +127,7 @@ public class UnencryptedJsonCookieTest {
     protected ApiClient createClient(Controller controller) throws ServletException, IOException {
         ApiServlet servlet = new ApiServlet(controller);
         servlet.init(null);
-        return new FakeApiClient(new URL("http://example.com/test"), "/api", servlet);
+        return new FakeServletClient(new URL("http://example.com/test"), "/api", servlet);
     }
 
 }

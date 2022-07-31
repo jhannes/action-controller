@@ -8,7 +8,7 @@ import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.exceptions.HttpRequestException;
 import org.actioncontroller.servlet.ApiServlet;
-import org.actioncontroller.test.FakeApiClient;
+import org.actioncontroller.servlet.FakeServletClient;
 import org.actioncontroller.values.ContentBody;
 import org.junit.Before;
 import org.junit.Test;
@@ -18,7 +18,6 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -98,7 +97,7 @@ public class JsonBodyTest {
     protected ApiClient createHttpClient(Object controller) throws Exception {
         final ApiServlet servlet = new ApiServlet(controller);
         servlet.init(null);
-        return new FakeApiClient(new URL("https://example.com/test"), "/api", servlet);
+        return new FakeServletClient(new URL("https://example.com/test"), "/api", servlet);
     }
 
     @Test

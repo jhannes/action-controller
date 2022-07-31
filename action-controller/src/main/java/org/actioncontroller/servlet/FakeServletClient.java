@@ -1,11 +1,12 @@
-package org.actioncontroller.test;
+package org.actioncontroller.servlet;
 
 import org.actioncontroller.ApiHttpExchange;
-import org.actioncontroller.exceptions.HttpNotModifiedException;
-import org.actioncontroller.util.IOUtil;
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.client.HttpClientException;
+import org.actioncontroller.exceptions.HttpNotModifiedException;
+import org.actioncontroller.util.IOUtil;
+import org.fakeservlet.FakeCookie;
 import org.fakeservlet.FakeServletRequest;
 import org.fakeservlet.FakeServletResponse;
 
@@ -36,18 +37,18 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class FakeApiClient implements ApiClient {
+public class FakeServletClient implements ApiClient {
     public static final Charset CHARSET = StandardCharsets.ISO_8859_1;
     private final URL contextRoot;
     private final String servletPath;
     private final Servlet servlet;
     private HttpSession session;
-    private final Map<String, Cookie> clientCookies = new HashMap<>();
+    private final Map<String, FakeCookie> clientCookies = new HashMap<>();
     private final List<String> clientCertificateDNs = new ArrayList<>();
     private Principal remoteUser;
     private final URL baseUrl;
 
-    public FakeApiClient(URL contextRoot, String servletPath, Servlet servlet) {
+    public FakeServletClient(URL contextRoot, String servletPath, Servlet servlet) {
         this.contextRoot = contextRoot;
         this.servletPath = servletPath;
         this.servlet = servlet;
@@ -76,13 +77,9 @@ public class FakeApiClient implements ApiClient {
     @Override
     public String getClientCookie(String key) {
         return Optional.ofNullable(clientCookies.get(key))
-                .filter(FakeApiClient::isUnexpired)
-                .map(Cookie::getValue)
+                .filter(FakeCookie::isUnexpired)
+                .map(FakeCookie::getValue)
                 .orElse(null);
-    }
-
-    private static boolean isUnexpired(Cookie c) {
-        return c.getMaxAge() == -1 || c.getMaxAge() > 0;
     }
 
     public void authenticate(Principal remoteUser) {
@@ -97,7 +94,8 @@ public class FakeApiClient implements ApiClient {
 
         private FakeApiClientExchange(URL contextRoot, String servletPath, Principal remoteUser) {
             List<Cookie> requestCookies = clientCookies.values().stream()
-                    .filter(FakeApiClient::isUnexpired)
+                    .filter(FakeCookie::isUnexpired)
+                    .map(c -> new Cookie(c.getName(), c.getValue()))
                     .collect(Collectors.toList());
 
             request = new FakeServletRequest("GET", contextRoot, servletPath, "/");

@@ -1,18 +1,19 @@
 package org.actioncontroller.jakarta;
 
-import jakarta.servlet.Servlet;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpSession;
 import org.actioncontroller.ApiHttpExchange;
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientExchange;
 import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.exceptions.HttpNotModifiedException;
 import org.actioncontroller.util.IOUtil;
+import org.fakeservlet.FakeCookie;
 import org.fakeservlet.jakarta.FakeJakartaRequest;
 import org.fakeservlet.jakarta.FakeJakartaResponse;
 
+import jakarta.servlet.Servlet;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpSession;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -42,7 +43,7 @@ public class FakeJakartaApiClient implements ApiClient {
     private final String servletPath;
     private final Servlet servlet;
     private HttpSession session;
-    private final Map<String, Cookie> clientCookies = new HashMap<>();
+    private final Map<String, FakeCookie> clientCookies = new HashMap<>();
     private final List<String> clientCertificateDNs = new ArrayList<>();
     private Principal remoteUser;
     private final URL baseUrl;
@@ -76,13 +77,9 @@ public class FakeJakartaApiClient implements ApiClient {
     @Override
     public String getClientCookie(String key) {
         return Optional.ofNullable(clientCookies.get(key))
-                .filter(FakeJakartaApiClient::isUnexpired)
-                .map(Cookie::getValue)
+                .filter(FakeCookie::isUnexpired)
+                .map(FakeCookie::getValue)
                 .orElse(null);
-    }
-
-    private static boolean isUnexpired(Cookie c) {
-        return c.getMaxAge() == -1 || c.getMaxAge() > 0;
     }
 
     public void authenticate(Principal remoteUser) {
@@ -97,7 +94,8 @@ public class FakeJakartaApiClient implements ApiClient {
 
         private FakeApiClientExchange(URL contextRoot, String servletPath, Principal remoteUser) {
             List<Cookie> requestCookies = clientCookies.values().stream()
-                    .filter(FakeJakartaApiClient::isUnexpired)
+                    .filter(FakeCookie::isUnexpired)
+                    .map(c -> new Cookie(c.getName(), c.getValue()))
                     .collect(Collectors.toList());
 
             request = new FakeJakartaRequest("GET", contextRoot, servletPath, "/");

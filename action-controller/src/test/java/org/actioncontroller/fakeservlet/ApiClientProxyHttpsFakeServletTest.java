@@ -2,7 +2,7 @@ package org.actioncontroller.fakeservlet;
 
 import org.actioncontroller.AbstractApiClientProxyHttpsTest;
 import org.actioncontroller.servlet.ApiServlet;
-import org.actioncontroller.test.FakeApiClient;
+import org.actioncontroller.servlet.FakeServletClient;
 import org.junit.Before;
 
 import java.net.URL;
@@ -13,7 +13,7 @@ public class ApiClientProxyHttpsFakeServletTest extends AbstractApiClientProxyHt
     public void createServerAndClient() throws Exception {
         ApiServlet servlet = new ApiServlet(new CertificateController());
         servlet.init(null);
-        apiClient = new FakeApiClient(new URL("https://example.com/test"), "/api", servlet);
+        apiClient = new FakeServletClient(new URL("https://example.com/test"), "/api", servlet);
     }
 
 }

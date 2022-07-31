@@ -1,12 +1,10 @@
 package org.actioncontroller.fakeservlet;
 
 import org.actioncontroller.AbstractApiClientProxyTest;
-import org.actioncontroller.ApiControllerAction;
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.servlet.ApiServlet;
-import org.actioncontroller.test.FakeApiClient;
+import org.actioncontroller.servlet.FakeServletClient;
 import org.junit.Test;
-import org.slf4j.event.Level;
 
 import java.net.URL;
 
@@ -18,7 +16,7 @@ public class ApiClientProxyFakeServletTest extends AbstractApiClientProxyTest {
     protected ApiClient createClient(TestController controller) throws Exception {
         final ApiServlet servlet = new ApiServlet(controller);
         servlet.init(null);
-        return new FakeApiClient(new URL("http://example.com/test"), "/api", servlet);
+        return new FakeServletClient(new URL("http://example.com/test"), "/api", servlet);
     }
 
     @Override

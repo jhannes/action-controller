@@ -1,10 +1,11 @@
 package org.fakeservlet.jakarta;
 
+import org.fakeservlet.FakeCookie;
+
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.WriteListener;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
-
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.net.URLDecoder;
@@ -20,6 +21,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * DANGER! Unfinished class! Implement methods as you go!
@@ -31,7 +33,6 @@ public class FakeJakartaResponse implements HttpServletResponse {
     private String statusMessage;
     private String contentType;
     private final Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-    private final List<Cookie> cookies = new ArrayList<>();
     private String characterEncoding;
 
     public FakeJakartaResponse(FakeJakartaRequest request) {
@@ -39,20 +40,28 @@ public class FakeJakartaResponse implements HttpServletResponse {
     }
 
     @Override
-    public void addCookie(Cookie cookie) {
-        cookies.add(cookie);
+    public void addCookie(Cookie c) {
+        addHeader(
+                "Set-Cookie",
+                new FakeCookie(c.getName(), URLDecoder.decode(c.getValue(), StandardCharsets.UTF_8))
+                        .domain(c.getDomain()).maxAge(c.getMaxAge()).path(c.getPath()).secure(c.getSecure()).httpOnly(c.isHttpOnly())
+                        .toStringRFC6265()
+        );
     }
 
     public List<String> getCookies(String name) {
-        return cookies.stream()
-                .filter(c -> c.getName().equals(name))
-                .map(Cookie::getValue)
-                .map(c -> URLDecoder.decode(c, CHARSET))
+        return streamCookies()
+                .filter(c -> c.getName().equalsIgnoreCase(name))
+                .map(FakeCookie::getValue)
                 .collect(Collectors.toList());
     }
 
-    public List<Cookie> getCookies() {
-        return cookies;
+    public List<FakeCookie> getCookies() {
+        return streamCookies().collect(Collectors.toList());
+    }
+
+    private Stream<FakeCookie> streamCookies() {
+        return getHeaders("Set-Cookie").stream().map(FakeCookie::parse);
     }
 
     // TODO
@@ -122,13 +131,16 @@ public class FakeJakartaResponse implements HttpServletResponse {
 
     @Override
     public void setHeader(String name, String value) {
-        headers.computeIfAbsent(name, k -> new ArrayList<>()).add(value);
+        if (value == null) {
+            headers.remove(name);
+        } else {
+            headers.put(name, List.of(value));
+        }
     }
 
-    // TODO
     @Override
-    public void addHeader(String s, String s1) {
-        throw unimplemented();
+    public void addHeader(String name, String value) {
+        headers.computeIfAbsent(name, k -> new ArrayList<>()).add(value);
     }
 
     @Override

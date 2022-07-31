@@ -3,14 +3,14 @@ package org.actioncontroller.fakeservlet;
 import org.actioncontroller.AbstractApiClientSessionTest;
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.servlet.ApiServlet;
-import org.actioncontroller.test.FakeApiClient;
+import org.actioncontroller.servlet.FakeServletClient;
 
 import java.net.URL;
 import java.security.Principal;
 
 public class ApiClientFakeSessionTest extends AbstractApiClientSessionTest {
 
-    private FakeApiClient apiClient;
+    private FakeServletClient apiClient;
 
     @Override
     protected ApiClient createClient(Object controller) throws Exception {
@@ -18,7 +18,7 @@ public class ApiClientFakeSessionTest extends AbstractApiClientSessionTest {
         ApiServlet servlet = new ApiServlet(new LoginController());
         servlet.init(null);
         final URL contextRoot = new URL("http://example.com/test");
-        apiClient = new FakeApiClient(contextRoot, "/api", servlet);
+        apiClient = new FakeServletClient(contextRoot, "/api", servlet);
         return apiClient;
     }
 

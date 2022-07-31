@@ -95,7 +95,7 @@
         <dependency>
             <groupId>org.logevents</groupId>
             <artifactId>logevents</artifactId>
-            <version>0.3.3</version>
+            <version>0.3.4</version>
             <scope>test</scope>
         </dependency>
         <dependency>

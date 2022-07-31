@@ -93,11 +93,6 @@ public class ServletHttpExchange implements ApiHttpExchange {
     }
 
     @Override
-    public URL getContextURL() {
-        return IOUtil.asURL(getServerURL() + getContextPath());
-    }
-
-    @Override
     public String getContextPath() {
         return req.getContextPath();
     }

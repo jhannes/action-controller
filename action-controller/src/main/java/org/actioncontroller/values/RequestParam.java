@@ -61,6 +61,11 @@ public @interface RequestParam {
         public HttpParameterMapper create(ClientIp annotation, Parameter parameter, ApiControllerContext context) {
             return ApiHttpExchange::getClientIp;
         }
+
+        @Override
+        public HttpClientParameterMapper clientParameterMapper(ClientIp annotation, Parameter parameter) {
+            return (exchange, arg) -> {};
+        }
     }
 
     class MapperFactory implements HttpParameterMapperFactory<RequestParam> {

@@ -6,7 +6,7 @@ import com.sun.net.httpserver.HttpPrincipal;
 import com.sun.net.httpserver.HttpsExchange;
 import org.actioncontroller.exceptions.HttpActionException;
 import org.actioncontroller.exceptions.HttpServerErrorException;
-import org.actioncontroller.util.IOUtil;
+import org.actioncontroller.util.HttpUrl;
 import org.actioncontroller.ApiHttpExchange;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -19,14 +19,12 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.net.HttpCookie;
-import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -42,17 +40,18 @@ public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
     private final HttpExchange exchange;
     private Map<String, String> pathParams = new HashMap<>();
     private final String contextPath;
-    private Map<String, List<String>> parameters;
+    private final Map<String, List<String>> parameters;
     private boolean responseSent = false;
 
     public JdkHttpExchange(HttpExchange exchange) {
         this.exchange = exchange;
         this.contextPath = exchange.getHttpContext().getPath().equals("/") ? "" : exchange.getHttpContext().getPath();
-        this.parameters = parseParameters(exchange.getRequestURI().getQuery());
-        if (!exchange.getRequestMethod().equals("GET")) {
-            if ("application/x-www-form-urlencoded".equals(exchange.getRequestHeaders().getFirst("content-type"))) {
-                this.parameters = parseParameters(asString(exchange.getRequestBody()));
-            }
+        if (exchange.getRequestMethod().equals("GET")) {
+            this.parameters = HttpUrl.parseParameters(exchange.getRequestURI().getQuery());
+        } else if ("application/x-www-form-urlencoded".equals(exchange.getRequestHeaders().getFirst("content-type"))) {
+            this.parameters = HttpUrl.parseParameters(asString(exchange.getRequestBody()));
+        } else {
+            this.parameters = Map.of();
         }
     }
 
@@ -67,11 +66,6 @@ public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
     @Override
     public String getHttpMethod() {
         return exchange.getRequestMethod();
-    }
-
-    @Override
-    public URL getContextURL() {
-        return IOUtil.asURL(getServerURL() + getContextPath());
     }
 
     @Override
@@ -117,11 +111,6 @@ public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
 
     private int getDefaultPort() {
         return getScheme().equals("https") ? 443 : (getScheme().equals("http") ? 80 : -1);
-    }
-
-    @Override
-    public URL getApiURL() {
-        return IOUtil.asURL(getServerURL() + getContextPath());
     }
 
     @Override
@@ -272,7 +261,7 @@ public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
 
         if (value == null) {
             // HACK: HttpCookie doesn't serialize to Set-Cookie format! More work is needed
-            HttpCookie httpCookie = new HttpCookie(name, null);
+            HttpCookie httpCookie = new HttpCookie(name, "");
             httpCookie.setSecure(secure);
             httpCookie.setPath(contextPath);
             httpCookie.setDomain(domain);
@@ -331,22 +320,6 @@ public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
         String body = getErrorResponse(statusCode, message);
         sendResponseHeaders(statusCode, body.getBytes().length);
         exchange.getResponseBody().write(body.getBytes());
-    }
-
-    protected Map<String, List<String>> parseParameters(String query) {
-        if (query == null) {
-            return new HashMap<>();
-        }
-        Map<String, List<String>> result = new HashMap<>();
-        for (String parameterString : query.split("&")) {
-            int equalsPos = parameterString.indexOf('=');
-            if (equalsPos > 0) {
-                String paramName = parameterString.substring(0, equalsPos);
-                String paramValue = URLDecoder.decode(parameterString.substring(equalsPos+1), StandardCharsets.ISO_8859_1);
-                result.computeIfAbsent(paramName, n -> new ArrayList<>()).add(paramValue);
-            }
-        }
-        return result;
     }
 
     public void close() throws IOException {

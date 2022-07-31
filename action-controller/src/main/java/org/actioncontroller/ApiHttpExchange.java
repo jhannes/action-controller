@@ -4,6 +4,7 @@ import org.actioncontroller.exceptions.HttpActionException;
 import org.actioncontroller.exceptions.HttpRequestException;
 import org.actioncontroller.meta.HttpParameterMapper;
 import org.actioncontroller.meta.HttpReturnMapping;
+import org.actioncontroller.util.IOUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,7 +44,9 @@ public interface ApiHttpExchange {
     /**
      * Returns the scheme, hostname, port and context path of the server
      */
-    URL getContextURL();
+    default URL getContextURL() {
+        return IOUtil.asURL(getServerURL() + getContextPath());
+    }
 
     /**
      * Returns the path to where the controllers paths are evaluated relative to, that
@@ -51,7 +54,9 @@ public interface ApiHttpExchange {
      * is bound as "/api/*" in a webapp mounted at "/app", getApiURL might return
      * <code>https://example.com:7443/app/api</code>.
      */
-    URL getApiURL();
+    default URL getApiURL() {
+        return IOUtil.asURL(getServerURL() + getContextPath());
+    }
 
     /**
      * Returns the part of the URL after getApiURL. For example if a controller is mounted at

@@ -77,16 +77,6 @@ public class ApiServlet extends HttpServlet implements UserContext {
         return context;
     }
 
-    @Override
-    public boolean isUserLoggedIn(ApiHttpExchange exchange) {
-        return exchange.isUserLoggedIn();
-    }
-
-    @Override
-    public boolean isUserInRole(ApiHttpExchange exchange, String role) {
-        return exchange.isUserInRole(role);
-    }
-
     private ActionControllerConfigurationCompositeException controllerException;
 
     @Override

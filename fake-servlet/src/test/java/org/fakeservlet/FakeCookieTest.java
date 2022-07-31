@@ -36,6 +36,12 @@ public class FakeCookieTest {
     }
 
     @Test
+    public void shouldSupportQuotedValues() {
+        FakeCookie cookie = FakeCookie.parse("test=\"value\"; Path=/");
+        assertThat(cookie.getValue()).isEqualTo("value");
+    }
+
+    @Test
     public void shouldDeleteCookie() {
         FakeCookie cookie = FakeCookie.delete("cookieName").path("/demo").httpOnly(true).secure(true);
         assertThat(cookie.toStringRFC6265())

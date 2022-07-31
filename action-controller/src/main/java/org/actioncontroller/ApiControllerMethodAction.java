@@ -343,10 +343,10 @@ public class ApiControllerMethodAction implements ApiControllerAction {
         if (role == null) {
             return;
         }
-        if (!userContext.isUserLoggedIn(exchange)) {
+        if (!exchange.isUserLoggedIn()) {
             throw new HttpUnauthorizedException("User must be logged in for " + action);
         }
-        if (!userContext.isUserInRole(exchange, role)) {
+        if (!exchange.isUserInRole(role)) {
             throw new HttpForbiddenException("User failed to authenticate for " + action + ": Missing role " + role + " for user");
         }
     }

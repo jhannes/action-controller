@@ -18,11 +18,10 @@ public class ApiHandler implements UserContext, HttpHandler {
     private static final Logger logger = LoggerFactory.getLogger(ApiHandler.class);
 
     private final ApiControllerActionRouter router = new ApiControllerActionRouter();
-    private final ActionControllerConfigurationCompositeException controllerException;
     private TimerRegistry timerRegistry = TimerRegistry.NULL;
 
     public ApiHandler(Object[] controllers, ApiControllerContext apiContext) {
-        this.controllerException = new ActionControllerConfigurationCompositeException();
+        ActionControllerConfigurationCompositeException controllerException = new ActionControllerConfigurationCompositeException();
         router.setupActions(Arrays.asList(controllers), apiContext, controllerException);
         controllerException.verifyNoExceptions();
     }
@@ -49,16 +48,6 @@ public class ApiHandler implements UserContext, HttpHandler {
                 httpExchange.sendError(500, "Internal server error");
             }
         }
-    }
-
-    @Override
-    public boolean isUserLoggedIn(ApiHttpExchange exchange) {
-        return exchange.isUserLoggedIn();
-    }
-
-    @Override
-    public boolean isUserInRole(ApiHttpExchange exchange, String role) {
-        return exchange.isUserInRole(role);
     }
 
     @Override

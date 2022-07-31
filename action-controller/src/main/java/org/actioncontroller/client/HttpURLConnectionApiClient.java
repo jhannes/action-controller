@@ -2,6 +2,7 @@ package org.actioncontroller.client;
 
 import org.actioncontroller.ApiHttpExchange;
 import org.actioncontroller.exceptions.HttpNotModifiedException;
+import org.actioncontroller.util.HttpUrl;
 import org.actioncontroller.util.IOUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +24,6 @@ import java.net.HttpCookie;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
@@ -241,7 +241,7 @@ public class HttpURLConnectionApiClient implements ApiClient {
             connection.setRequestMethod(method);
             if (!requestCookies.isEmpty()) {
                 connection.setRequestProperty("Cookie", requestCookies.entrySet().stream()
-                        .map(c -> c.getKey() + "=\"" + c.getValue() + "\"")
+                        .map(c -> c.getKey() + "=" + c.getValue())
                         .collect(Collectors.joining(",")));
             }
             requestHeaders.forEach(connection::setRequestProperty);
@@ -256,7 +256,7 @@ public class HttpURLConnectionApiClient implements ApiClient {
             }
 
             long startTime = System.currentTimeMillis();
-            String query = getQuery();
+            String query = HttpUrl.getQuery(requestParameters);
             if (query != null && !isGetRequest()) {
                 connection.setDoOutput(true);
                 connection.setRequestProperty("Content-type", "application/x-www-form-urlencoded");
@@ -290,22 +290,12 @@ public class HttpURLConnectionApiClient implements ApiClient {
         }
 
         public String getRequestUrl() {
-            String query = getQuery();
+            String query = HttpUrl.getQuery(requestParameters);
             return baseUrl + pathInfo + (query != null && isGetRequest() ? "?" + query : "");
         }
 
         private boolean isGetRequest() {
             return method.equals("GET");
-        }
-
-        private String getQuery() {
-            if (!requestParameters.isEmpty()) {
-                return requestParameters
-                        .entrySet().stream()
-                        .map(entry -> entry.getValue().stream().map(v -> urlEncode(entry.getKey()) + "=" + urlEncode(v)).collect(Collectors.joining("&")))
-                        .collect(Collectors.joining("&"));
-            }
-            return null;
         }
 
         @Override
@@ -395,10 +385,6 @@ public class HttpURLConnectionApiClient implements ApiClient {
                 .filter(HttpURLConnectionApiClient::isUnexpired)
                 .filter(c -> !isHttps() || c.getSecure())
                 .collect(Collectors.toMap(c -> c.getName(), c -> c.getValue()));
-    }
-
-    private String urlEncode(String value) {
-        return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 
     public static TrustManager[] getTrustManagers(KeyStore trustStore) throws NoSuchAlgorithmException, KeyStoreException {

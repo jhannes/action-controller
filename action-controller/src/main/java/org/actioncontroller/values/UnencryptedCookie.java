@@ -124,9 +124,7 @@ public @interface UnencryptedCookie {
 
         @Override
         public Object apply(ApiHttpExchange exchange) {
-            return (Consumer<?>) o -> {
-                setResponseCookie(exchange, o);
-            };
+            return (Consumer<?>) o -> setResponseCookie(exchange, o);
         }
 
         protected void setResponseCookie(ApiHttpExchange exchange, Object o) {

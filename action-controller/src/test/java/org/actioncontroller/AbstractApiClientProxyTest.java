@@ -19,7 +19,7 @@ import org.actioncontroller.values.LastModified;
 import org.actioncontroller.values.PathParam;
 import org.actioncontroller.values.RequestParam;
 import org.actioncontroller.values.SendRedirect;
-import org.actioncontroller.values.UnencryptedCookiePreview;
+import org.actioncontroller.values.UnencryptedCookie;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -157,30 +157,36 @@ public abstract class AbstractApiClientProxyTest {
             return personId + "'s name";
         }
 
+        @GET("/myIpAddress")
+        @ContentBody
+        public String getMyIpAddress(@RequestParam.ClientIp String clientIp) {
+            return clientIp;
+        }
+
         @PUT("/loginSession/me")
         public void putLoginSession(
                 @RequestParam("username") String username,
                 @RequestParam("password") String password,
-                @UnencryptedCookiePreview("sessionCookie") Consumer<String> sessionCookie
+                @UnencryptedCookie("sessionCookie") Consumer<String> sessionCookie
         ) {
             sessionCookie.accept(username + ":" + password);
         }
 
         @GET("/loginSession/me")
         @HttpResponseHeader("X-Username")
-        public String whoAmI(@UnencryptedCookiePreview("sessionCookie") Optional<String> sessionCookie) {
+        public String whoAmI(@UnencryptedCookie("sessionCookie") Optional<String> sessionCookie) {
             return sessionCookie.map(s -> s.split(":")[0]).orElse("<none>");
         }
 
         @GET("/loginSession/me/required")
         @HttpResponseHeader("X-Username")
-        public String whoAmIRequired(@UnencryptedCookiePreview("sessionCookie") String sessionCookie) {
+        public String whoAmIRequired(@UnencryptedCookie("sessionCookie") String sessionCookie) {
             return sessionCookie.split(":")[0];
         }
 
         @GET("/loginSession/endsession")
         @SendRedirect
-        public String endsession(@UnencryptedCookiePreview("sessionCookie") Consumer<String> setSessionCookie, @ContextUrl String url) {
+        public String endsession(@UnencryptedCookie("sessionCookie") Consumer<String> setSessionCookie, @ContextUrl String url) {
             setSessionCookie.accept(null);
             return url + "/frontPage";
         }
@@ -188,7 +194,7 @@ public abstract class AbstractApiClientProxyTest {
         @POST("/loginSession/changeUser")
         @ContentBody
         public String changeUser(
-                @UnencryptedCookiePreview("username") AtomicReference<String> usernameCookie,
+                @UnencryptedCookie("username") AtomicReference<String> usernameCookie,
                 @RequestParam("username") String newUsername
         ) {
             String oldValue = usernameCookie.get();

@@ -25,7 +25,7 @@ public class ActionControllerCookieTest {
     }
 
     @Test
-    public void shouldStringFields() {
+    public void shouldSupportStringFields() {
         String example = "lang=en-US; Path=/; Domain=example.com";
         ActionControllerCookie cookie = ActionControllerCookie.parse(example);
         assertThat(cookie.getName()).isEqualTo("lang");
@@ -33,6 +33,12 @@ public class ActionControllerCookieTest {
         assertThat(cookie.getAttribute("Path")).isEqualTo("/");
         assertThat(cookie.getAttribute("Domain")).isEqualTo("example.com");
         assertThat(cookie.toStringRFC6265()).isEqualTo(example);
+    }
+
+    @Test
+    public void shouldSupportQuotedValues() {
+        ActionControllerCookie cookie = ActionControllerCookie.parse("test=\"value\"; Path=/");
+        assertThat(cookie.getValue()).isEqualTo("value");
     }
 
     @Test

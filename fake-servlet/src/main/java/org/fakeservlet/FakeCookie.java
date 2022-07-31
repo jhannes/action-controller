@@ -55,7 +55,7 @@ public class FakeCookie {
         String[] parts = rfc6264String.split(";");
         int equalsPos = parts[0].indexOf('=');
         String name = parts[0].substring(0, equalsPos);
-        String value = URLDecoder.decode(parts[0].substring(equalsPos + 1), StandardCharsets.UTF_8);
+        String value = parseValue(parts[0].substring(equalsPos + 1));
         FakeCookie cookie = new FakeCookie(name, value);
         for (int i = 1; i < parts.length; i++) {
             equalsPos = parts[i].indexOf('=');
@@ -69,6 +69,13 @@ public class FakeCookie {
             }
         }
         return cookie;
+    }
+
+    private static String parseValue(String value) {
+        if (value.startsWith("\"") && value.endsWith("\"") && value.length() >= 2) {
+            value = value.substring(1, value.length()-1);
+        }
+        return URLDecoder.decode(value, StandardCharsets.UTF_8);
     }
 
 
@@ -150,5 +157,12 @@ public class FakeCookie {
         return this;
     }
 
+    public boolean secure() {
+        return getBooleanAttribute("secure");
+    }
+
+    private boolean getBooleanAttribute(String key) {
+        return attributes.containsKey(key) && attributes.get(key) == Boolean.TRUE;
+    }
 }
 

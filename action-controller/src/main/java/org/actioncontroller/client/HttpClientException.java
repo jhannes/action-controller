@@ -26,13 +26,21 @@ public class HttpClientException extends RuntimeException {
         return responseBody;
     }
 
+    public String getTruncatedBody() {
+        if (responseBody == null || responseBody.length() < 50) {
+            return responseBody;
+        } else {
+            return responseBody.substring(0, 45) + "...";
+        }
+    }
+
     public URL getUrl() {
         return url;
     }
 
     @Override
     public String toString() {
-        return getClass().getName() + ": " + getStatusCode() + " " + getMessage() + " [" + url + "]";
+        return getClass().getName() + ": " + getStatusCode() + " " + getMessage() + " [" + url + "]: " + getTruncatedBody();
     }
 
     @Override

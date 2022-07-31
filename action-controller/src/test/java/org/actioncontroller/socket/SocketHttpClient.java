@@ -106,6 +106,17 @@ public class SocketHttpClient implements ApiClient {
         return c.getMaxAge() == -1 || c.getMaxAge() > 0;
     }
 
+    private Map<String, String> getClientCookies() {
+        return clientCookies.values().stream()
+                .filter(SocketHttpClient::isUnexpired)
+                .filter(c -> !isHttps() || c.getSecure())
+                .collect(Collectors.toMap(c -> c.getName(), c -> c.getValue()));
+    }
+
+    private boolean isHttps() {
+        return false;
+    }
+
     private class SocketApiClientExchange implements ApiClientExchange {
         private String method;
         private String pathInfo;
@@ -114,13 +125,12 @@ public class SocketHttpClient implements ApiClient {
         private final Map<String, List<String>> requestParameters = new TreeMap<>();
         private final Map<String, String> requestHeaders = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         private List<HttpCookie> responseCookies = new ArrayList<>();
-        private final List<HttpCookie> requestCookies = clientCookies.values().stream()
-                .filter(SocketHttpClient::isUnexpired)
-                .collect(Collectors.toList());
+
+        private final Map<String, String> requestCookies = getClientCookies();
 
         private Integer responseCode;
         private String responseMessage;
-        private Map<String, List<String>> responseHeaders;
+        private Map<String, List<String>> responseHeaders = Map.of();
         private ApiHttpExchange.OutputStreamConsumer consumer;
         private ByteArrayOutputStream requestBody;
 
@@ -192,10 +202,7 @@ public class SocketHttpClient implements ApiClient {
 
         @Override
         public void addRequestCookie(String name, Object value) {
-            possiblyOptionalToString(value, s -> {
-                HttpCookie cookie = new HttpCookie(name, s);
-                requestCookies.add(cookie);
-            });
+            possiblyOptionalToString(value, s -> requestCookies.put(name, s));
         }
 
         @Override
@@ -209,9 +216,8 @@ public class SocketHttpClient implements ApiClient {
 
             setHeader("Host", url.getAuthority());
             if (!requestCookies.isEmpty()) {
-                setHeader("Cookie", requestCookies.stream()
-                        .filter(c -> isHttps() || !c.getSecure())
-                        .map(c -> c.getName() + "=\"" + c.getValue() + "\"")
+                setHeader("Cookie", requestCookies.entrySet().stream()
+                        .map(c -> c.getKey() + "=\"" + c.getValue() + "\"")
                         .collect(Collectors.joining(",")));
             }
 
@@ -249,10 +255,6 @@ public class SocketHttpClient implements ApiClient {
                 responseCookies = HttpCookie.parse(setCookieHeader);
                 responseCookies.forEach(c -> clientCookies.put(c.getName(), c));
             }
-        }
-
-        private boolean isHttps() {
-            return false;
         }
 
         @Override

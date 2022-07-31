@@ -5,7 +5,7 @@ import org.actioncontroller.actions.GET;
 import org.actioncontroller.actions.POST;
 import org.actioncontroller.values.RequestParam;
 import org.actioncontroller.values.SendRedirect;
-import org.actioncontroller.values.UnencryptedCookie;
+import org.actioncontroller.values.UnencryptedCookiePreview;
 import org.actioncontroller.values.UserPrincipal;
 
 import java.security.Principal;
@@ -53,7 +53,7 @@ public class UserController {
     public String postLogin(
             @RequestParam("username") String username,
             @RequestParam("redirectAfterLogin") Optional<String> redirectAfterLogin,
-            @UnencryptedCookie(value = "username", secure = false) Consumer<String> setUsername
+            @UnencryptedCookiePreview(value = "username", secure = false) Consumer<String> setUsername
     ) {
         setUsername.accept(username);
         return redirectAfterLogin.orElse("user/required");

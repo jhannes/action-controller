@@ -19,7 +19,7 @@ import org.actioncontroller.values.LastModified;
 import org.actioncontroller.values.PathParam;
 import org.actioncontroller.values.RequestParam;
 import org.actioncontroller.values.SendRedirect;
-import org.actioncontroller.values.UnencryptedCookie;
+import org.actioncontroller.values.UnencryptedCookiePreview;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -161,33 +161,36 @@ public abstract class AbstractApiClientProxyTest {
         public void putLoginSession(
                 @RequestParam("username") String username,
                 @RequestParam("password") String password,
-                @UnencryptedCookie("sessionCookie") Consumer<String> sessionCookie
+                @UnencryptedCookiePreview("sessionCookie") Consumer<String> sessionCookie
         ) {
             sessionCookie.accept(username + ":" + password);
         }
 
         @GET("/loginSession/me")
         @HttpResponseHeader("X-Username")
-        public String whoAmI(@UnencryptedCookie("sessionCookie") Optional<String> sessionCookie) {
+        public String whoAmI(@UnencryptedCookiePreview("sessionCookie") Optional<String> sessionCookie) {
             return sessionCookie.map(s -> s.split(":")[0]).orElse("<none>");
         }
 
         @GET("/loginSession/me/required")
         @HttpResponseHeader("X-Username")
-        public String whoAmIRequired(@UnencryptedCookie("sessionCookie") String sessionCookie) {
+        public String whoAmIRequired(@UnencryptedCookiePreview("sessionCookie") String sessionCookie) {
             return sessionCookie.split(":")[0];
         }
 
         @GET("/loginSession/endsession")
         @SendRedirect
-        public String endsession(@UnencryptedCookie("sessionCookie") Consumer<String> setSessionCookie, @ContextUrl String url) {
+        public String endsession(@UnencryptedCookiePreview("sessionCookie") Consumer<String> setSessionCookie, @ContextUrl String url) {
             setSessionCookie.accept(null);
             return url + "/frontPage";
         }
 
         @POST("/loginSession/changeUser")
         @ContentBody
-        public String changeUser(@UnencryptedCookie("username") AtomicReference<String> usernameCookie, @RequestParam("username") String newUsername) {
+        public String changeUser(
+                @UnencryptedCookiePreview("username") AtomicReference<String> usernameCookie,
+                @RequestParam("username") String newUsername
+        ) {
             String oldValue = usernameCookie.get();
             usernameCookie.set(newUsername);
             return oldValue;
@@ -238,7 +241,7 @@ public abstract class AbstractApiClientProxyTest {
         public byte[] reverseBytes(@ContentBody byte[] bytes) {
             byte[] result = new byte[bytes.length];
             for (int i = 0; i < bytes.length; i++) {
-                result[result.length-i-1] = bytes[i];
+                result[result.length - i - 1] = bytes[i];
             }
             return result;
         }
@@ -263,7 +266,7 @@ public abstract class AbstractApiClientProxyTest {
         }
 
         @GET("/files/{filename}.html")
-        @ContentBody(contentType =  "text/html")
+        @ContentBody(contentType = "text/html")
         public String getHtmlFile(@PathParam("filename") String filename) {
             return "<html><h2>Hello from " + filename + "</h2></html>";
         }
@@ -436,12 +439,12 @@ public abstract class AbstractApiClientProxyTest {
         assertThat(controllerClient.whoAmIRequired(null)).isEqualTo("the user");
         controllerClient.endsession(null, null);
         assertThatThrownBy(() -> controllerClient.whoAmIRequired(null))
-            .isInstanceOf(HttpClientException.class);
+                .isInstanceOf(HttpClientException.class);
     }
 
     @Test
     public void shouldUpdateCookie() {
-        AtomicReference<String> usernameCookie = new AtomicReference<>("oldValue");
+        AtomicReference<String> usernameCookie = new AtomicReference<>("old user; with {}, \"quotations\" and '+' in name");
         String oldValue = controllerClient.changeUser(usernameCookie, "newUser");
         assertThat(oldValue).isEqualTo(oldValue);
         assertThat(usernameCookie.get()).isEqualTo("newUser");
@@ -455,8 +458,9 @@ public abstract class AbstractApiClientProxyTest {
     @Test
     public void shouldHandleNewCookie() {
         AtomicReference<String> usernameCookie = new AtomicReference<>(null);
-        assertThat(controllerClient.changeUser(usernameCookie, "newUser")).isEqualTo("null");
-        assertThat(usernameCookie.get()).isEqualTo("newUser");
+        String newUsername = "new user; with {}, \"quotations\" and '+' in name";
+        assertThat(controllerClient.changeUser(usernameCookie, newUsername)).isEqualTo("null");
+        assertThat(usernameCookie.get()).isEqualTo(newUsername);
     }
 
     @Test
@@ -466,7 +470,7 @@ public abstract class AbstractApiClientProxyTest {
 
     @Test
     public void shouldSendAndReceiveBytes() {
-        byte[] input = {1,2,3,4};
+        byte[] input = {1, 2, 3, 4};
         assertThat(controllerClient.reverseBytes(input))
                 .containsExactly(4, 3, 2, 1);
     }
@@ -483,7 +487,7 @@ public abstract class AbstractApiClientProxyTest {
         expectedLogEvents.setAllowUnexpectedLogs(true);
         assertThatThrownBy(() -> controllerClient.sendError("Something went wrong"))
                 .isInstanceOf(HttpClientException.class)
-                .satisfies(e -> assertThat(((HttpClientException)e).getResponseBody()).contains("MESSAGE: Something went wrong"));
+                .satisfies(e -> assertThat(((HttpClientException) e).getResponseBody()).contains("MESSAGE: Something went wrong"));
     }
 
     @Test
@@ -491,7 +495,7 @@ public abstract class AbstractApiClientProxyTest {
         expectedLogEvents.setAllowUnexpectedLogs(true);
         assertThatThrownBy(() -> controllerClient.sendHtmlError("It went wrong"))
                 .isInstanceOf(HttpClientException.class)
-                .satisfies(e -> assertThat(((HttpClientException)e).getResponseBody()).contains("<tr><th>MESSAGE:</th><td>It went wrong</td></tr>"));
+                .satisfies(e -> assertThat(((HttpClientException) e).getResponseBody()).contains("<tr><th>MESSAGE:</th><td>It went wrong</td></tr>"));
     }
 
     @Test

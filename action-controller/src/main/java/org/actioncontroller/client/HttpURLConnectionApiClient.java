@@ -141,9 +141,8 @@ public class HttpURLConnectionApiClient implements ApiClient {
         private final Map<String, String> requestHeaders = new HashMap<>();
         private final Map<String, List<String>> requestParameters = new HashMap<>();
         private HttpURLConnection connection;
-        private final List<HttpCookie> requestCookies = clientCookies.values().stream()
-                .filter(HttpURLConnectionApiClient::isUnexpired)
-                .collect(Collectors.toList());
+        private final Map<String, String> requestCookies = getClientCookies();
+
         private List<HttpCookie> responseCookies = new ArrayList<>();
         private String errorBody;
         private KeyStore exchangeKeyStore = null;
@@ -219,11 +218,7 @@ public class HttpURLConnectionApiClient implements ApiClient {
 
         @Override
         public void addRequestCookie(String name, Object value) {
-            possiblyOptionalToString(value, s -> {
-                HttpCookie cookie = new HttpCookie(name, s);
-                cookie.setPath(baseUrl.getPath());
-                requestCookies.add(cookie);
-            });
+            possiblyOptionalToString(value, s -> requestCookies.put(name, s));
         }
 
         @Override
@@ -245,9 +240,8 @@ public class HttpURLConnectionApiClient implements ApiClient {
             connection.setInstanceFollowRedirects(false);
             connection.setRequestMethod(method);
             if (!requestCookies.isEmpty()) {
-                connection.setRequestProperty("Cookie", requestCookies.stream()
-                        .filter(c -> isHttps() || !c.getSecure())
-                        .map(c -> c.getName() + "=\"" + c.getValue() + "\"")
+                connection.setRequestProperty("Cookie", requestCookies.entrySet().stream()
+                        .map(c -> c.getKey() + "=\"" + c.getValue() + "\"")
                         .collect(Collectors.joining(",")));
             }
             requestHeaders.forEach(connection::setRequestProperty);
@@ -300,10 +294,6 @@ public class HttpURLConnectionApiClient implements ApiClient {
             return baseUrl + pathInfo + (query != null && isGetRequest() ? "?" + query : "");
         }
 
-        private boolean isHttps() {
-            return baseUrl.getProtocol().equals("https");
-        }
-
         private boolean isGetRequest() {
             return method.equals("GET");
         }
@@ -325,6 +315,9 @@ public class HttpURLConnectionApiClient implements ApiClient {
 
         @Override
         public List<String> getResponseHeaders(String name) {
+            if (connection == null) {
+                return List.of();
+            }
             return connection.getHeaderFields().entrySet().stream()
                     .filter(e -> name.equalsIgnoreCase(e.getKey()))
                     .map(Map.Entry::getValue)
@@ -397,6 +390,13 @@ public class HttpURLConnectionApiClient implements ApiClient {
         }
     }
 
+    private Map<String, String> getClientCookies() {
+        return clientCookies.values().stream()
+                .filter(HttpURLConnectionApiClient::isUnexpired)
+                .filter(c -> !isHttps() || c.getSecure())
+                .collect(Collectors.toMap(c -> c.getName(), c -> c.getValue()));
+    }
+
     private String urlEncode(String value) {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
@@ -405,6 +405,10 @@ public class HttpURLConnectionApiClient implements ApiClient {
         TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         trustManagerFactory.init(trustStore);
         return trustManagerFactory.getTrustManagers();
+    }
+
+    private boolean isHttps() {
+        return baseUrl.getProtocol().equals("https");
     }
 
     private static boolean isUnexpired(HttpCookie c) {

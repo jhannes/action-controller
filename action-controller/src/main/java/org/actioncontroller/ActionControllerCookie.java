@@ -1,4 +1,4 @@
-package org.fakeservlet;
+package org.actioncontroller;
 
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -33,12 +33,12 @@ import static java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME;
  * </ul>
  *
  */
-public class FakeCookie {
+public class ActionControllerCookie {
     private final String name;
     private final String value;
     private final Map<String, Object> attributes = new LinkedHashMap<>();
 
-    public FakeCookie(String name, String value) {
+    public ActionControllerCookie(String name, String value) {
         this.name = name;
         this.value = value != null ? value : "";
         if (this.value.isEmpty()) {
@@ -47,16 +47,16 @@ public class FakeCookie {
         }
     }
 
-    public static FakeCookie delete(String name) {
-        return new FakeCookie(name, null);
+    public static ActionControllerCookie delete(String name) {
+        return new ActionControllerCookie(name, null);
     }
 
-    public static FakeCookie parse(String rfc6264String) {
+    public static ActionControllerCookie parse(String rfc6264String) {
         String[] parts = rfc6264String.split(";");
         int equalsPos = parts[0].indexOf('=');
         String name = parts[0].substring(0, equalsPos);
         String value = URLDecoder.decode(parts[0].substring(equalsPos + 1), StandardCharsets.UTF_8);
-        FakeCookie cookie = new FakeCookie(name, value);
+        ActionControllerCookie cookie = new ActionControllerCookie(name, value);
         for (int i = 1; i < parts.length; i++) {
             equalsPos = parts[i].indexOf('=');
             if (equalsPos < 0) {
@@ -112,27 +112,31 @@ public class FakeCookie {
         return attribute == null || (!attribute.equals(-1) && attribute.equals("-1"));
     }
 
-    public FakeCookie domain(String domain) {
+    public ActionControllerCookie domain(String domain) {
         return setAttribute("Domain", domain);
     }
 
-    public FakeCookie maxAge(int maxAge) {
+    public ActionControllerCookie maxAge(int maxAge) {
         return setAttribute("Max-age", maxAge != -1 ? String.valueOf(maxAge) : null);
     }
 
-    public FakeCookie path(String path) {
+    public ActionControllerCookie path(String path) {
         return setAttribute("Path", path);
     }
 
-    public FakeCookie secure(boolean secure) {
+    public ActionControllerCookie sameSite(String sameSite) {
+        return setAttribute("Same-site", sameSite);
+    }
+
+    public ActionControllerCookie secure(boolean secure) {
         return setAttribute("Secure", secure);
     }
 
-    public FakeCookie httpOnly(boolean httpOnly) {
+    public ActionControllerCookie httpOnly(boolean httpOnly) {
         return setAttribute("HttpOnly", httpOnly);
     }
 
-    public FakeCookie setAttribute(String key, String value) {
+    public ActionControllerCookie setAttribute(String key, String value) {
         if (value == null) {
             attributes.remove(key);
         } else {
@@ -141,7 +145,7 @@ public class FakeCookie {
         return this;
     }
 
-    public FakeCookie setAttribute(String key, Boolean value) {
+    public ActionControllerCookie setAttribute(String key, Boolean value) {
         if (value == null || !value) {
             attributes.remove(key);
         } else {

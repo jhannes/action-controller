@@ -150,6 +150,11 @@ public class ServletHttpExchange implements ApiHttpExchange {
     }
 
     @Override
+    public void addResponseHeader(String key, String value) {
+        resp.addHeader(key, value);
+    }
+
+    @Override
     public void sendRedirect(String location) throws IOException {
         resp.sendRedirect(location);
     }

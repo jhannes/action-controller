@@ -1,5 +1,6 @@
 package org.actioncontroller.values;
 
+import org.actioncontroller.ActionControllerCookie;
 import org.actioncontroller.ApiControllerContext;
 import org.actioncontroller.ApiHttpExchange;
 import org.actioncontroller.client.ApiClientExchange;
@@ -22,8 +23,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
+ * <strong>This is a preview version of @UnencryptedCookie, which supports cookies with the Same-Site attribute set</strong>
+ * <p>
  * Maps the parameter to the specified HTTP request cookie, URL decoding and converting the type if necessary.
  * If the session parameter is missing, aborts the request with 401 Unauthorized, unless the parameter type is Optional.
  * If the parameter type is Consumer, calling parameter.accept() sets the cookie value instead of returning it
@@ -33,8 +37,11 @@ import java.util.function.Consumer;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
-@HttpParameterMapping(UnencryptedCookie.Factory.class)
-public @interface UnencryptedCookie {
+@HttpParameterMapping(UnencryptedCookiePreview.Factory.class)
+public @interface UnencryptedCookiePreview {
+    enum SameSite {
+        Strict, Lax, None, NotSet
+    }
 
     /**
      * The name of the cookie
@@ -53,17 +60,29 @@ public @interface UnencryptedCookie {
      */
     boolean isHttpOnly() default true;
 
-    class Factory implements HttpParameterMapperFactory<UnencryptedCookie> {
+    /**
+     * If set, sets the SameSite attribute on the cookie. Legal values are: Strict (never send the cookie to other hosts),
+     * Lax (send the cookie to other sites with the same domain, even if the subdomain and port differ),
+     * None (send the cookie to all sites)
+     */
+    SameSite sameSite() default SameSite.NotSet;
+
+    /**
+     * If set, sets the Comment attribute on the cookie
+     */
+    String comment() default "";
+
+    class Factory implements HttpParameterMapperFactory<UnencryptedCookiePreview> {
 
         @Override
-        public HttpParameterMapper create(UnencryptedCookie annotation, Parameter parameter, ApiControllerContext context) {
+        public HttpParameterMapper create(UnencryptedCookiePreview annotation, Parameter parameter, ApiControllerContext context) {
             Class<?> type = TypesUtil.getRawType(parameter.getParameterizedType());
             if (type == Consumer.class) {
-                return new UnencryptedCookie.ConsumerMapper(annotation, parameter);
+                return new ConsumerMapper(annotation, parameter);
             } else if (type == AtomicReference.class) {
-                return new UnencryptedCookie.AtomicReferenceMapper(annotation, parameter);
+                return new AtomicReferenceMapper(annotation, parameter);
             } else {
-                return new UnencryptedCookie.Mapper(annotation, parameter);
+                return new Mapper(annotation, parameter);
             }
         }
 
@@ -74,7 +93,7 @@ public @interface UnencryptedCookie {
         }
 
         @Override
-        public HttpClientParameterMapper clientParameterMapper(UnencryptedCookie annotation, Parameter parameter) {
+        public HttpClientParameterMapper clientParameterMapper(UnencryptedCookiePreview annotation, Parameter parameter) {
             Type parameterType = parameter.getParameterizedType();
             if (parameter.getType() == Consumer.class) {
                 return new ConsumerMapper(annotation, parameter);
@@ -87,11 +106,11 @@ public @interface UnencryptedCookie {
     }
 
     class Mapper implements HttpParameterMapper, HttpClientParameterMapper {
-        private final UnencryptedCookie annotation;
+        private final UnencryptedCookiePreview annotation;
         private final String name;
         private final TypeConverter converter;
 
-        public Mapper(UnencryptedCookie annotation, Parameter parameter) {
+        public Mapper(UnencryptedCookiePreview annotation, Parameter parameter) {
             this.name = annotation.value();
             this.annotation = annotation;
             this.converter = TypeConverterFactory.fromStrings(parameter.getParameterizedType(), "cookie " + name);
@@ -113,10 +132,10 @@ public @interface UnencryptedCookie {
     class ConsumerMapper implements HttpParameterMapper, HttpClientParameterMapper {
 
         protected final String name;
-        private final UnencryptedCookie annotation;
+        private final UnencryptedCookiePreview annotation;
         private final TypeConverter converter;
 
-        public ConsumerMapper(UnencryptedCookie annotation, Parameter parameter) {
+        public ConsumerMapper(UnencryptedCookiePreview annotation, Parameter parameter) {
             this.name = annotation.value();
             this.annotation = annotation;
             this.converter = TypeConverterFactory.fromStrings(TypesUtil.typeParameter(parameter.getParameterizedType()), "cookie " + annotation.value());
@@ -124,13 +143,18 @@ public @interface UnencryptedCookie {
 
         @Override
         public Object apply(ApiHttpExchange exchange) {
-            return (Consumer<?>) o -> {
-                setResponseCookie(exchange, o);
-            };
+            return (Consumer<?>) o -> setResponseCookie(exchange, o);
         }
 
         protected void setResponseCookie(ApiHttpExchange exchange, Object o) {
-            exchange.setCookie(name, Objects.toString(o, null), annotation.secure(), annotation.isHttpOnly());
+            exchange.addResponseHeader("Set-Cookie", createCookie(o, exchange.getContextPath()).toStringRFC6265());
+        }
+
+        protected ActionControllerCookie createCookie(Object o, String contextPath) {
+            return new ActionControllerCookie(name, Objects.toString(o, null))
+                    .path(contextPath)
+                    .secure(annotation.secure()).httpOnly(annotation.isHttpOnly()).setAttribute("Comment", annotation.comment())
+                    .sameSite(annotation.sameSite() == SameSite.NotSet ? null : annotation.sameSite().toString());
         }
 
         private Map<String, Object> combine(Map<String, Object> defaultValues, Map<String, String> extra) {
@@ -147,7 +171,13 @@ public @interface UnencryptedCookie {
         }
 
         protected List<String> getResponseCookies(ApiClientExchange exchange) {
-            return exchange.getResponseCookies(name);
+            return exchange.getResponseHeaders("Set-Cookie")
+                    .stream()
+                    .map(ActionControllerCookie::parse)
+                    .filter(c -> c.getName().equalsIgnoreCase(name))
+                    .filter(ActionControllerCookie::isUnexpired)
+                    .map(ActionControllerCookie::getValue)
+                    .collect(Collectors.toList());
         }
     }
 
@@ -155,7 +185,7 @@ public @interface UnencryptedCookie {
     class AtomicReferenceMapper extends ConsumerMapper {
         private final TypeConverter converter;
 
-        public AtomicReferenceMapper(UnencryptedCookie annotation, Parameter parameter) {
+        public AtomicReferenceMapper(UnencryptedCookiePreview annotation, Parameter parameter) {
             super(annotation, parameter);
             this.converter = TypeConverterFactory.fromStrings(parameter.getParameterizedType(), "cookie " + annotation.value());
         }

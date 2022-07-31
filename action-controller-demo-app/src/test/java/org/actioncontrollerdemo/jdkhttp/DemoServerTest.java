@@ -57,7 +57,7 @@ public class DemoServerTest {
     @Test
     public void shouldCallTestController() {
         TestController testController = ApiClientClassProxy.create(TestController.class, client);
-        assertThat(testController.sayHello(Optional.of("Test")))
+        assertThat(testController.sayHello(Optional.of("Test"), new AtomicReference<>()))
                 .isEqualTo("Hello Test");
         assertThat(testController.getJson())
                 .isEqualTo(new JsonObject().put("product", "Blåbærsyltetøy"));

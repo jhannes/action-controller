@@ -134,6 +134,8 @@ public interface ApiHttpExchange {
 
     void setResponseHeader(String key, String value);
 
+    void addResponseHeader(String key, String value);
+
     void sendRedirect(String path) throws IOException;
 
     /**

@@ -200,6 +200,11 @@ public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
     }
 
     @Override
+    public void addResponseHeader(String key, String value) {
+        exchange.getResponseHeaders().add(key, value);
+    }
+
+    @Override
     public void sendRedirect(String path) throws IOException {
         exchange.getResponseHeaders().set("Location", path);
         sendResponseHeaders(302, 0);

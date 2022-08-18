@@ -61,7 +61,7 @@ public class FakeJakartaResponse implements HttpServletResponse {
     }
 
     private Stream<FakeCookie> streamCookies() {
-        return getHeaders("Set-Cookie").stream().map(FakeCookie::parse);
+        return getHeaders("Set-Cookie").stream().map(FakeCookie::parseSetCookieHeader);
     }
 
     // TODO

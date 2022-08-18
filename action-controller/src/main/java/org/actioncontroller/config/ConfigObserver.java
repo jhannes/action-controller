@@ -80,29 +80,6 @@ public class ConfigObserver implements FileListener {
         return this;
     }
 
-    public <T> ConfigObserver onSingleConfigValue(String key, ConfigValueTransformer<String, T> transformer, T defaultValue, ConfigValueListener<T> listener) {
-        return onConfigChange(new ConfigListener() {
-            @Override
-            public void onConfigChanged(Set<String> changedKeys, ConfigMap newConfiguration) throws Exception {
-                if (changeIncludes(changedKeys, key)) {
-                    String value = newConfiguration.getOrDefault(key, null);
-                    T configValue;
-                    if (value == null) {
-                        configValue = defaultValue;
-                    } else {
-                        try {
-                            configValue = transformer.apply(value);
-                        } catch (Exception e) {
-                            throw new ConfigException("Failed to convert " + key + "=" + value, e);
-                        }
-                    }
-                    logger.info("onConfigChanged key={} value={}", key, configValue);
-                    listener.apply(configValue);
-                }
-            }
-        });
-    }
-
     public ConfigObserver onStringValue(String key, String defaultValue, ConfigValueListener<String> listener) {
         return onSingleConfigValue(key, v -> v, defaultValue, listener);
     }
@@ -121,6 +98,10 @@ public class ConfigObserver implements FileListener {
 
     public ConfigObserver onBooleanValue(String key, boolean defaultValue, ConfigValueListener<Boolean> listener) {
         return onSingleConfigValue(key, Boolean::parseBoolean, defaultValue, listener);
+    }
+
+    public ConfigObserver onInetSocketAddress(String key, ConfigValueListener<Optional<InetSocketAddress>> listener) {
+        return onSingleOptionalValue(key, ConfigListener::asInetSocketAddress, listener);
     }
 
     public ConfigObserver onInetSocketAddress(String key, int defaultPort, ConfigValueListener<InetSocketAddress> listener) {
@@ -156,6 +137,32 @@ public class ConfigObserver implements FileListener {
 
     public <T> ConfigObserver onPrefixedValue(String prefix, ConfigListener.Transformer<T> transformer, ConfigValueListener<T> listener) {
         return onPrefixedValue(prefix, configMap -> listener.apply(transform(configMap, transformer)));
+    }
+
+    public <T> ConfigObserver onSingleConfigValue(String key, ConfigValueTransformer<String, T> transformer, T defaultValue, ConfigValueListener<T> listener) {
+        return onConfigChange(new ConfigListener() {
+            @Override
+            public void onConfigChanged(Set<String> changedKeys, ConfigMap newConfiguration) throws Exception {
+                if (changeIncludes(changedKeys, key)) {
+                    T configValue = newConfiguration.optional(key, transformer).orElse(defaultValue);
+                    logger.info("onConfigChanged key={} value={}", key, configValue);
+                    listener.apply(configValue);
+                }
+            }
+        });
+    }
+
+    public <T> ConfigObserver onSingleOptionalValue(String key, ConfigValueTransformer<String, T> transformer, ConfigValueListener<Optional<T>> listener) {
+        return onConfigChange(new ConfigListener() {
+            @Override
+            public void onConfigChanged(Set<String> changedKeys, ConfigMap newConfiguration) throws Exception {
+                if (changeIncludes(changedKeys, key)) {
+                    Optional<T> configValue = newConfiguration.optional(key, transformer);
+                    logger.info("onConfigChanged key={} value={}", key, configValue);
+                    listener.apply(configValue);
+                }
+            }
+        });
     }
 
     public <T> ConfigObserver onPrefixedOptionalValue(String prefix, ConfigListener.Transformer<T> transformer, ConfigValueListener<Optional<T>> listener) {

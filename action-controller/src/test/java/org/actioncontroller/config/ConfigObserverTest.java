@@ -67,28 +67,25 @@ public class ConfigObserverTest {
         }
     };
 
-    private InetSocketAddress httpListenAddress;
-    private DummyDataSource dataSource;
-    private Duration daemonPollingInterval;
-
     public ConfigObserverTest() throws IOException {
     }
 
     @Test
     public void shouldOnlyUpdateWhenPropertyWasChanged() {
-        observer.onDurationValue("daemonPollingInterval", null, duration -> this.daemonPollingInterval = duration);
+        AtomicReference<Duration> value = new AtomicReference<>();
+        observer.onDurationValue("daemonPollingInterval", null, value::set);
 
-        assertThat(daemonPollingInterval).isEqualTo(null);
-        daemonPollingInterval = Duration.ofMinutes(5);
+        assertThat(value.get()).isEqualTo(null);
+        value.set(Duration.ofMinutes(5));
 
         writeConfigLines(
                 "example.one=dummy2",
                 "example.two=foobar2"
         );
-        assertThat(daemonPollingInterval).isEqualTo(Duration.ofMinutes(5));
+        assertThat(value.get()).isEqualTo(Duration.ofMinutes(5));
 
         writeConfigLine("daemonPollingInterval=PT1M");
-        assertThat(daemonPollingInterval).isEqualTo(Duration.ofMinutes(1));
+        assertThat(value.get()).isEqualTo(Duration.ofMinutes(1));
     }
 
     @Test
@@ -123,17 +120,27 @@ public class ConfigObserverTest {
 
     @Test
     public void shouldListenToInetAddresses() {
-        observer.onInetSocketAddress("httpListenAddress",
-                10080, address -> this.httpListenAddress = address
-        );
-        assertThat(httpListenAddress).isEqualTo(new InetSocketAddress("localhost", 10080));
+        AtomicReference<InetSocketAddress> value = new AtomicReference<>();
+        observer.onInetSocketAddress("httpListenAddress", 10080, value::set);
+        assertThat(value.get()).isEqualTo(new InetSocketAddress("localhost", 10080));
 
         writeConfigLine("httpListenAddress=127.0.0.1:11080");
-        assertThat(httpListenAddress).isEqualTo(new InetSocketAddress("127.0.0.1", 11080));
+        assertThat(value.get()).isEqualTo(new InetSocketAddress("127.0.0.1", 11080));
         writeConfigLine("httpListenAddress=12080");
-        assertThat(httpListenAddress).isEqualTo(InetSocketAddress.createUnresolved("localhost", 12080));
+        assertThat(value.get()).isEqualTo(new InetSocketAddress(12080));
         writeConfigLine("httpListenAddress=:13080");
-        assertThat(httpListenAddress).isEqualTo(InetSocketAddress.createUnresolved("localhost", 13080));
+        assertThat(value.get()).isEqualTo(new InetSocketAddress(13080));
+    }
+
+    @Test
+    public void shouldListenToOptionalInetAddress() {
+        AtomicReference<Optional<InetSocketAddress>> value = new AtomicReference<>(Optional.empty());
+        observer.onInetSocketAddress("listenAddress", value::set);
+        assertThat(value.get()).isEmpty();
+        writeConfigLine("listenAddress=10080");
+        assertThat(value.get()).get().isEqualTo(new InetSocketAddress(10080));
+        writeConfigLine("listenAddress=");
+        assertThat(value.get()).isEmpty();
     }
 
     @Test
@@ -202,8 +209,8 @@ public class ConfigObserverTest {
     @Test
     public void shouldReadUrlValue() throws MalformedURLException {
         AtomicReference<URL> url = new AtomicReference<>();
-        observer.onUrlValue("url", new URL("http://example.net"), url::set);
-        assertThat(url.get()).isEqualTo(new URL("http://example.net"));
+        observer.onUrlValue("url", new URL("https://example.net"), url::set);
+        assertThat(url.get()).isEqualTo(new URL("https://example.net"));
         writeConfigLine("url=https://example.org");
         assertThat(url.get()).isEqualTo(new URL("https://example.org"));
         expectedLogEvents.expectPattern(ConfigObserver.class, Level.ERROR, "Failed to notify listener while reloading {}");
@@ -298,25 +305,23 @@ public class ConfigObserverTest {
 
     @Test
     public void shouldWatchForFileChanges() {
+        AtomicReference<DummyDataSource> value = new AtomicReference<>();
         writeConfigLines("my.dataSource.jdbcUrl=jdbc:datamastery:example",
                 "my.dataSource.jdbcUsername=sa",
                 "my.dataSource.jdbcPassword=");
-        observer.onConfigChange(new DummyDataSourceConfigListener(
-                "my.dataSource",
-                dataSource -> this.dataSource = dataSource
-        ));
-        assertThat(dataSource).usingRecursiveComparison().isEqualTo(new DummyDataSource(
+        observer.onConfigChange(new DummyDataSourceConfigListener("my.dataSource", value::set));
+        assertThat(value.get()).usingRecursiveComparison().isEqualTo(new DummyDataSource(
                 "jdbc:datamastery:example", "sa", ""
         ));
 
-        dataSource = null;
+        value.set(null);
         writeConfigLine("otherConfig=something");
-        assertThat(dataSource).isNull();
+        assertThat(value.get()).isNull();
 
         writeConfigLines("my.dataSource.jdbcUrl=jdbc:datamastery:UPDATED",
                 "my.dataSource.jdbcUsername=sa",
                 "my.dataSource.jdbcPassword=");
-        assertThat(dataSource).usingRecursiveComparison().isEqualTo(new DummyDataSource(
+        assertThat(value.get()).usingRecursiveComparison().isEqualTo(new DummyDataSource(
                 "jdbc:datamastery:UPDATED", "sa", ""
         ));
     }

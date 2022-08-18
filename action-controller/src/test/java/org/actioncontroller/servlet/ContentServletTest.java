@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ContentServletTest {
 
     private Path dir;
-    private FakeServletContainer container = new FakeServletContainer();
+    private final FakeServletContainer container = new FakeServletContainer();
     private ContentServlet servlet;
 
     @Before

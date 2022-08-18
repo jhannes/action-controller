@@ -24,9 +24,9 @@ public interface ConfigListener {
     static InetSocketAddress asInetSocketAddress(String value) {
         int colonPos = value.indexOf(':');
         if (colonPos < 0) {
-            return InetSocketAddress.createUnresolved("localhost", Integer.parseInt(value));
+            return new InetSocketAddress(Integer.parseInt(value));
         } else if (colonPos == 0) {
-            return InetSocketAddress.createUnresolved("localhost", Integer.parseInt(value.substring(1)));
+            return new InetSocketAddress(Integer.parseInt(value.substring(1)));
         } else {
             return new InetSocketAddress(
                     value.substring(0, colonPos),

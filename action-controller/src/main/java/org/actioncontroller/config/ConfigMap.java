@@ -110,6 +110,20 @@ public class ConfigMap extends AbstractMap<String, String> {
                 .or(() -> Optional.ofNullable(environment.get(getEnvironmentKey(getPrefixedKey(key)))));
     }
 
+    public <T> Optional<T> optional(String key, ConfigValueTransformer<String, T> transformer) {
+        Optional<String> value = optional(key);
+        if (value.isPresent()) {
+            try {
+                return Optional.of(transformer.apply(value.get()));
+            } catch (Exception e) {
+                throw new ConfigException("Failed to convert " + key + "=" + value, e);
+            }
+        } else {
+            return Optional.empty();
+        }
+    }
+
+
     private String getEnvironmentKey(String innerKey) {
         return innerKey.replace('.', '_').toUpperCase();
     }

@@ -193,9 +193,9 @@ public class ConfigMapTest {
         assertThat(configMap.getInetSocketAddress("one", 10080))
                 .isEqualTo(new InetSocketAddress("127.0.0.1", 11080));
         assertThat(configMap.getInetSocketAddress("two", 10080))
-                .isEqualTo(InetSocketAddress.createUnresolved("localhost", 12080));
+                .isEqualTo(new InetSocketAddress(12080));
         assertThat(configMap.getInetSocketAddress("three", 10080))
-                .isEqualTo(InetSocketAddress.createUnresolved("localhost", 13080));
+                .isEqualTo(new InetSocketAddress(13080));
     }
 
     @Test

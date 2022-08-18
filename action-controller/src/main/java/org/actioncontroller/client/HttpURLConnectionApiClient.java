@@ -24,6 +24,7 @@ import java.net.HttpCookie;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
@@ -218,7 +219,7 @@ public class HttpURLConnectionApiClient implements ApiClient {
 
         @Override
         public void addRequestCookie(String name, Object value) {
-            possiblyOptionalToString(value, s -> requestCookies.put(name, s));
+            possiblyOptionalToString(value, s -> requestCookies.put(name, URLEncoder.encode(s, StandardCharsets.UTF_8)));
         }
 
         @Override
@@ -240,9 +241,10 @@ public class HttpURLConnectionApiClient implements ApiClient {
             connection.setInstanceFollowRedirects(false);
             connection.setRequestMethod(method);
             if (!requestCookies.isEmpty()) {
-                connection.setRequestProperty("Cookie", requestCookies.entrySet().stream()
+                String cookieHeader = requestCookies.entrySet().stream()
                         .map(c -> c.getKey() + "=" + c.getValue())
-                        .collect(Collectors.joining(",")));
+                        .collect(Collectors.joining(";"));
+                connection.setRequestProperty("Cookie", cookieHeader);
             }
             requestHeaders.forEach(connection::setRequestProperty);
             if (trustStore != null || exchangeKeyStore != null) {

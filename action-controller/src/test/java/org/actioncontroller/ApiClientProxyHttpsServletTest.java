@@ -11,6 +11,7 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.event.Level;
 import sun.security.x509.AlgorithmId;
@@ -48,6 +49,19 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ApiClientProxyHttpsServletTest extends AbstractApiClientProxyTest {
 
+    private static final String hostname = "localhost";
+    private static final SslContextFactory.Server sslConnectionFactory = new SslContextFactory.Server();
+    private static X509Certificate serverCertificate;
+
+    @BeforeClass
+    public static void generateCertificates() throws Exception {
+        KeyPair serverKeyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+        serverCertificate = generateServerCertificate(serverKeyPair, hostname);
+
+        sslConnectionFactory.setTrustStore(createTrustStore(serverCertificate, "server"));
+        sslConnectionFactory.setKeyStore(createKeyStore(hostname, serverKeyPair.getPrivate(), serverCertificate));
+    }
+
     @Override
     @Test
     public void shouldRethrowRuntimeExceptions() {
@@ -64,9 +78,6 @@ public class ApiClientProxyHttpsServletTest extends AbstractApiClientProxyTest {
 
     @Override
     protected ApiClient createClient(TestController controller) throws Exception {
-        String hostname = "localhost";
-        KeyPair serverKeyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
-        X509Certificate serverCertificate = generateServerCertificate(serverKeyPair, hostname);
 
         Server server = new Server();
         ServletContextHandler handler = new ServletContextHandler();
@@ -80,9 +91,6 @@ public class ApiClientProxyHttpsServletTest extends AbstractApiClientProxyTest {
         handler.setContextPath("/test");
         server.setHandler(handler);
 
-        SslContextFactory.Server sslConnectionFactory = new SslContextFactory.Server();
-        sslConnectionFactory.setTrustStore(createTrustStore(serverCertificate, "server"));
-        sslConnectionFactory.setKeyStore(createKeyStore(hostname, serverKeyPair.getPrivate(), serverCertificate));
         ServerConnector connector = new ServerConnector(server, sslConnectionFactory);
         connector.setHost(hostname);
         server.addConnector(connector);
@@ -109,7 +117,7 @@ public class ApiClientProxyHttpsServletTest extends AbstractApiClientProxyTest {
         }
     }
 
-    private X509Certificate generateServerCertificate(KeyPair serverKeyPair, String hostname) {
+    private static X509Certificate generateServerCertificate(KeyPair serverKeyPair, String hostname) {
         try {
             CertificateExtensions extensions = new CertificateExtensions();
             GeneralNames names = new GeneralNames();
@@ -133,7 +141,7 @@ public class ApiClientProxyHttpsServletTest extends AbstractApiClientProxyTest {
         }
     }
 
-    private X509CertInfo createX509Info(String subject, String issuer, PublicKey publicKey, Instant validFrom, Instant validTo) throws CertificateException, IOException {
+    private static X509CertInfo createX509Info(String subject, String issuer, PublicKey publicKey, Instant validFrom, Instant validTo) throws CertificateException, IOException {
         X509CertInfo certInfo = new X509CertInfo();
         certInfo.set(X509CertInfo.VERSION, new CertificateVersion(CertificateVersion.V3));
         certInfo.set(X509CertInfo.VALIDITY, new CertificateValidity(Date.from(validFrom), Date.from(validTo)));

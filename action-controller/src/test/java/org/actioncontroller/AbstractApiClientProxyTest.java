@@ -195,6 +195,7 @@ public abstract class AbstractApiClientProxyTest {
         @ContentBody
         public String changeUser(
                 @UnencryptedCookie("username") AtomicReference<String> usernameCookie,
+                @UnencryptedCookie("token") String token,
                 @RequestParam("username") String newUsername
         ) {
             String oldValue = usernameCookie.get();
@@ -450,22 +451,25 @@ public abstract class AbstractApiClientProxyTest {
 
     @Test
     public void shouldUpdateCookie() {
-        AtomicReference<String> usernameCookie = new AtomicReference<>("old user; with {}, \"quotations\" and '+' in name");
-        String oldValue = controllerClient.changeUser(usernameCookie, "newUser");
-        assertThat(oldValue).isEqualTo(oldValue);
+        String originalValue = "old user; with {}, \"quotations\" and '+' in name";
+        AtomicReference<String> usernameCookie = new AtomicReference<>(originalValue);
+        String oldValue = controllerClient.changeUser(usernameCookie, "token", "newUser");
+        assertThat(oldValue).isEqualTo(originalValue);
         assertThat(usernameCookie.get()).isEqualTo("newUser");
+        controllerClient.changeUser(usernameCookie, "token", originalValue);
+        assertThat(usernameCookie.get()).isEqualTo(originalValue);
     }
 
     @Test
     public void shouldHandleNullCookie() {
-        assertThat(controllerClient.changeUser(null, "newUser")).isEqualTo("null");
+        assertThat(controllerClient.changeUser(null, "token", "newUser")).isEqualTo("null");
     }
 
     @Test
     public void shouldHandleNewCookie() {
         AtomicReference<String> usernameCookie = new AtomicReference<>(null);
         String newUsername = "new user; with {}, \"quotations\" and '+' in name";
-        assertThat(controllerClient.changeUser(usernameCookie, newUsername)).isEqualTo("null");
+        assertThat(controllerClient.changeUser(usernameCookie, "token", newUsername)).isEqualTo("null");
         assertThat(usernameCookie.get()).isEqualTo(newUsername);
     }
 

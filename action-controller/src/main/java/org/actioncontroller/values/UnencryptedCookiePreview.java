@@ -106,13 +106,11 @@ public @interface UnencryptedCookiePreview {
     }
 
     class Mapper implements HttpParameterMapper, HttpClientParameterMapper {
-        private final UnencryptedCookiePreview annotation;
         private final String name;
         private final TypeConverter converter;
 
         public Mapper(UnencryptedCookiePreview annotation, Parameter parameter) {
             this.name = annotation.value();
-            this.annotation = annotation;
             this.converter = TypeConverterFactory.fromStrings(parameter.getParameterizedType(), "cookie " + name);
         }
 

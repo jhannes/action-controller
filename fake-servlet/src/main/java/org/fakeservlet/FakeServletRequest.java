@@ -82,7 +82,7 @@ public class FakeServletRequest implements HttpServletRequest {
     private List<Cookie> cookies = new ArrayList<>();
 
     public void addCookie(String key, String value) {
-        cookies.add(new Cookie(key, value));
+        cookies.add(new Cookie(key, URLEncoder.encode(value, StandardCharsets.UTF_8)));
     }
 
     @Override

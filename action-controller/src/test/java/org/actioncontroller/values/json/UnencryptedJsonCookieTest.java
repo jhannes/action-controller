@@ -7,6 +7,7 @@ import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.servlet.ApiServlet;
 import org.actioncontroller.servlet.FakeServletClient;
+import org.actioncontroller.values.UnencryptedCookie;
 import org.jsonbuddy.JsonObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,7 +31,7 @@ public class UnencryptedJsonCookieTest {
 
         @GET("/methodWithCookie")
         @ContentBody
-        public String methodWithCookie(@UnencryptedJsonCookie("myCookie") JsonObject cookie) {
+        public String methodWithCookie(@UnencryptedJsonCookie("myCookie") JsonObject cookie, @UnencryptedCookie("randomCookie") String randomCookie) {
             return cookie.requiredString("message");
         }
 
@@ -70,7 +71,7 @@ public class UnencryptedJsonCookieTest {
     @Test
     public void shouldHandleJsonObject() {
         JsonObject cookie = new JsonObject().put("message", "Hello world");
-        assertThat(apiClient.methodWithCookie(cookie)).isEqualTo("Hello world");
+        assertThat(apiClient.methodWithCookie(cookie, "random")).isEqualTo("Hello world");
     }
 
     @Test
@@ -124,7 +125,7 @@ public class UnencryptedJsonCookieTest {
         this.apiClient = ApiClientClassProxy.create(Controller.class, client);
     }
 
-    protected ApiClient createClient(Controller controller) throws ServletException, IOException {
+    protected ApiClient createClient(Controller controller) throws Exception {
         ApiServlet servlet = new ApiServlet(controller);
         servlet.init(null);
         return new FakeServletClient(new URL("http://example.com/test"), "/api", servlet);

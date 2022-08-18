@@ -53,7 +53,8 @@ public interface ApiClientExchange {
     String getApiURL();
 
     /**
-     * Sets the specified HTTP cookie value
+     * Sets the specified HTTP cookie value. The cookie value will be URL encoded
+     * before sent in the Cookie-header
      *
      * @param name Name of the HTTP cookie to set
      * @param value If null or Optional.empty, cookie will be unset; if Optional, value will be extracted

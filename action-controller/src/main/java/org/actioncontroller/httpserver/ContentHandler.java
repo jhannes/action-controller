@@ -17,8 +17,8 @@ public class ContentHandler implements HttpHandler {
 
     public ContentSource contentSource;
 
-    public ContentHandler(URL baseResource) {
-        this(ContentSource.fromURL(baseResource));
+    public ContentHandler(String resourceBase) {
+        this(ContentSource.fromClasspath(resourceBase));
     }
 
     public ContentHandler(ContentSource contentSource) {

@@ -9,6 +9,8 @@ import org.actioncontroller.httpserver.ApiHandler;
 import org.actioncontroller.httpserver.ContentHandler;
 import org.actioncontrollerdemo.TestController;
 import org.actioncontrollerdemo.UserController;
+import org.actioncontrollerdemo.infrastructure.HttpsClientConfiguration;
+import org.actioncontrollerdemo.infrastructure.HttpsConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +49,7 @@ public class DemoServer {
             new UserController()
     });
     private final ContentHandler swaggerHandler = new ContentHandler(ContentSource.fromWebJar("swagger-ui"));
-    private final ContentHandler staticContent = new ContentHandler(getClass().getResource("/webapp-actioncontrollerdemo/"));
+    private final ContentHandler staticContent = new ContentHandler("/webapp-actioncontrollerdemo/");
     private final RedirectHandler redirectHandler = new RedirectHandler("/demo");
     private HttpsServer httpsServer;
 
@@ -91,10 +93,9 @@ public class DemoServer {
                 .setAuthenticator(new DemoAuthenticator());
         httpServer.createContext("/demo", staticContent);
         httpServer.createContext("/", redirectHandler);
-
     }
 
-    private static String getUrl(HttpServer httpServer) {
+    static String getUrl(HttpServer httpServer) {
         if (httpServer instanceof HttpsServer) {
             return "https://" + httpServer.getAddress().getHostName() + ":" + httpServer.getAddress().getPort();
         } else if (httpServer.getAddress().getPort() != 80) {
@@ -118,9 +119,9 @@ public class DemoServer {
 
     public static void main(String[] args) throws InterruptedException {
         DemoServer server = new DemoServer();
-        new ConfigObserver("demoserver")
+        new ConfigObserver("demo-server")
                 .onPrefixedValue("https", HttpsConfiguration::create, server::setHttpsConfiguration)
-                .onInetSocketAddress("httpSocketAddress", 8080, server::setServerPort)
+                .onInetSocketAddress("http.address", 8080, server::setServerPort)
                 .onPrefixedValue("httpsClient", HttpsClientConfiguration::create, server::setClientSslSocketFactory);
         Thread.currentThread().join();
     }

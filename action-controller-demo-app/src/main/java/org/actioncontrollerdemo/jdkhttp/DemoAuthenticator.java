@@ -1,8 +1,8 @@
 package org.actioncontrollerdemo.jdkhttp;
 
 import com.sun.net.httpserver.HttpExchange;
+import org.actioncontroller.ActionControllerCookie;
 import org.actioncontroller.httpserver.ActionAuthenticator;
-import org.actioncontroller.httpserver.JdkHttpExchange;
 import org.actioncontroller.httpserver.NestedHttpPrincipal;
 import org.actioncontroller.ApiHttpExchange;
 import org.actioncontrollerdemo.DemoPrincipal;
@@ -15,7 +15,7 @@ public class DemoAuthenticator extends ActionAuthenticator {
 
     @Override
     public Result authenticate(HttpExchange exchange) {
-        return JdkHttpExchange.getCookie("username", exchange.getRequestHeaders())
+        return ActionControllerCookie.parseClientCookies(exchange.getRequestHeaders().get("Cookie")).get("username")
                 .stream()
                 .findFirst()
                 .map(username -> new Success(new NestedHttpPrincipal("demo", DemoPrincipal.createPrincipal(username))))

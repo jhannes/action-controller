@@ -1,4 +1,4 @@
-package org.actioncontrollerdemo.jdkhttp;
+package org.actioncontrollerdemo.infrastructure;
 
 import org.actioncontroller.config.ConfigMap;
 
@@ -9,7 +9,7 @@ import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.util.Optional;
 
-class HttpsConfiguration {
+public class HttpsConfiguration {
 
     public static Optional<HttpsConfiguration> create(ConfigMap config) throws Exception {
         return config.mapOptionalFile("keystoreFile", keystoreFile -> create(config, keystoreFile));
@@ -27,7 +27,7 @@ class HttpsConfiguration {
         this.address = config.getInetSocketAddress("address", 443);
         this.sslContext = SSLFactory.createSslContext(
                 keystoreFile,
-                config.getOrDefault("keyStorePassword", ""),
+                config.getOrDefault("keystorePassword", ""),
                 config.getOrDefault("keyPassword", "")
         );
         this.keystoreFile = keystoreFile;

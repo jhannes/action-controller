@@ -1,4 +1,4 @@
-package org.actioncontrollerdemo.jdkhttp;
+package org.actioncontrollerdemo.infrastructure;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -23,8 +23,19 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
+/**
+ * Example openssl command line:
+ * <ol>
+ * <li>
+ * <code>openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout example.org.key -out example.org.crt -subj "/CN=example.org" -addext "subjectAltName=DNS:example.org,IP:10.0.0.1"</code>
+ * </li>
+ * <li>
+ * <code>openssl pkcs12 -export -out example.org.p12 -inkey example.org.key -in example.org.crt</code>
+ * </li>
+ * </ol>
+ */
 public class SSLFactory {
-    
+
     public static KeyManager[] createKeyManagers(
             Path keystoreFile, String keyStorePassword, String keyPassword
     ) throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, UnrecoverableKeyException {
@@ -42,15 +53,14 @@ public class SSLFactory {
         return createSslContext(createKeyManagers(keystoreFile, keyStorePassword, keyPassword), null);
     }
 
-    public static SSLContext createSslContext(KeyManager[] keyManagers, TrustManager[] trustManagers) throws GeneralSecurityException  {
+    public static SSLContext createSslContext(KeyManager[] keyManagers, TrustManager[] trustManagers) throws GeneralSecurityException {
         SSLContext sslContext = SSLContext.getInstance("TLS");
         sslContext.init(keyManagers, trustManagers, null);
         return sslContext;
     }
 
     public static TrustManager[] createTrustManagers(List<Path> trustedCertificates, boolean includeSystemCaCerts)
-            throws CertificateException, KeyStoreException, IOException, NoSuchAlgorithmException
-    {
+            throws CertificateException, KeyStoreException, IOException, NoSuchAlgorithmException {
         TrustManager[] trustManagers = createTrustManagers(trustedCertificates);
         return includeSystemCaCerts ? createTrustManagersWithDefault(trustManagers) : trustManagers;
     }
@@ -89,7 +99,7 @@ public class SSLFactory {
 
     private static TrustManager[] createTrustManagersWithDefault(TrustManager[] trustManagers) throws NoSuchAlgorithmException {
         TrustManager[] defaultTrustManagers = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm()).getTrustManagers();
-        return new TrustManager[] {
+        return new TrustManager[]{
                 combinedTrustManager(getX509TrustManager(trustManagers), getX509TrustManager(defaultTrustManagers))
         };
     }
@@ -102,8 +112,7 @@ public class SSLFactory {
     }
 
     private static TrustManager[] createTrustManagers(List<Path> trustedCertificates)
-            throws CertificateException, KeyStoreException, IOException, NoSuchAlgorithmException
-    {
+            throws CertificateException, KeyStoreException, IOException, NoSuchAlgorithmException {
         CertificateFactory certificateFactory = CertificateFactory.getInstance("X509");
         KeyStore trustStore = KeyStore.getInstance("pkcs12");
         trustStore.load(null, null);

@@ -1,0 +1,27 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Relying server</title>
+</head>
+<body>
+<h1>Relying party</h1>
+
+<p>Demonstration of cross site cookies. This server uses API calls at the demo-server with different cookie
+    settings.</p>
+
+<h1>Cross site call</h1>
+
+<div id="response"></div>
+
+</body>
+<script defer>
+    fetch("https://example.com:31443/demo/api/cookies", {
+        credentials: "include"
+    }).then(res => res.text())
+        .then(text => document.getElementById("response").innerText = text);
+
+</script>
+</html>

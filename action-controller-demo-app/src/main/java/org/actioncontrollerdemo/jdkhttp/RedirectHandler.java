@@ -6,7 +6,7 @@ import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;
 
 public class RedirectHandler implements HttpHandler {
-    private String target;
+    private final String target;
 
     public RedirectHandler(String target) {
         this.target = target;

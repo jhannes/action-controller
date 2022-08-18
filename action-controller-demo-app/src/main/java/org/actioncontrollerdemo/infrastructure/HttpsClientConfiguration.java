@@ -1,4 +1,4 @@
-package org.actioncontrollerdemo.jdkhttp;
+package org.actioncontrollerdemo.infrastructure;
 
 import org.actioncontroller.config.ConfigMap;
 

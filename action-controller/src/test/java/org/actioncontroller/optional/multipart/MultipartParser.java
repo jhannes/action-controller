@@ -1,4 +1,4 @@
-package org.actioncontroller.multipart;
+package org.actioncontroller.optional.multipart;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,25 +40,25 @@ public class MultipartParser {
     }
 
         private void parseToken() throws IOException {
-            var partToken = parts.next();
-            var partTokenType = partToken.getType();
+            BlockingIOAdapter.ParserToken partToken = parts.next();
+            BlockingIOAdapter.ParserToken.Type partTokenType = partToken.getType();
 
             switch (partTokenType) {
                 case PART:
-                    var part = (BlockingIOAdapter.Part) partToken;
-                    var headers= part.getHeaders();
+                    BlockingIOAdapter.Part part = (BlockingIOAdapter.Part) partToken;
+                    Map<String, List<String>> headers= part.getHeaders();
 
                     if (MultipartUtils.isFormField(headers, context)) {
-                        var fieldName = MultipartUtils.getFieldName(headers);
-                        var fieldValue = readFormParameterValue(part.getPartBody(), headers);
+                        String fieldName = MultipartUtils.getFieldName(headers);
+                        String fieldValue = readFormParameterValue(part.getPartBody(), headers);
                         parsedRequest.put(fieldName, fieldValue);
                     } else {
-                        var fieldName = MultipartUtils.getFieldName(headers);
-                        var files = (ArrayList<JsonObject>) parsedRequest.get(fieldName);
+                        String fieldName = MultipartUtils.getFieldName(headers);
+                        ArrayList<JsonObject> files = (ArrayList<JsonObject>) parsedRequest.get(fieldName);
                         if (files == null) {
-                            files = new ArrayList<JsonObject>();
+                            files = new ArrayList<>();
                         }
-                        var fileName = MultipartUtils.getFileName(headers);
+                        String fileName = MultipartUtils.getFileName(headers);
                         files.add(new JsonObject().put(fileName,
                                 new String(Base64.getEncoder().encode(part.getPartBody().readAllBytes()))));
                         parsedRequest.put(fieldName, files);

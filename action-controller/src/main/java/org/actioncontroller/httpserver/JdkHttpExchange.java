@@ -1,13 +1,13 @@
 package org.actioncontroller.httpserver;
 
-import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpPrincipal;
 import com.sun.net.httpserver.HttpsExchange;
+import org.actioncontroller.ActionControllerCookie;
+import org.actioncontroller.ApiHttpExchange;
 import org.actioncontroller.exceptions.HttpActionException;
 import org.actioncontroller.exceptions.HttpServerErrorException;
 import org.actioncontroller.util.HttpUrl;
-import org.actioncontroller.ApiHttpExchange;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import java.io.ByteArrayOutputStream;
@@ -18,19 +18,15 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Reader;
-import java.net.HttpCookie;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.function.Supplier;
 
 import static org.actioncontroller.util.ExceptionUtil.softenException;
 
@@ -38,6 +34,7 @@ public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
     public static final Charset CHARSET = StandardCharsets.ISO_8859_1;
 
     private final HttpExchange exchange;
+    private final Supplier<Map<String, List<String>>> cookies;
     private Map<String, String> pathParams = new HashMap<>();
     private final String contextPath;
     private final Map<String, List<String>> parameters;
@@ -53,6 +50,7 @@ public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
         } else {
             this.parameters = Map.of();
         }
+        cookies = ActionControllerCookie.parseClientCookieMap(exchange.getRequestHeaders().get("Cookie"));
     }
 
     /**
@@ -258,41 +256,22 @@ public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
         if (getServerName().equals("localhost") && !getScheme().equals("https")) {
             secure = false;
         }
-
-        if (value == null) {
-            // HACK: HttpCookie doesn't serialize to Set-Cookie format! More work is needed
-            HttpCookie httpCookie = new HttpCookie(name, "");
-            httpCookie.setSecure(secure);
-            httpCookie.setPath(contextPath);
-            httpCookie.setDomain(domain);
-            httpCookie.setComment(comment);
-            exchange.getResponseHeaders().add("Set-Cookie", httpCookie + "; Max-age=0");
-        } else {
-            HttpCookie httpCookie = new HttpCookie(name, URLEncoder.encode(value, CHARSET));
-            httpCookie.setSecure(secure);
-            httpCookie.setPath(contextPath);
-            httpCookie.setMaxAge(maxAge);
-            httpCookie.setDomain(domain);
-            httpCookie.setComment(comment);
-            exchange.getResponseHeaders().add("Set-Cookie", httpCookie.toString());
-        }
+        exchange.getResponseHeaders().add(
+                "Set-Cookie",
+                new ActionControllerCookie(name, value)
+                    .secure(secure)
+                    .httpOnly(isHttpOnly)
+                    .path(contextPath)
+                    .maxAge(maxAge)
+                    .domain(domain)
+                    .setAttribute("Comment", comment)
+                    .toStringRFC6265()
+        );
     }
 
     @Override
     public List<String> getCookies(String name) {
-        return getCookie(name, exchange.getRequestHeaders());
-    }
-
-    public static List<String> getCookie(String name, Headers requestHeaders) {
-        if (!requestHeaders.containsKey("Cookie")) {
-            return Collections.emptyList();
-        }
-        return requestHeaders.get("Cookie")
-                .stream()
-                .flatMap(header -> HttpCookie.parse(header).stream())
-                .filter(c -> c.getName().equals(name))
-                .map(httpCookie -> URLDecoder.decode(httpCookie.getValue(), CHARSET))
-                .collect(Collectors.toList());
+        return cookies.get().getOrDefault(name, List.of());
     }
 
     private String getErrorResponse(int statusCode, String message) {

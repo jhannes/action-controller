@@ -171,11 +171,11 @@ public @interface UnencryptedCookiePreview {
         }
 
         protected List<String> getResponseCookies(ApiClientExchange exchange) {
-            return exchange.getResponseHeaders("Set-Cookie")
-                    .stream()
-                    .map(ActionControllerCookie::parse)
-                    .filter(c -> c.getName().equalsIgnoreCase(name))
+            List<ActionControllerCookie> responseCookies = ActionControllerCookie
+                    .parseSetCookieHeaders(exchange.getResponseHeaders("Set-Cookie"));
+            return responseCookies.stream()
                     .filter(ActionControllerCookie::isUnexpired)
+                    .filter(c -> c.getName().equalsIgnoreCase(name))
                     .map(ActionControllerCookie::getValue)
                     .collect(Collectors.toList());
         }

@@ -101,20 +101,6 @@ public class SocketHttpClient implements ApiClient {
                 .orElse(null);
     }
 
-    private Map<String, String> getClientCookies() {
-        return clientCookies.values().stream()
-                .filter(ActionControllerCookie::isUnexpired)
-                .filter(c -> !isHttps() || c.secure())
-                .collect(Collectors.toMap(
-                        ActionControllerCookie::getName,
-                        ActionControllerCookie::getValue
-                ));
-    }
-
-    private boolean isHttps() {
-        return false;
-    }
-
     private class SocketApiClientExchange implements ApiClientExchange {
         private String method;
         private String pathInfo;
@@ -124,7 +110,7 @@ public class SocketHttpClient implements ApiClient {
         private final Map<String, String> requestHeaders = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         private List<ActionControllerCookie> responseCookies = new ArrayList<>();
 
-        private final Map<String, String> requestCookies = getClientCookies();
+        private final List<ActionControllerCookie> requestCookies = new ArrayList<>();
 
         private Integer responseCode;
         private String responseMessage;
@@ -186,7 +172,10 @@ public class SocketHttpClient implements ApiClient {
 
         @Override
         public void addRequestCookie(String name, Object value) {
-            possiblyOptionalToString(value, s -> requestCookies.put(name, s));
+            possiblyOptionalToString(
+                    value,
+                    s -> requestCookies.add(new ActionControllerCookie(name, s))
+            );
         }
 
         @Override
@@ -199,11 +188,12 @@ public class SocketHttpClient implements ApiClient {
             URL url = getRequestURL();
 
             setHeader("Host", url.getAuthority());
-            if (!requestCookies.isEmpty()) {
-                setHeader("Cookie", requestCookies.entrySet().stream()
-                        .map(c -> c.getKey() + "=\"" + c.getValue() + "\"")
-                        .collect(Collectors.joining(",")));
-            }
+            Map<String, ActionControllerCookie> cookies = clientCookies.entrySet().stream()
+                    .filter(entry -> entry.getValue().isUnexpired())
+                    .filter(c -> !isHttps(url) || c.getValue().secure())
+                    .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+            requestCookies.forEach(c -> cookies.put(c.getName(), c));
+            setHeader("Cookie", ActionControllerCookie.asClientCookieHeader(cookies.values()));
 
             socket = new Socket(url.getHost(), url.getPort());
 
@@ -234,11 +224,12 @@ public class SocketHttpClient implements ApiClient {
             this.responseMessage = parts[2];
 
             responseHeaders = readHttpHeaders(socket.getInputStream());
-            responseCookies = new ArrayList<>();
-            for (String setCookieHeader : getResponseHeaders("Set-Cookie")) {
-                responseCookies.add(ActionControllerCookie.parse(setCookieHeader));
-            }
+            responseCookies = ActionControllerCookie.parseSetCookieHeaders(responseHeaders.get("Set-Cookie"));
             responseCookies.forEach(c -> clientCookies.put(c.getName(), c));
+        }
+
+        private boolean isHttps(URL url) {
+            return url.getProtocol().equals("https");
         }
 
         @Override

@@ -14,8 +14,6 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.net.Socket;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -23,7 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.function.Supplier;
 
 public class SocketHttpExchange implements ApiHttpExchange, AutoCloseable {
     public static final Map<Integer, String> REASON_PHRASES = Map.ofEntries(
@@ -49,6 +47,7 @@ public class SocketHttpExchange implements ApiHttpExchange, AutoCloseable {
     private final Map<String, List<String>> parameters;
     private final Socket socket;
     private final String contextPath = "";
+    private final Supplier<Map<String, List<String>>> cookies;
     private boolean headersSent = false;
     private Map<String, String> pathParameters;
 
@@ -60,6 +59,7 @@ public class SocketHttpExchange implements ApiHttpExchange, AutoCloseable {
         this.requestMethod = parts[0];
         this.requestTarget = parts[1];
         this.requestHeaders = SocketHttpClient.readHttpHeaders(socket.getInputStream());
+        this.cookies = ActionControllerCookie.parseClientCookieMap(requestHeaders.get("Cookie"));
 
         if (requestMethod.equals("GET")) {
             this.parameters = HttpUrl.parseParameters(getQueryString());
@@ -259,11 +259,7 @@ public class SocketHttpExchange implements ApiHttpExchange, AutoCloseable {
 
     @Override
     public List<String> getCookies(String name) {
-        return getHeaders("Cookie").stream()
-                .map(ActionControllerCookie::parse)
-                .map(ActionControllerCookie::getValue)
-                .map(s -> URLDecoder.decode(s, StandardCharsets.UTF_8))
-                .collect(Collectors.toList());
+        return cookies.get().get(name);
     }
 
     @Override
@@ -327,7 +323,7 @@ public class SocketHttpExchange implements ApiHttpExchange, AutoCloseable {
     }
 
     @Override
-    public void authenticate() throws IOException {
+    public void authenticate() {
         throw new UnsupportedOperationException("Not implemented yet");
     }
 

@@ -29,6 +29,7 @@ import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -249,6 +250,15 @@ public class JakartaServletHttpExchange implements ApiHttpExchange {
     @Override
     public List<String> getHeaders(String name) {
         return req.getHeaders(name) != null ? Collections.list(req.getHeaders(name)) : null;
+    }
+
+    @Override
+    public Map<String, List<String>> getAllHeaders() {
+        LinkedHashMap<String, List<String>> allHeaders = new LinkedHashMap<>();
+        for (String headerName : Collections.list(req.getHeaderNames())) {
+            allHeaders.put(headerName, Collections.list(req.getHeaders(headerName)));
+        }
+        return allHeaders;
     }
 
     @Override

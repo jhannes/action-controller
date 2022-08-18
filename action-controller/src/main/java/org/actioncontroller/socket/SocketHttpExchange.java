@@ -9,7 +9,6 @@ import org.actioncontroller.util.HttpUrl;
 import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Reader;
@@ -21,7 +20,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 public class SocketHttpExchange implements ApiHttpExchange, AutoCloseable {
     public static final Map<Integer, String> REASON_PHRASES = Map.ofEntries(
@@ -42,39 +40,30 @@ public class SocketHttpExchange implements ApiHttpExchange, AutoCloseable {
 
     private final String requestMethod;
     private final String requestTarget;
-    private final Map<String, List<String>> requestHeaders;
     private final LinkedHashMap<String, List<String>> responseHeaders = new LinkedHashMap<>();
     private final Map<String, List<String>> parameters;
     private final Socket socket;
     private final String contextPath = "";
-    private final Supplier<Map<String, List<String>>> cookies;
+    private final HttpMessage requestMessage;
     private boolean headersSent = false;
     private Map<String, String> pathParameters;
 
     public SocketHttpExchange(Socket socket) throws IOException {
         this.socket = socket;
-        String responseLine = SocketHttpClient.readLine(socket.getInputStream());
 
-        String[] parts = responseLine.split(" ", 3);
+        this.requestMessage = HttpMessage.read(socket.getInputStream());
+
+        String[] parts = requestMessage.getStartLine().split(" ", 3);
         this.requestMethod = parts[0];
         this.requestTarget = parts[1];
-        this.requestHeaders = SocketHttpClient.readHttpHeaders(socket.getInputStream());
-        this.cookies = ActionControllerCookie.parseClientCookieMap(requestHeaders.get("Cookie"));
 
         if (requestMethod.equals("GET")) {
             this.parameters = HttpUrl.parseParameters(getQueryString());
-        } else if (firstHeader("Content-Type").map(s -> s.equalsIgnoreCase("application/x-www-form-urlencoded")).orElse(false)) {
-            this.parameters = HttpUrl.parseParameters(new String(getRequestBody()));
+        } else if (requestMessage.firstHeader("Content-Type").map(s -> s.equalsIgnoreCase("application/x-www-form-urlencoded")).orElse(false)) {
+            this.parameters = HttpUrl.parseParameters(requestMessage.readBodyString(this.socket.getInputStream()));
         } else {
             this.parameters = new LinkedHashMap<>();
         }
-    }
-
-    private byte[] getRequestBody() throws IOException {
-        int contentLength = Integer.parseInt(firstHeader("Content-Length").orElseThrow());
-        byte[] body = new byte[contentLength];
-        getInputStream().read(body);
-        return body;
     }
 
     @Override
@@ -110,7 +99,7 @@ public class SocketHttpExchange implements ApiHttpExchange, AutoCloseable {
     }
 
     private String getHost() {
-        return firstHeader("X-Forwarded-Host").orElseGet(this::calculateHost);
+        return requestMessage.firstHeader("X-Forwarded-Host").orElseGet(this::calculateHost);
     }
 
     private String calculateHost() {
@@ -118,7 +107,7 @@ public class SocketHttpExchange implements ApiHttpExchange, AutoCloseable {
     }
 
     private int getServerPort() {
-        String hostHeader = firstHeader("Host").orElse(null);
+        String hostHeader = requestMessage.firstHeader("Host").orElse(null);
         if (hostHeader == null) {
             return socket.getLocalPort();
         }
@@ -131,23 +120,18 @@ public class SocketHttpExchange implements ApiHttpExchange, AutoCloseable {
     }
 
     private String getScheme() {
-        return firstHeader("X-Forwarded-Proto")
+        return requestMessage.firstHeader("X-Forwarded-Proto")
                 .orElse(socket instanceof SSLSocket ? "https" : "http");
     }
 
 
     private String getServerName() {
-        Optional<String> hostHeader = firstHeader("Host");
+        Optional<String> hostHeader = requestMessage.firstHeader("Host");
         if (!hostHeader.isPresent()) {
             return socket.getLocalAddress().getHostName();
         }
         int colonPos = hostHeader.get().indexOf(':');
         return colonPos == -1 ? hostHeader.get() : hostHeader.get().substring(0, colonPos);
-    }
-
-    private Optional<String> firstHeader(String name) {
-        List<String> headers = getHeaders(name);
-        return headers.isEmpty() ? Optional.empty() : Optional.of(headers.get(0));
     }
 
     @Override
@@ -175,7 +159,12 @@ public class SocketHttpExchange implements ApiHttpExchange, AutoCloseable {
 
     @Override
     public List<String> getHeaders(String name) {
-        return requestHeaders.containsKey(name) ? requestHeaders.get(name) : List.of();
+        return requestMessage.getHeaders(name);
+    }
+
+    @Override
+    public Map<String, List<String>> getAllHeaders() {
+        return requestMessage.getAllHeaders();
     }
 
     @Override
@@ -234,13 +223,18 @@ public class SocketHttpExchange implements ApiHttpExchange, AutoCloseable {
     }
 
     @Override
+    public List<String> getCookies(String name) {
+        return requestMessage.getRequestCookies(name);
+    }
+
+    @Override
     public Reader getReader() throws IOException {
-        return new InputStreamReader(getInputStream());
+        return requestMessage.getReader(socket.getInputStream());
     }
 
     @Override
     public InputStream getInputStream() throws IOException {
-        return new HttpInputStream(socket.getInputStream(), requestHeaders);
+        return requestMessage.getInputStream(socket.getInputStream());
     }
 
     @Override
@@ -257,10 +251,6 @@ public class SocketHttpExchange implements ApiHttpExchange, AutoCloseable {
         return s != null ? s : "";
     }
 
-    @Override
-    public List<String> getCookies(String name) {
-        return cookies.get().get(name);
-    }
 
     @Override
     public void sendError(int statusCode, String message) throws IOException {

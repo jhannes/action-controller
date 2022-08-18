@@ -3,7 +3,7 @@ package org.actioncontroller.httpserver;
 import com.sun.net.httpserver.HttpServer;
 import org.actioncontroller.AbstractApiClientProxyTest;
 import org.actioncontroller.ApiControllerRouteMap;
-import org.actioncontroller.socket.SocketHttpClient;
+import org.actioncontroller.socket.HttpMessage;
 import org.actioncontroller.client.ApiClient;
 import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.HttpClientException;
@@ -56,9 +56,9 @@ public class ApiClientProxyHttpServerTest extends AbstractApiClientProxyTest {
                 "Connection: close\r\n" +
                 "\r\n").getBytes());
 
-        String responseLine = SocketHttpClient.readLine(socket.getInputStream());
+        String responseLine = HttpMessage.readLine(socket.getInputStream());
         assertThat(responseLine).startsWith("HTTP/1.1 302 ");
-        assertThat(SocketHttpClient.readHttpHeaders(socket.getInputStream()))
+        assertThat(HttpMessage.readHttpHeaders(socket.getInputStream()))
                 .containsEntry("location", singletonList("http://" + Inet4Address.getByName("127.0.0.1").getHostName() + ":" + url.getPort() + "/frontPage"));
     }
 

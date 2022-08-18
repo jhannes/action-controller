@@ -22,7 +22,9 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -179,6 +181,11 @@ public class JdkHttpExchange implements ApiHttpExchange, AutoCloseable {
     @Override
     public List<String> getHeaders(String name) {
         return exchange.getRequestHeaders().get(name);
+    }
+
+    @Override
+    public Map<String, List<String>> getAllHeaders() {
+        return Collections.unmodifiableMap(exchange.getRequestHeaders());
     }
 
     @Override

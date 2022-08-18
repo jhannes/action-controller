@@ -228,6 +228,10 @@ public class ApiControllerMethodAction implements ApiControllerAction {
             HttpParameterMapper[] parameterMappers = createParameterMappers(getAction());
             Object[] arguments = createArguments(getAction(), exchange, parameterMappers);
             logger.debug("Invoking {}", this);
+            if (logger.isTraceEnabled()) {
+                logger.trace("Query string: {}", exchange.getQueryString());
+                logger.trace("Headers: {}", exchange.getAllHeaders());
+            }
             Object result = invoke(getController(), getAction(), arguments);
             for (int i = 0; i < parameterMappers.length; i++) {
                 parameterMappers[i].onComplete(exchange, arguments[i]);

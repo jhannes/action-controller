@@ -1,9 +1,9 @@
-package org.actioncontroller.httpserver;
+package org.actioncontroller.socket;
 
 import com.sun.net.httpserver.HttpServer;
 import org.actioncontroller.AbstractApiClientProxyTest;
-import org.actioncontroller.socket.SocketHttpClient;
 import org.actioncontroller.client.ApiClient;
+import org.actioncontroller.httpserver.ApiHandler;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;

@@ -16,12 +16,8 @@ import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Reader;
-import java.io.StringReader;
-import java.io.StringWriter;
 import java.net.Socket;
 import java.net.URL;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -39,38 +35,10 @@ import java.util.stream.Collectors;
  */
 public class SocketHttpClient implements ApiClient {
     private final URL baseUrl;
-    private static final Charset CHARSET = StandardCharsets.ISO_8859_1;
     private final Map<String, ActionControllerCookie> clientCookies = new HashMap<>();
 
     public SocketHttpClient(URL baseUrl) {
         this.baseUrl = baseUrl;
-    }
-
-    public static Map<String, List<String>> readHttpHeaders(InputStream inputStream) throws IOException {
-        Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        String headerLine;
-        while (!(headerLine = readLine(inputStream)).trim().isEmpty()) {
-            int colonPos = headerLine.indexOf(':');
-            String headerName = headerLine.substring(0, colonPos).trim().toLowerCase();
-            String headerValue = headerLine.substring(colonPos + 1).trim();
-            headers.computeIfAbsent(headerName, k -> new ArrayList<>()).add(headerValue);
-        }
-        return headers;
-    }
-
-    public static String readLine(InputStream inputStream) throws IOException {
-        int c;
-        StringBuilder line = new StringBuilder();
-        while ((c = inputStream.read()) != -1) {
-            if (c == '\r') {
-                inputStream.read();
-                break;
-            } else if (c == '\n') {
-                break;
-            }
-            line.append((char) c);
-        }
-        return line.toString();
     }
 
     @Override
@@ -108,17 +76,16 @@ public class SocketHttpClient implements ApiClient {
 
         private final Map<String, List<String>> requestParameters = new TreeMap<>();
         private final Map<String, String> requestHeaders = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        private List<ActionControllerCookie> responseCookies = new ArrayList<>();
 
         private final List<ActionControllerCookie> requestCookies = new ArrayList<>();
 
         private Integer responseCode;
         private String responseMessage;
-        private Map<String, List<String>> responseHeaders = Map.of();
         private ApiHttpExchange.OutputStreamConsumer consumer;
         private ByteArrayOutputStream requestBody;
 
         private Socket socket;
+        private HttpMessage response;
 
         @Override
         public void setTarget(String method, String pathInfo) {
@@ -217,15 +184,11 @@ public class SocketHttpClient implements ApiClient {
             }
             socket.getOutputStream().flush();
 
-            String responseLine = readLine(socket.getInputStream());
-
-            String[] parts = responseLine.split(" " , 3);
+            response = HttpMessage.read(socket.getInputStream());
+            String[] parts = response.getStartLine().split(" " , 3);
             this.responseCode = Integer.parseInt(parts[1]);
             this.responseMessage = parts[2];
-
-            responseHeaders = readHttpHeaders(socket.getInputStream());
-            responseCookies = ActionControllerCookie.parseSetCookieHeaders(responseHeaders.get("Set-Cookie"));
-            responseCookies.forEach(c -> clientCookies.put(c.getName(), c));
+            response.getResponseCookies().forEach(c -> clientCookies.put(c.getName(), c));
         }
 
         private boolean isHttps(URL url) {
@@ -239,16 +202,15 @@ public class SocketHttpClient implements ApiClient {
 
         @Override
         public List<String> getResponseHeaders(String name) {
-            return responseHeaders.getOrDefault(name, new ArrayList<>());
-        }
-
-        public String firstResponseHeader(String name) {
-            return responseHeaders.containsKey(name) ? responseHeaders.get(name).get(0) : null;
+            return response.getHeaders(name);
         }
 
         @Override
         public List<String> getResponseCookies(String name) {
-            return responseCookies.stream()
+            if (response == null) {
+                return List.of();
+            }
+            return response.getResponseCookies().stream()
                     .filter(c -> c.getName().equals(name))
                     .filter(ActionControllerCookie::isUnexpired)
                     .map(ActionControllerCookie::getValue)
@@ -257,68 +219,22 @@ public class SocketHttpClient implements ApiClient {
 
         @Override
         public Reader getResponseBodyReader() throws IOException {
-            if ("chunked".equalsIgnoreCase(firstResponseHeader("transfer-encoding"))) {
-                StringBuilder buffer = new StringBuilder();
-
-                int length;
-                if ((length = readLength(socket.getInputStream())) > 0) {
-                    for (int i = 0; i < length; i++) {
-                        buffer.append((char)socket.getInputStream().read());
-                    }
-                }
-                return new StringReader(buffer.toString());
-            }
-
-            String contentLengthHeader = firstResponseHeader("Content-length");
-            if (contentLengthHeader != null) {
-                int contentLength = Integer.parseInt(contentLengthHeader);
-
-                StringBuilder buffer = new StringBuilder();
-                for (int i = 0; i < contentLength; i++) {
-                    buffer.append((char)socket.getInputStream().read());
-                }
-
-                return new StringReader(buffer.toString());
-            } else {
-                return null;
-            }
+            return response.getReader(socket.getInputStream());
         }
 
-        private String getResponseBody() throws IOException {
-            Reader reader = getResponseBodyReader();
-            if (reader == null) {
-                return null;
-            }
-            StringWriter buffer = new StringWriter();
-            reader.transferTo(buffer);
-            return buffer.toString();
-        }
-
-        private int readLength(InputStream inputStream) throws IOException {
-            String line = readLine(inputStream);
-            return line.length() > 0 ? Integer.parseInt(line, 16) : 0;
+        private String readResponseBody() throws IOException {
+            return response.readBodyString(socket.getInputStream());
         }
 
         @Override
         public InputStream getResponseBodyStream() throws IOException {
-            if ("chunked".equalsIgnoreCase(firstResponseHeader("transfer-encoding"))) {
-                ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-
-                int length;
-                if ((length = readLength(socket.getInputStream())) > 0) {
-                    for (int i = 0; i < length; i++) {
-                        buffer.write(socket.getInputStream().read());
-                    }
-                }
-                return new ByteArrayInputStream(buffer.toByteArray());
-            }
-            throw new UnsupportedOperationException();
+            return response.getInputStream(socket.getInputStream());
         }
 
         @Override
         public void checkForError() throws HttpClientException, IOException {
             if (getResponseCode() >= 400) {
-                throw new HttpClientException(getResponseCode(), responseMessage, getResponseBody(), getRequestURL());
+                throw new HttpClientException(getResponseCode(), responseMessage, readResponseBody(), getRequestURL());
             } else if (getResponseCode() == 304) {
                 throw new HttpNotModifiedException(null);
             }

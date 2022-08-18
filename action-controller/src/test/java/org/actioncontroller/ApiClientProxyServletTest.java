@@ -5,7 +5,7 @@ import org.actioncontroller.client.ApiClientClassProxy;
 import org.actioncontroller.client.HttpClientException;
 import org.actioncontroller.client.HttpURLConnectionApiClient;
 import org.actioncontroller.servlet.ApiServlet;
-import org.actioncontroller.socket.SocketHttpClient;
+import org.actioncontroller.socket.HttpMessage;
 import org.eclipse.jetty.server.HttpChannel;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -70,9 +70,9 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
                 "Connection: close\r\n" +
                 "\r\n").getBytes());
 
-        String responseLine = SocketHttpClient.readLine(socket.getInputStream());
+        String responseLine = HttpMessage.readLine(socket.getInputStream());
         assertThat(responseLine).startsWith("HTTP/1.1 302 ");
-        assertThat(SocketHttpClient.readHttpHeaders(socket.getInputStream()))
+        assertThat(HttpMessage.readHttpHeaders(socket.getInputStream()))
                 .containsEntry("location", singletonList("http://127.0.0.1:" + url.getPort() + "/test/frontPage"));
     }
 
@@ -86,9 +86,9 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
                 "Host: www.example.com:8080\r\n" +
                 "\r\n").getBytes());
 
-        String responseLine = SocketHttpClient.readLine(socket.getInputStream());
+        String responseLine = HttpMessage.readLine(socket.getInputStream());
         assertThat(responseLine).startsWith("HTTP/1.1 302 ");
-        assertThat(SocketHttpClient.readHttpHeaders(socket.getInputStream()))
+        assertThat(HttpMessage.readHttpHeaders(socket.getInputStream()))
                 .containsEntry("location", singletonList("http://www.example.com:8080/test/frontPage"));
     }
 
@@ -104,9 +104,9 @@ public class ApiClientProxyServletTest extends AbstractApiClientProxyTest {
                 "Host: app.example.com:8080\r\n" +
                 "\r\n").getBytes());
 
-        String responseLine = SocketHttpClient.readLine(socket.getInputStream());
+        String responseLine = HttpMessage.readLine(socket.getInputStream());
         assertThat(responseLine).startsWith("HTTP/1.1 302 ");
-        assertThat(SocketHttpClient.readHttpHeaders(socket.getInputStream()))
+        assertThat(HttpMessage.readHttpHeaders(socket.getInputStream()))
                 .containsEntry("location", singletonList("https://www.example.com:8443/test/frontPage"));
     }
 

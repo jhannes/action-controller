@@ -124,6 +124,8 @@ public interface ApiHttpExchange {
      */
     List<String> getHeaders(String name);
 
+    Map<String, List<String>> getAllHeaders();
+
     /**
      * Returns true if the "Accept" request header matches the argument content type
      */

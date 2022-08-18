@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -23,6 +24,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 
+import static org.actioncontroller.content.Content.RFC_1123_DATE_TIME;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ContentServletTest {
@@ -53,7 +55,7 @@ public class ContentServletTest {
 
         assertThat(response.getStatus()).isEqualTo(200);
         assertThat(response.getHeader("Last-modified"))
-                .isEqualTo("Wed, 1 Dec 2021 03:14:00 +0100");
+                .isEqualTo(lastModified.format(RFC_1123_DATE_TIME));
     }
 
     @Test

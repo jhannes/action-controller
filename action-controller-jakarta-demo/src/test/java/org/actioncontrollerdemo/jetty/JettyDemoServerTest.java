@@ -44,7 +44,7 @@ public class JettyDemoServerTest {
                 .as(connection.getResponseMessage())
                 .isEqualTo(200);
         String body = HttpURLConnectionApiClient.asString(connection.getInputStream());
-        assertThat(body).contains("<h1>Hello World</h1>");
+        assertThat(body).contains("<h1>Demo Action Controller</h1>");
         assertThat(connection.getHeaderField("Content-Type")).isEqualTo("text/html");
 
         assertThat(ZonedDateTime.parse(connection.getHeaderField("Last-Modified"), DateTimeFormatter.RFC_1123_DATE_TIME))

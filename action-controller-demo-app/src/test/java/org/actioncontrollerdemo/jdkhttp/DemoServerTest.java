@@ -41,7 +41,7 @@ public class DemoServerTest {
         StringWriter writer = new StringWriter();
         new BufferedReader(new InputStreamReader(connection.getInputStream())).transferTo(writer);
         assertThat(writer.toString())
-                .contains("<h1>Hello World</h1>");
+                .contains("<h1>Demo Action Controller</h1>");
     }
 
     @Test

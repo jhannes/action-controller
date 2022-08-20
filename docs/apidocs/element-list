@@ -10,7 +10,7 @@ org.actioncontroller.jmx
 org.actioncontroller.meta
 org.actioncontroller.optional.json
 org.actioncontroller.servlet
-org.actioncontroller.test
+org.actioncontroller.socket
 org.actioncontroller.util
 org.actioncontroller.values
 org.actioncontroller.values.json

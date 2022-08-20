@@ -4,10 +4,10 @@
     <meta name="viewport"
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Relying server</title>
+    <title>View cookies</title>
 </head>
 <body>
-<h1>Relying party</h1>
+<h1>View cookies</h1>
 
 <p>Demonstration of cross site cookies. This server uses API calls at the demo-server with different cookie
     settings.</p>
@@ -20,11 +20,13 @@
 <script defer>
     fetch("https://logeventsdemo.example.com:31443/demo/api/cookies", {
         credentials: "include"
-    }).then(res => res.text(), err => {
+    }).then(res => {
+        console.log(res.cookie)
+        return res.text();
+    }, err => {
         console.log(err);
         return err;
     })
         .then(text => document.getElementById("response").innerText = text);
-
 </script>
 </html>

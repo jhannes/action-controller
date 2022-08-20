@@ -24,7 +24,7 @@ public class DemoDeferredAuthentication implements Authentication.Deferred {
                 .stream()
                 .map(s -> getAuthentication(DemoPrincipal.createPrincipal(s)))
                 .findFirst()
-                .orElse(this);
+                .orElse((NonAuthenticated) (username, password, request) -> null);
     }
 
     private Authentication getAuthentication(Principal principal) {

@@ -2,9 +2,38 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Hello World</title>
+    <title>Demo Action Controller</title>
 </head>
 <body>
-    <h1>Hello World</h1>
+<h1>Demo Action Controller</h1>
+<h2>A basic demonstration of random Action Controller features</h2>
+
+<h2>Cookies</h2>
+
+<h3>Set cookies</h3>
+
+<form action="/demo/api/setCookies">
+    <div>
+        <label>Name: <input name="name" /></label>
+    </div>
+    <div>
+        <button>Submit</button>
+    </div>
+</form>
+
+<h3>View cookies</h3>
+
+<ul>
+    <li><a href="https://logeventsdemo.example.com:31443/demo/cookies.html">On secure same origin</a></li>
+    <li><a href="http://logeventsdemo.example.com:31080/demo/cookies.html">On insecure same origin</a></li>
+    <li><a href="https://example.org:30443/">On secure other origin</a></li>
+    <li><a href="http://example.org:30080/">On insecure other origin</a></li>
+    <li><a href="http://localhost:31080/demo/cookies.html">On insecure localhost</a></li>
+</ul>
+
+<h2>View Swagger UI documentation</h2>
+
+<p><a href="/demo/swagger/">Swagger Petstore</a></p>
+
 </body>
 </html>

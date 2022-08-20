@@ -10,12 +10,14 @@ import org.actioncontrollerdemo.DemoPrincipal;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 public class DemoAuthenticator extends ActionAuthenticator {
 
     @Override
     public Result authenticate(HttpExchange exchange) {
-        return ActionControllerCookie.parseClientCookies(exchange.getRequestHeaders().get("Cookie")).get("username")
+        return ActionControllerCookie.parseClientCookies(exchange.getRequestHeaders().get("Cookie"))
+                .getOrDefault("username", List.of())
                 .stream()
                 .findFirst()
                 .map(username -> new Success(new NestedHttpPrincipal("demo", DemoPrincipal.createPrincipal(username))))

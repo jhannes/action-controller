@@ -342,7 +342,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
     // TODO: It feels like there is some more generic concept missing here
     // TODO: Perhaps a mechanism like transaction wrapping could be supported?
     // TODO: Timing logging? MDC boundary?
-    protected void verifyUserAccess(ApiHttpExchange exchange, UserContext userContext) {
+    protected void verifyUserAccess(ApiHttpExchange exchange, UserContext ignored) {
         String role = getRequiredUserRole().orElse(null);
         if (role == null) {
             return;

@@ -123,10 +123,10 @@ public class ApiControllerMethodAction implements ApiControllerAction {
         }
     }
 
-    private static final Map<Class<?>, HttpReturnMapper> typebasedResponseMapping = new HashMap<>();
+    private static final Map<Class<?>, HttpReturnMapper> typeBasedResponseMapping = new HashMap<>();
     static {
-        typebasedResponseMapping.put(URL.class, (o, exchange) -> exchange.sendRedirect(o.toString()));
-        typebasedResponseMapping.put(Void.TYPE, (o, exchange) -> {});
+        typeBasedResponseMapping.put(URL.class, (o, exchange) -> exchange.sendRedirect(o.toString()));
+        typeBasedResponseMapping.put(Void.TYPE, (o, exchange) -> exchange.setStatus(204));
     }
 
     private static final Map<Class<?>, HttpParameterMapper> typebasedRequestMapping = new HashMap<>();
@@ -136,7 +136,7 @@ public class ApiControllerMethodAction implements ApiControllerAction {
 
     private HttpReturnMapper createResponseMapper(ApiControllerContext context) {
         return HttpReturnMapperFactory.createNewInstance(action, context)
-                .or(() -> Optional.ofNullable(typebasedResponseMapping.get(action.getReturnType())))
+                .or(() -> Optional.ofNullable(typeBasedResponseMapping.get(action.getReturnType())))
                 .orElseThrow(() -> new ApiActionResponseUnknownMappingException(action, action.getGenericReturnType()));
     }
 
